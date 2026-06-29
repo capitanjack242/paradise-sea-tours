@@ -1,6 +1,6 @@
-# Paradise Sea Taxi
+# Paradise Sea Tours
 
-On-demand **water taxi** for Nassau, The Bahamas. Fast, fixed per-person rides
+On-demand **water tours** for Nassau, The Bahamas. Fast, fixed per-person rides
 from the Cruise Port and downtown to Paradise Island, Atlantis, Cabbage Beach,
 Rose Island and the cays.
 
@@ -8,7 +8,7 @@ This repo holds the public marketing site (and will grow to host the booking
 platform).
 
 ```
-nassauboattaxi/
+paradise-sea-tours/
 ├── web/        Marketing website   ← live (static HTML/CSS/JS, deployed to Pages)
 ├── api/        Backend API         (planned)
 ├── control/    Dispatch dashboard  (planned)

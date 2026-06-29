@@ -3,7 +3,7 @@ const CONFIG = {
   phone: "+12420000000",          // tel: dialable, no spaces
   phoneDisplay: "+1 (242) 000-0000",
   whatsapp: "12420000000",        // digits only, country code first
-  email: "hello@paradiseseataxi.com",
+  email: "hello@paradiseseatours.com",
 };
 /* ───────────────────────────────────────────────────────────────── */
 
@@ -25,11 +25,11 @@ document.querySelectorAll("[data-phone]").forEach((el) => {
 const waLink = (text) =>
   `https://wa.me/${CONFIG.whatsapp}?text=${encodeURIComponent(text)}`;
 document.querySelectorAll("[data-whatsapp]").forEach((el) =>
-  (el.href = waLink("Hi! I'd like to book a boat taxi.")));
+  (el.href = waLink("Hi! I'd like to book a boat tour.")));
 document.querySelectorAll("[data-call]").forEach((el) =>
-  (el.href = waLink("Hi! I'd like to book a boat taxi.")));
+  (el.href = waLink("Hi! I'd like to book a boat tour.")));
 document.querySelectorAll("[data-captain]").forEach((el) =>
-  (el.href = waLink("Hi! I own a boat in Nassau and want to join the Paradise Sea Taxi network.")));
+  (el.href = waLink("Hi! I own a boat in Nassau and want to join the Paradise Sea Tours network.")));
 
 // booking form (client-side for now; phase 2 will POST to the API)
 const form = document.getElementById("bookingForm");
