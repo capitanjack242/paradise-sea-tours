@@ -4,8 +4,13 @@ const CONFIG = {
   phoneDisplay: "+1 (242) 000-0000",
   whatsapp: "12420000000",        // digits only, country code first
   email: "hello@paradiseseatours.com",
+  // Publishable (anon) key — safe to expose client-side, access is scoped by RLS.
+  supabaseUrl: "https://fjdoaonnoezbbitbawzs.supabase.co",
+  supabaseKey: "sb_publishable_RjTM-t2isu1Teq9P5z37PQ_h_Oy3EpP",
 };
 /* ───────────────────────────────────────────────────────────────── */
+
+const db = window.supabase.createClient(CONFIG.supabaseUrl, CONFIG.supabaseKey);
 
 // year
 document.getElementById("year").textContent = new Date().getFullYear();
@@ -31,11 +36,12 @@ document.querySelectorAll("[data-call]").forEach((el) =>
 document.querySelectorAll("[data-captain]").forEach((el) =>
   (el.href = waLink("Hi! I own a boat in Nassau and want to join the Paradise Sea Tours network.")));
 
-// booking form (client-side for now; phase 2 will POST to the API)
+// booking form: write a real booking record, then hand off to WhatsApp
+// (still the fastest notification channel until the control view is live).
 const form = document.getElementById("bookingForm");
 const status = document.getElementById("formStatus");
 
-form.addEventListener("submit", (e) => {
+form.addEventListener("submit", async (e) => {
   e.preventDefault();
   status.className = "form-status";
   const data = Object.fromEntries(new FormData(form).entries());
@@ -48,6 +54,20 @@ form.addEventListener("submit", (e) => {
       return;
     }
   }
+
+  status.textContent = "Sending your request…";
+
+  const { error } = await db.from("bookings").insert({
+    contact_name: data.name,
+    contact_phone: data.phone,
+    pickup: data.pickup,
+    destination: data.destination,
+    scheduled_at: new Date(`${data.date}T${data.time}`).toISOString(),
+    passengers: Number(data.guests) || 1,
+    trip_type: data.triptype,
+    notes: data.notes || null,
+  });
+  if (error) console.error("booking insert failed:", error);
 
   // Build a WhatsApp message so the inquiry actually goes somewhere today.
   const msg =

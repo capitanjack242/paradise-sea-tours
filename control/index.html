@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Paradise Sea Tours — Dispatch</title>
+<meta name="robots" content="noindex, nofollow">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="loginView" class="login-wrap">
+  <form id="loginForm" class="login-card">
+    <h1 class="brand">Paradise<strong>Sea Tours</strong></h1>
+    <p class="muted">Dispatch — staff sign in</p>
+    <label>Email<input id="email" type="email" required autocomplete="username"></label>
+    <label>Password<input id="password" type="password" required autocomplete="current-password"></label>
+    <button type="submit" class="btn btn-primary btn-block">Sign in</button>
+    <p id="loginError" class="err"></p>
+  </form>
+</div>
+
+<!-- DASHBOARD -->
+<div id="dashView" class="dash" style="display:none">
+  <header class="topbar">
+    <h1 class="brand">Paradise<strong>Sea Tours</strong> <span class="muted">· Dispatch</span></h1>
+    <div class="topbar-right">
+      <span id="whoami" class="muted"></span>
+      <button id="refreshBtn" class="btn btn-ghost btn-sm">Refresh</button>
+      <button id="logoutBtn" class="btn btn-ghost btn-sm">Sign out</button>
+    </div>
+  </header>
+
+  <div class="toolbar">
+    <div class="filter-tabs" id="filterTabs">
+      <button data-filter="active" class="tab active">Active</button>
+      <button data-filter="all" class="tab">All</button>
+      <button data-filter="completed" class="tab">Completed</button>
+      <button data-filter="cancelled" class="tab">Cancelled</button>
+    </div>
+    <span id="countInfo" class="muted"></span>
+  </div>
+
+  <div id="bookingsWrap" class="bookings-wrap">
+    <table class="bookings">
+      <thead>
+        <tr>
+          <th>Received</th>
+          <th>Contact</th>
+          <th>Trip</th>
+          <th>When</th>
+          <th>Pax</th>
+          <th>Type</th>
+          <th>Notes</th>
+          <th>Status</th>
+          <th>Quoted $</th>
+        </tr>
+      </thead>
+      <tbody id="bookingsBody"></tbody>
+    </table>
+    <div id="emptyState" class="empty-state" style="display:none">No bookings yet.</div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="script.js"></script>
+</body>
+</html>
