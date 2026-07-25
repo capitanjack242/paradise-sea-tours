@@ -40,6 +40,10 @@ document.querySelectorAll("[data-captain]").forEach((el) =>
 // (still the fastest notification channel until the control view is live).
 const form = document.getElementById("bookingForm");
 const status = document.getElementById("formStatus");
+const dateInput = form.querySelector('[name="date"]');
+
+// Don't let the date picker itself offer past dates.
+dateInput.min = new Date().toLocaleDateString("en-CA"); // YYYY-MM-DD, local time
 
 form.addEventListener("submit", async (e) => {
   e.preventDefault();
@@ -55,6 +59,13 @@ form.addEventListener("submit", async (e) => {
     }
   }
 
+  const scheduledAt = new Date(`${data.date}T${data.time}`);
+  if (scheduledAt.getTime() <= Date.now()) {
+    status.textContent = "Please choose a date and time in the future.";
+    status.classList.add("err");
+    return;
+  }
+
   status.textContent = "Sending your request…";
 
   const { error } = await db.from("bookings").insert({
@@ -62,7 +73,7 @@ form.addEventListener("submit", async (e) => {
     contact_phone: data.phone,
     pickup: data.pickup,
     destination: data.destination,
-    scheduled_at: new Date(`${data.date}T${data.time}`).toISOString(),
+    scheduled_at: scheduledAt.toISOString(),
     passengers: Number(data.guests) || 1,
     trip_type: data.triptype,
     notes: data.notes || null,
