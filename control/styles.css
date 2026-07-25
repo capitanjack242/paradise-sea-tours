@@ -51,6 +51,11 @@ table.bookings th{text-align:left;padding:.7em .8em;background:var(--foam);
 table.bookings td{padding:.6em .8em;border-bottom:1px solid var(--line);vertical-align:top}
 table.bookings tr:last-child td{border-bottom:none}
 table.bookings td.notes{white-space:normal;max-width:220px;color:var(--muted)}
+.boat-select{font:inherit;padding:.4em .5em;border-radius:6px;border:1px solid var(--line);
+  background:#fff;max-width:190px}
+.assign-whatsapp{margin-top:.3rem}
+.assign-whatsapp a{color:var(--ok);font-weight:600;font-size:.82rem;text-decoration:none}
+.assign-whatsapp a:hover{text-decoration:underline}
 .trip{display:flex;flex-direction:column}
 .trip .arrow{color:var(--muted);font-size:.8rem}
 .contact-name{font-weight:600}

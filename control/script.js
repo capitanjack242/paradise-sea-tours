@@ -22,6 +22,7 @@ const countInfo = document.getElementById("countInfo");
 
 let currentFilter = "active";
 let pollTimer = null;
+let boatsList = []; // active boats available to assign, loaded once per session
 
 // ── auth ─────────────────────────────────────────────────────────────────
 loginForm.addEventListener("submit", async (e) => {
@@ -51,9 +52,23 @@ async function showDashboard(session) {
   loginView.style.display = "none";
   dashView.style.display = "block";
   whoami.textContent = session.user.email;
+  await loadBoats();
   await loadBookings();
   clearInterval(pollTimer);
   pollTimer = setInterval(loadBookings, 15000);
+}
+
+async function loadBoats() {
+  const { data, error } = await db
+    .from("boats")
+    .select("id, name, captain_name, captain_whatsapp")
+    .eq("is_active", true)
+    .order("name");
+  if (error) {
+    console.error("load boats failed:", error);
+    return;
+  }
+  boatsList = data;
 }
 
 // ── filters ──────────────────────────────────────────────────────────────
@@ -70,7 +85,7 @@ document.getElementById("refreshBtn").addEventListener("click", loadBookings);
 async function loadBookings() {
   const { data, error } = await db
     .from("bookings")
-    .select("*")
+    .select("*, boats(name, captain_name, captain_whatsapp)")
     .order("created_at", { ascending: false });
   if (error) {
     console.error("load bookings failed:", error);
@@ -102,6 +117,17 @@ function renderBookings(all) {
       const dollars = parseFloat(inp.value);
       const cents = Number.isFinite(dollars) ? Math.round(dollars * 100) : null;
       updateBooking(inp.dataset.id, { quoted_price_cents: cents }, inp.closest("tr"));
+    });
+  });
+  bookingsBody.querySelectorAll("select.boat-select").forEach((sel) => {
+    sel.addEventListener("change", async () => {
+      const boatId = sel.value || null;
+      await updateBooking(sel.dataset.id, { assigned_boat_id: boatId }, sel.closest("tr"));
+      const b = (window.__allBookings || []).find((x) => x.id === sel.dataset.id);
+      if (b) {
+        b.boats = boatId ? boatsList.find((x) => x.id === boatId) || null : null;
+        renderBookings(window.__allBookings);
+      }
     });
   });
 }
@@ -148,6 +174,17 @@ function rowHtml(b) {
       <td>${b.passengers ?? ""}</td>
       <td>${esc(b.trip_type || "")}</td>
       <td class="notes">${esc(b.notes || "")}</td>
+      <td>
+        <select class="boat-select" data-id="${b.id}">
+          <option value="">— Unassigned —</option>
+          ${boatsList.map((boat) =>
+            `<option value="${boat.id}" ${boat.id === b.assigned_boat_id ? "selected" : ""}>${esc(boat.name)} — Capt. ${esc(boat.captain_name || "?")}</option>`
+          ).join("")}
+        </select>
+        ${b.boats?.captain_whatsapp
+          ? `<div class="assign-whatsapp"><a href="https://wa.me/${b.boats.captain_whatsapp.replace(/\D/g, "")}" target="_blank" rel="noopener">💬 ${esc(b.boats.captain_name || "")}</a></div>`
+          : ""}
+      </td>
       <td>
         <select class="status-select" data-id="${b.id}">
           ${STATUSES.map((s) => `<option value="${s}" ${s === b.status ? "selected" : ""}>${s.replace("_", " ")}</option>`).join("")}
