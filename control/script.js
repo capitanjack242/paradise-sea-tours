@@ -106,23 +106,23 @@ function renderBookings(all) {
   const rows = all.filter(matchesFilter);
   countInfo.textContent = `${rows.length} of ${all.length} bookings`;
   emptyState.style.display = rows.length ? "none" : "block";
-  bookingsBody.innerHTML = rows.map(rowHtml).join("");
+  bookingsBody.innerHTML = rows.map(cardHtml).join("");
 
   bookingsBody.querySelectorAll("select.status-select").forEach((sel) => {
     sel.classList.add("st-" + sel.value);
-    sel.addEventListener("change", () => updateBooking(sel.dataset.id, { status: sel.value }, sel.closest("tr")));
+    sel.addEventListener("change", () => updateBooking(sel.dataset.id, { status: sel.value }, sel.closest(".booking-card")));
   });
   bookingsBody.querySelectorAll("input.price-input").forEach((inp) => {
     inp.addEventListener("change", () => {
       const dollars = parseFloat(inp.value);
       const cents = Number.isFinite(dollars) ? Math.round(dollars * 100) : null;
-      updateBooking(inp.dataset.id, { quoted_price_cents: cents }, inp.closest("tr"));
+      updateBooking(inp.dataset.id, { quoted_price_cents: cents }, inp.closest(".booking-card"));
     });
   });
   bookingsBody.querySelectorAll("select.boat-select").forEach((sel) => {
     sel.addEventListener("change", async () => {
       const boatId = sel.value || null;
-      await updateBooking(sel.dataset.id, { assigned_boat_id: boatId }, sel.closest("tr"));
+      await updateBooking(sel.dataset.id, { assigned_boat_id: boatId }, sel.closest(".booking-card"));
       const b = (window.__allBookings || []).find((x) => x.id === sel.dataset.id);
       if (b) {
         b.boats = boatId ? boatsList.find((x) => x.id === boatId) || null : null;
@@ -135,8 +135,8 @@ function renderBookings(all) {
   });
   bookingsBody.querySelectorAll("button.btn-cancel-row").forEach((btn) => {
     btn.addEventListener("click", () => {
-      const tr = btn.closest("tr");
-      const reasonInput = tr.querySelector("input.cancel-reason");
+      const card = btn.closest(".booking-card");
+      const reasonInput = card.querySelector("input.cancel-reason");
       const reason = reasonInput.value.trim();
       if (!reason) {
         reasonInput.classList.add("input-error");
@@ -144,20 +144,20 @@ function renderBookings(all) {
         return;
       }
       reasonInput.classList.remove("input-error");
-      updateBooking(btn.dataset.id, { status: "cancelled", cancellation_reason: reason }, tr);
+      updateBooking(btn.dataset.id, { status: "cancelled", cancellation_reason: reason }, card);
     });
   });
   bookingsBody.querySelectorAll("button.btn-complete-row").forEach((btn) => {
     btn.addEventListener("click", () => {
-      updateBooking(btn.dataset.id, { status: "completed" }, btn.closest("tr"));
+      updateBooking(btn.dataset.id, { status: "completed" }, btn.closest(".booking-card"));
     });
   });
 }
 
-async function updateBooking(id, patch, rowEl) {
-  rowEl?.classList.add("row-saving");
+async function updateBooking(id, patch, cardEl) {
+  cardEl?.classList.add("row-saving");
   const { error } = await db.from("bookings").update(patch).eq("id", id);
-  rowEl?.classList.remove("row-saving");
+  cardEl?.classList.remove("row-saving");
   if (error) {
     alert("Update failed: " + error.message);
     loadBookings();
@@ -185,65 +185,72 @@ function customerConfirmMessage(b) {
   return lines.join("\n");
 }
 
-function rowHtml(b) {
+function cardHtml(b) {
   const when = b.scheduled_at
     ? new Date(b.scheduled_at).toLocaleString(undefined, {
-        month: "short", day: "numeric", hour: "numeric", minute: "2-digit",
+        weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit",
       })
-    : "—";
+    : "No time given";
   const received = new Date(b.created_at).toLocaleString(undefined, {
     month: "short", day: "numeric", hour: "numeric", minute: "2-digit",
   });
   const price = b.quoted_price_cents != null ? (b.quoted_price_cents / 100).toFixed(2) : "";
 
   return `
-    <tr>
-      <td>${received}</td>
-      <td>
-        <div class="contact-name">${esc(b.contact_name || "—")}</div>
-        <div class="contact-phone">${esc(b.contact_phone || "")}</div>
-        ${b.contact_phone
-          ? `<div class="assign-whatsapp"><a href="https://wa.me/${b.contact_phone.replace(/\D/g, "")}?text=${encodeURIComponent(customerConfirmMessage(b))}" target="_blank" rel="noopener">💬 Message customer</a></div>`
-          : ""}
-      </td>
-      <td>
-        <div class="trip">
-          <span>${esc(b.pickup || "—")}</span>
-          <span class="arrow">↓ ${esc(b.destination || "—")}</span>
+    <article class="booking-card">
+      <div class="card-header">
+        <div>
+          <span class="contact-name">${esc(b.contact_name || "—")}</span>
+          <span class="contact-phone">${esc(b.contact_phone || "")}</span>
         </div>
-      </td>
-      <td>${when}</td>
-      <td>${b.passengers ?? ""}</td>
-      <td>${esc(b.trip_type || "")}</td>
-      <td class="notes">${esc(b.notes || "")}</td>
-      <td>
-        <select class="boat-select" data-id="${b.id}">
-          <option value="">— Unassigned —</option>
-          ${boatsList.map((boat) =>
-            `<option value="${boat.id}" ${boat.id === b.assigned_boat_id ? "selected" : ""}>${esc(boat.name)} — Capt. ${esc(boat.captain_name || "?")}</option>`
-          ).join("")}
-        </select>
-        ${b.boats?.captain_whatsapp
-          ? `<div class="assign-whatsapp"><a href="https://wa.me/${b.boats.captain_whatsapp.replace(/\D/g, "")}" target="_blank" rel="noopener">💬 ${esc(b.boats.captain_name || "")}</a></div>`
+        <span class="received-at">Received ${received}</span>
+      </div>
+
+      <div class="card-trip">
+        <div class="trip-route">${esc(b.pickup || "—")} <span class="arrow">→</span> ${esc(b.destination || "—")}</div>
+        <div class="trip-meta">${when} · ${b.passengers ?? "?"} pax · ${esc(b.trip_type || "")}</div>
+        ${b.notes ? `<div class="card-notes">${esc(b.notes)}</div>` : ""}
+        ${b.contact_phone
+          ? `<a class="wa-link" href="https://wa.me/${b.contact_phone.replace(/\D/g, "")}?text=${encodeURIComponent(customerConfirmMessage(b))}" target="_blank" rel="noopener">💬 Message customer</a>`
           : ""}
-      </td>
-      <td>
-        <select class="status-select" data-id="${b.id}">
-          ${STATUSES.map((s) => `<option value="${s}" ${s === b.status ? "selected" : ""}>${s.replace("_", " ")}</option>`).join("")}
-        </select>
-        ${b.status === "cancelled" && b.cancellation_reason
-          ? `<div class="cancel-reason-shown">Reason: ${esc(b.cancellation_reason)}</div>`
-          : ""}
-      </td>
-      <td><input type="number" step="0.01" min="0" class="price-input" data-id="${b.id}" value="${price}" placeholder="—"></td>
-      <td class="actions-cell">
-        <div class="action-row">
+      </div>
+
+      <div class="card-controls">
+        <div class="control">
+          <label>Boat</label>
+          <select class="boat-select" data-id="${b.id}">
+            <option value="">— Unassigned —</option>
+            ${boatsList.map((boat) =>
+              `<option value="${boat.id}" ${boat.id === b.assigned_boat_id ? "selected" : ""}>${esc(boat.name)} — Capt. ${esc(boat.captain_name || "?")}</option>`
+            ).join("")}
+          </select>
+          ${b.boats?.captain_whatsapp
+            ? `<a class="wa-link" href="https://wa.me/${b.boats.captain_whatsapp.replace(/\D/g, "")}" target="_blank" rel="noopener">💬 ${esc(b.boats.captain_name || "")}</a>`
+            : ""}
+        </div>
+        <div class="control">
+          <label>Status</label>
+          <select class="status-select" data-id="${b.id}">
+            ${STATUSES.map((s) => `<option value="${s}" ${s === b.status ? "selected" : ""}>${s.replace("_", " ")}</option>`).join("")}
+          </select>
+          ${b.status === "cancelled" && b.cancellation_reason
+            ? `<div class="cancel-reason-shown">Reason: ${esc(b.cancellation_reason)}</div>`
+            : ""}
+        </div>
+        <div class="control">
+          <label>Quoted $</label>
+          <input type="number" step="0.01" min="0" class="price-input" data-id="${b.id}" value="${price}" placeholder="—">
+        </div>
+      </div>
+
+      <div class="card-footer">
+        <div class="cancel-group">
           <input type="text" class="cancel-reason" placeholder="Cancel reason (required)">
           <button type="button" class="btn-cancel-row" data-id="${b.id}">Cancel</button>
         </div>
         <button type="button" class="btn-complete-row" data-id="${b.id}">✓ Complete</button>
-      </td>
-    </tr>`;
+      </div>
+    </article>`;
 }
 
 function esc(s) {

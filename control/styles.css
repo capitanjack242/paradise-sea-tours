@@ -44,22 +44,37 @@ h1{font-family:'Baloo 2','Inter',sans-serif;margin:0}
   font-weight:600;font-size:.85rem;cursor:pointer;color:var(--muted)}
 .tab.active{background:var(--navy);color:#fff;border-color:var(--navy)}
 
-.bookings-wrap{background:#fff;border:1px solid var(--line);border-radius:12px;overflow:auto}
-table.bookings{width:100%;border-collapse:collapse;font-size:.88rem;white-space:nowrap}
-table.bookings th{text-align:left;padding:.7em .8em;background:var(--foam);
-  color:var(--muted);font-weight:600;position:sticky;top:0;border-bottom:1px solid var(--line)}
-table.bookings td{padding:.6em .8em;border-bottom:1px solid var(--line);vertical-align:top}
-table.bookings tr:last-child td{border-bottom:none}
-table.bookings td.notes{white-space:normal;max-width:220px;color:var(--muted)}
-.boat-select{font:inherit;padding:.4em .5em;border-radius:6px;border:1px solid var(--line);
-  background:#fff;max-width:190px}
-.assign-whatsapp{margin-top:.3rem}
-.assign-whatsapp a{color:var(--ok);font-weight:600;font-size:.82rem;text-decoration:none}
-.assign-whatsapp a:hover{text-decoration:underline}
-.trip{display:flex;flex-direction:column}
-.trip .arrow{color:var(--muted);font-size:.8rem}
-.contact-name{font-weight:600}
+.bookings-wrap{display:block}
+.cards-list{display:flex;flex-direction:column;gap:1rem}
+
+.booking-card{background:#fff;border:1px solid var(--line);border-radius:12px;
+  padding:1rem 1.1rem;box-shadow:0 1px 3px rgba(6,36,59,.06)}
+.row-saving{opacity:.5}
+
+.card-header{display:flex;justify-content:space-between;align-items:baseline;
+  flex-wrap:wrap;gap:.4rem .8rem;padding-bottom:.7rem;margin-bottom:.7rem;
+  border-bottom:1px solid var(--line)}
+.contact-name{font-weight:700;margin-right:.6rem}
 .contact-phone{color:var(--muted);font-size:.85rem}
+.received-at{color:var(--muted);font-size:.78rem;white-space:nowrap}
+
+.card-trip{margin-bottom:.9rem}
+.trip-route{font-weight:600;font-size:1.02rem}
+.trip-route .arrow{color:var(--muted);margin:0 .2rem}
+.trip-meta{color:var(--muted);font-size:.85rem;margin-top:.15rem}
+.card-notes{margin-top:.5rem;font-size:.88rem;font-style:italic;color:var(--ink);
+  background:var(--foam);border-radius:8px;padding:.5em .7em}
+.wa-link{display:inline-block;margin-top:.5rem;color:var(--ok);font-weight:600;
+  font-size:.82rem;text-decoration:none}
+.wa-link:hover{text-decoration:underline}
+
+.card-controls{display:flex;flex-wrap:wrap;gap:1.2rem;padding:.9rem 0;
+  border-top:1px solid var(--line);border-bottom:1px solid var(--line);margin-bottom:.9rem}
+.control{display:flex;flex-direction:column;gap:.3rem;min-width:170px}
+.control label{font-size:.75rem;font-weight:700;text-transform:uppercase;
+  letter-spacing:.04em;color:var(--muted)}
+.boat-select{font:inherit;padding:.4em .5em;border-radius:6px;border:1px solid var(--line);
+  background:#fff}
 
 select.status-select{font:inherit;font-weight:600;padding:.4em .5em;border-radius:6px;
   border:1px solid var(--line);background:#fff}
@@ -69,25 +84,30 @@ select.status-select.st-confirmed,select.status-select.st-assigned{color:var(--d
 select.status-select.st-in_progress{color:#7a3fb8;border-color:#7a3fb8}
 select.status-select.st-completed{color:var(--ok);border-color:var(--ok)}
 select.status-select.st-cancelled{color:var(--danger);border-color:var(--danger)}
+.cancel-reason-shown{margin-top:.2rem;font-size:.78rem;color:var(--danger);font-style:italic}
 
-.price-input{width:80px;font:inherit;padding:.35em .5em;border-radius:6px;border:1px solid var(--line)}
+.price-input{width:100px;font:inherit;padding:.4em .5em;border-radius:6px;border:1px solid var(--line)}
 .empty-state{padding:3rem;text-align:center;color:var(--muted)}
-.row-saving{opacity:.5}
 
-.actions-cell{min-width:190px;position:sticky;right:0;
-  box-shadow:-6px 0 8px -6px rgba(0,0,0,.25)}
-td.actions-cell{background:#fff}
-th.actions-cell{background:var(--foam);z-index:3}
-.action-row{display:flex;gap:.35rem;margin-bottom:.4rem}
-.cancel-reason{font:inherit;font-size:.82rem;padding:.35em .5em;border-radius:6px;
-  border:1px solid var(--line);width:130px}
+.card-footer{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:.8rem}
+.cancel-group{display:flex;gap:.4rem;flex-wrap:wrap}
+.cancel-reason{font:inherit;font-size:.85rem;padding:.4em .6em;border-radius:6px;
+  border:1px solid var(--line);width:190px}
 .cancel-reason.input-error{border-color:var(--danger);
   background:#fdecea;outline:2px solid rgba(214,69,58,.25)}
 .cancel-reason.input-error::placeholder{color:var(--danger)}
-.btn-cancel-row,.btn-complete-row{font:inherit;font-weight:600;font-size:.82rem;
-  border-radius:6px;padding:.4em .7em;cursor:pointer;white-space:nowrap}
+.btn-cancel-row,.btn-complete-row{font:inherit;font-weight:600;font-size:.85rem;
+  border-radius:6px;padding:.5em .9em;cursor:pointer;white-space:nowrap}
 .btn-cancel-row{background:#fff;color:var(--danger);border:1px solid var(--danger)}
 .btn-cancel-row:hover{background:#fdecea}
-.btn-complete-row{background:#fff;color:var(--ok);border:1px solid var(--ok);width:100%}
+.btn-complete-row{background:#fff;color:var(--ok);border:1px solid var(--ok)}
 .btn-complete-row:hover{background:#eafaf1}
-.cancel-reason-shown{margin-top:.3rem;font-size:.78rem;color:var(--danger);font-style:italic}
+
+@media(max-width:640px){
+  .card-controls{gap:.9rem}
+  .control{min-width:140px;flex:1 1 140px}
+  .card-footer{flex-direction:column;align-items:stretch}
+  .cancel-group{width:100%}
+  .cancel-reason{flex:1}
+  .btn-complete-row{width:100%}
+}
