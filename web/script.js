@@ -103,7 +103,7 @@ async function loadFleet() {
   const wrap = document.getElementById("fleetCards");
   const { data, error } = await db
     .from("boats")
-    .select("name, kind, capacity, captain_name, description")
+    .select("name, kind, capacity, captain_name, description, photo_url")
     .eq("is_active", true)
     .order("name");
 
@@ -116,10 +116,14 @@ async function loadFleet() {
   const photoClasses = ["", "alt", "alt2"];
   wrap.innerHTML = data
     .map((b, i) => {
-      const photoClass = photoClasses[i % photoClasses.length];
+      // Real photo when we have one; otherwise fall back to a gradient placeholder.
+      const photoClass = b.photo_url ? "" : photoClasses[i % photoClasses.length];
+      const photoStyle = b.photo_url
+        ? ` style="background-image:url('${escHtml(b.photo_url)}');background-size:cover;background-position:center"`
+        : "";
       return `
         <article class="card boat">
-          <div class="boat-photo ${photoClass}" data-label="${escHtml(b.kind || b.name)}"></div>
+          <div class="boat-photo ${photoClass}"${photoStyle} data-label="${escHtml(b.kind || b.name)}"></div>
           <h3>${escHtml(b.name)}</h3>
           ${b.captain_name ? `<p class="boat-captain">Capt. ${escHtml(b.captain_name)}</p>` : ""}
           <p>${escHtml(b.description || "")}</p>
