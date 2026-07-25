@@ -36,8 +36,8 @@ document.querySelectorAll("[data-call]").forEach((el) =>
 document.querySelectorAll("[data-captain]").forEach((el) =>
   (el.href = waLink("Hi! I own a boat in Nassau and want to join the Paradise Sea Tours network.")));
 
-// booking form: write a real booking record, then hand off to WhatsApp
-// (still the fastest notification channel until the control view is live).
+// booking form: writes a real booking record; staff get an automatic
+// Telegram alert the instant it lands (see supabase/functions/notify-booking).
 const form = document.getElementById("bookingForm");
 const status = document.getElementById("formStatus");
 const dateInput = form.querySelector('[name="date"]');
@@ -78,18 +78,16 @@ form.addEventListener("submit", async (e) => {
     trip_type: data.triptype,
     notes: data.notes || null,
   });
-  if (error) console.error("booking insert failed:", error);
 
-  // Build a WhatsApp message so the inquiry actually goes somewhere today.
-  const msg =
-    `New booking request%0A` +
-    `Name: ${data.name}%0APhone: ${data.phone}%0A` +
-    `Pickup: ${data.pickup}%0ADestination: ${data.destination}%0A` +
-    `Date: ${data.date} ${data.time}%0AGuests: ${data.guests}%0A` +
-    `Type: ${data.triptype}%0ANotes: ${data.notes || "-"}`;
+  if (error) {
+    console.error("booking insert failed:", error);
+    status.textContent =
+      `Something went wrong sending your request. Please call or WhatsApp us at ${CONFIG.phoneDisplay} instead.`;
+    status.classList.add("err");
+    return;
+  }
 
-  status.textContent = "Opening WhatsApp to send your request…";
+  status.textContent = "Thanks! We've received your request and will confirm shortly.";
   status.classList.add("ok");
-  window.open(`https://wa.me/${CONFIG.whatsapp}?text=${msg}`, "_blank");
   form.reset();
 });
