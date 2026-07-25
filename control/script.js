@@ -143,6 +143,11 @@ function renderBookings(all) {
       updateBooking(btn.dataset.id, { status: "completed" }, btn.closest(".booking-card"));
     });
   });
+  bookingsBody.querySelectorAll("textarea.dispatch-notes-input").forEach((ta) => {
+    ta.addEventListener("change", () => {
+      updateBooking(ta.dataset.id, { dispatch_notes: ta.value.trim() || null }, ta.closest(".booking-card"));
+    });
+  });
 }
 
 async function updateBooking(id, patch, cardEl) {
@@ -232,6 +237,12 @@ function cardHtml(b) {
             <input type="number" step="0.01" min="0" class="price-input" data-id="${b.id}" value="${price}" placeholder="—">
           </div>
         </div>
+      </div>
+
+      <div class="dispatch-notes-section">
+        <label>Dispatch Notes</label>
+        <textarea class="dispatch-notes-input" data-id="${b.id}" rows="2"
+          placeholder="Internal notes — call attempts, special arrangements, etc.">${esc(b.dispatch_notes || "")}</textarea>
       </div>
 
       <div class="card-footer">

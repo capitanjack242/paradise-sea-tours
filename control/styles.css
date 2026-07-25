@@ -89,6 +89,13 @@ h1{font-family:'Baloo 2','Inter',sans-serif;margin:0}
   -webkit-appearance:none;margin:0}
 .empty-state{padding:3rem;text-align:center;color:var(--muted)}
 
+.dispatch-notes-section{margin-bottom:.9rem}
+.dispatch-notes-section label{display:block;font-size:.75rem;font-weight:700;
+  text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin-bottom:.3rem}
+.dispatch-notes-input{width:100%;font:inherit;font-size:.88rem;padding:.5em .6em;
+  border-radius:6px;border:1px solid var(--line);resize:vertical;min-height:2.4em}
+.dispatch-notes-input:focus{outline:2px solid var(--aqua);border-color:var(--teal)}
+
 .card-footer{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:.8rem}
 .cancel-group{display:flex;gap:.4rem;flex-wrap:wrap}
 .cancel-reason{font:inherit;font-size:.85rem;padding:.4em .6em;border-radius:6px;
