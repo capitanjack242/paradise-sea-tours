@@ -130,10 +130,20 @@ function renderBookings(all) {
       }
     });
   });
+  bookingsBody.querySelectorAll("input.cancel-reason").forEach((inp) => {
+    inp.addEventListener("input", () => inp.classList.remove("input-error"));
+  });
   bookingsBody.querySelectorAll("button.btn-cancel-row").forEach((btn) => {
     btn.addEventListener("click", () => {
       const tr = btn.closest("tr");
-      const reason = tr.querySelector("input.cancel-reason").value.trim() || null;
+      const reasonInput = tr.querySelector("input.cancel-reason");
+      const reason = reasonInput.value.trim();
+      if (!reason) {
+        reasonInput.classList.add("input-error");
+        reasonInput.focus();
+        return;
+      }
+      reasonInput.classList.remove("input-error");
       updateBooking(btn.dataset.id, { status: "cancelled", cancellation_reason: reason }, tr);
     });
   });
@@ -228,7 +238,7 @@ function rowHtml(b) {
       <td><input type="number" step="0.01" min="0" class="price-input" data-id="${b.id}" value="${price}" placeholder="—"></td>
       <td class="actions-cell">
         <div class="action-row">
-          <input type="text" class="cancel-reason" placeholder="Cancel reason (optional)">
+          <input type="text" class="cancel-reason" placeholder="Cancel reason (required)">
           <button type="button" class="btn-cancel-row" data-id="${b.id}">Cancel</button>
         </div>
         <button type="button" class="btn-complete-row" data-id="${b.id}">✓ Complete</button>

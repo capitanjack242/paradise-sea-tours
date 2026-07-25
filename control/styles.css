@@ -81,6 +81,9 @@ th.actions-cell{background:var(--foam);z-index:3}
 .action-row{display:flex;gap:.35rem;margin-bottom:.4rem}
 .cancel-reason{font:inherit;font-size:.82rem;padding:.35em .5em;border-radius:6px;
   border:1px solid var(--line);width:130px}
+.cancel-reason.input-error{border-color:var(--danger);
+  background:#fdecea;outline:2px solid rgba(214,69,58,.25)}
+.cancel-reason.input-error::placeholder{color:var(--danger)}
 .btn-cancel-row,.btn-complete-row{font:inherit;font-weight:600;font-size:.82rem;
   border-radius:6px;padding:.4em .7em;cursor:pointer;white-space:nowrap}
 .btn-cancel-row{background:#fff;color:var(--danger);border:1px solid var(--danger)}
