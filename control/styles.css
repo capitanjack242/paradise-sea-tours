@@ -74,7 +74,10 @@ select.status-select.st-cancelled{color:var(--danger);border-color:var(--danger)
 .empty-state{padding:3rem;text-align:center;color:var(--muted)}
 .row-saving{opacity:.5}
 
-.actions-cell{min-width:190px}
+.actions-cell{min-width:190px;position:sticky;right:0;
+  box-shadow:-6px 0 8px -6px rgba(0,0,0,.25)}
+td.actions-cell{background:#fff}
+th.actions-cell{background:var(--foam);z-index:3}
 .action-row{display:flex;gap:.35rem;margin-bottom:.4rem}
 .cancel-reason{font:inherit;font-size:.82rem;padding:.35em .5em;border-radius:6px;
   border:1px solid var(--line);width:130px}
