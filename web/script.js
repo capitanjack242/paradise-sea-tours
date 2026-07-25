@@ -1,8 +1,8 @@
 /* ── Edit these with your real details ──────────────────────────── */
 const CONFIG = {
-  phone: "+12420000000",          // tel: dialable, no spaces
-  phoneDisplay: "+1 (242) 000-0000",
-  whatsapp: "12420000000",        // digits only, country code first
+  phone: "+50764819290",          // tel: dialable, no spaces
+  phoneDisplay: "+507 6481-9290",
+  whatsapp: "50764819290",        // digits only, country code first
   email: "hello@paradiseseatours.com",
   // Publishable (anon) key — safe to expose client-side, access is scoped by RLS.
   supabaseUrl: "https://fjdoaonnoezbbitbawzs.supabase.co",
