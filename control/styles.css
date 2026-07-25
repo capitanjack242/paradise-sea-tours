@@ -86,7 +86,10 @@ select.status-select.st-completed{color:var(--ok);border-color:var(--ok)}
 select.status-select.st-cancelled{color:var(--danger);border-color:var(--danger)}
 .cancel-reason-shown{margin-top:.2rem;font-size:.78rem;color:var(--danger);font-style:italic}
 
-.price-input{width:100px;font:inherit;padding:.4em .5em;border-radius:6px;border:1px solid var(--line)}
+.price-input{width:100px;font:inherit;padding:.4em .5em;border-radius:6px;border:1px solid var(--line);
+  -moz-appearance:textfield}
+.price-input::-webkit-outer-spin-button,.price-input::-webkit-inner-spin-button{
+  -webkit-appearance:none;margin:0}
 .empty-state{padding:3rem;text-align:center;color:var(--muted)}
 
 .card-footer{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:.8rem}
