@@ -91,3 +91,41 @@ form.addEventListener("submit", async (e) => {
   status.classList.add("ok");
   form.reset();
 });
+
+// fleet: pull real active boats/captains instead of showing generic placeholders
+function escHtml(s) {
+  return String(s).replace(/[&<>"']/g, (c) => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
+  }[c]));
+}
+
+async function loadFleet() {
+  const wrap = document.getElementById("fleetCards");
+  const { data, error } = await db
+    .from("boats")
+    .select("name, kind, capacity, captain_name, description")
+    .eq("is_active", true)
+    .order("name");
+
+  if (error || !data || data.length === 0) {
+    if (error) console.error("load fleet failed:", error);
+    wrap.innerHTML = '<p class="muted">Fleet details coming soon.</p>';
+    return;
+  }
+
+  const photoClasses = ["", "alt", "alt2"];
+  wrap.innerHTML = data
+    .map((b, i) => {
+      const photoClass = photoClasses[i % photoClasses.length];
+      return `
+        <article class="card boat">
+          <div class="boat-photo ${photoClass}" data-label="${escHtml(b.kind || b.name)}"></div>
+          <h3>${escHtml(b.name)}</h3>
+          ${b.captain_name ? `<p class="boat-captain">Capt. ${escHtml(b.captain_name)}</p>` : ""}
+          <p>${escHtml(b.description || "")}</p>
+          <span class="tag">Up to ${b.capacity} guests</span>
+        </article>`;
+    })
+    .join("");
+}
+loadFleet();

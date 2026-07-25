@@ -114,6 +114,7 @@ img{max-width:100%}
 .boat-photo.alt2{background:linear-gradient(135deg,#143b66,#0a3b5c)}
 .boat-photo:after{content:attr(data-label);position:absolute;left:12px;bottom:10px;
   color:#fff;font-weight:600;font-size:.85rem;opacity:.9;text-shadow:0 1px 6px rgba(0,0,0,.4)}
+.boat-captain{color:var(--teal);font-weight:600;font-size:.9rem;margin:-.2rem 0 .6rem}
 
 /* booking */
 .booking{background:linear-gradient(180deg,#fff,var(--foam))}
