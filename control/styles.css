@@ -75,11 +75,11 @@ h1{font-family:'Baloo 2','Inter',sans-serif;margin:0}
 
 .card-controls{padding:.9rem 0;border-top:1px solid var(--line);
   border-bottom:1px solid var(--line);margin-bottom:.9rem}
-.control{display:flex;flex-direction:column;gap:.3rem;max-width:260px}
+.control{display:flex;flex-direction:column;gap:.3rem;max-width:360px}
 .control label{font-size:.75rem;font-weight:700;text-transform:uppercase;
   letter-spacing:.04em;color:var(--muted)}
-.boat-select{font:inherit;padding:.4em .5em;border-radius:6px;border:1px solid var(--line);
-  background:#fff}
+.boat-select{font:inherit;padding:.4em 1.8em .4em .5em;border-radius:6px;border:1px solid var(--line);
+  background:#fff;width:100%;text-overflow:ellipsis}
 .fare-row{display:flex;align-items:center;gap:.5rem;margin-top:.5rem}
 .fare-row label{margin:0}
 
