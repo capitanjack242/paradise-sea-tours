@@ -259,8 +259,28 @@
         <label>Phone / WhatsApp<input name="phone" type="tel" required></label>
       </div>
       <div class="row">
-        <label>Pickup<input name="pickup" type="text" placeholder="e.g. Nassau Cruise Port" required></label>
-        <label>Destination<input name="destination" type="text" placeholder="e.g. Paradise Island" required></label>
+        <label>Pickup
+          <select name="pickup" required>
+            <option value="" disabled selected>Select pickup…</option>
+            <option>Nassau Cruise Port</option>
+            <option>Downtown Nassau / Prince George Wharf</option>
+            <option>Paradise Island</option>
+            <option>Atlantis Marina</option>
+            <option>Other (see notes)</option>
+          </select>
+        </label>
+        <label>Destination
+          <select name="destination" required>
+            <option value="" disabled selected>Select destination…</option>
+            <option>Paradise Island &amp; Atlantis</option>
+            <option>Cabbage Beach</option>
+            <option>Rose Island &amp; Cays</option>
+            <option>The Sandbar</option>
+            <option>Nassau Cruise Port</option>
+            <option>Downtown Nassau</option>
+            <option>Other / Custom (see notes)</option>
+          </select>
+        </label>
       </div>
       <div class="row">
         <label>Date<input name="date" type="date" required></label>
