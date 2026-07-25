@@ -6,11 +6,6 @@ const SUPABASE_URL = "https://fjdoaonnoezbbitbawzs.supabase.co";
 const SUPABASE_KEY = "sb_publishable_RjTM-t2isu1Teq9P5z37PQ_h_Oy3EpP";
 const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-const STATUSES = [
-  "requested", "quoted", "confirmed", "assigned",
-  "in_progress", "completed", "cancelled",
-];
-
 const loginView = document.getElementById("loginView");
 const dashView = document.getElementById("dashView");
 const loginForm = document.getElementById("loginForm");
@@ -108,10 +103,6 @@ function renderBookings(all) {
   emptyState.style.display = rows.length ? "none" : "block";
   bookingsBody.innerHTML = rows.map(cardHtml).join("");
 
-  bookingsBody.querySelectorAll("select.status-select").forEach((sel) => {
-    sel.classList.add("st-" + sel.value);
-    sel.addEventListener("change", () => updateBooking(sel.dataset.id, { status: sel.value }, sel.closest(".booking-card")));
-  });
   bookingsBody.querySelectorAll("input.price-input").forEach((inp) => {
     inp.addEventListener("change", () => {
       const dollars = parseFloat(inp.value);
@@ -196,6 +187,13 @@ function cardHtml(b) {
   });
   const price = b.quoted_price_cents != null ? (b.quoted_price_cents / 100).toFixed(2) : "";
 
+  const statusBanner =
+    b.status === "cancelled"
+      ? `<div class="status-banner sb-cancelled">✗ Cancelled${b.cancellation_reason ? ` — ${esc(b.cancellation_reason)}` : ""}</div>`
+      : b.status === "completed"
+      ? `<div class="status-banner sb-completed">✓ Completed</div>`
+      : "";
+
   return `
     <article class="booking-card">
       <div class="card-header">
@@ -205,6 +203,8 @@ function cardHtml(b) {
         </div>
         <span class="received-at">Received ${received}</span>
       </div>
+
+      ${statusBanner}
 
       <div class="card-trip">
         <div class="trip-route">${esc(b.pickup || "—")} <span class="arrow">→</span> ${esc(b.destination || "—")}</div>
@@ -227,19 +227,10 @@ function cardHtml(b) {
           ${b.boats?.captain_whatsapp
             ? `<a class="wa-link" href="https://wa.me/${b.boats.captain_whatsapp.replace(/\D/g, "")}" target="_blank" rel="noopener">💬 ${esc(b.boats.captain_name || "")}</a>`
             : ""}
-        </div>
-        <div class="control">
-          <label>Status</label>
-          <select class="status-select" data-id="${b.id}">
-            ${STATUSES.map((s) => `<option value="${s}" ${s === b.status ? "selected" : ""}>${s.replace("_", " ")}</option>`).join("")}
-          </select>
-          ${b.status === "cancelled" && b.cancellation_reason
-            ? `<div class="cancel-reason-shown">Reason: ${esc(b.cancellation_reason)}</div>`
-            : ""}
-        </div>
-        <div class="control">
-          <label>Quoted $</label>
-          <input type="number" step="0.01" min="0" class="price-input" data-id="${b.id}" value="${price}" placeholder="—">
+          <div class="fare-row">
+            <label>Fare $</label>
+            <input type="number" step="0.01" min="0" class="price-input" data-id="${b.id}" value="${price}" placeholder="—">
+          </div>
         </div>
       </div>
 

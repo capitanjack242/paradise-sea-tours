@@ -68,23 +68,20 @@ h1{font-family:'Baloo 2','Inter',sans-serif;margin:0}
   font-size:.82rem;text-decoration:none}
 .wa-link:hover{text-decoration:underline}
 
-.card-controls{display:flex;flex-wrap:wrap;gap:1.2rem;padding:.9rem 0;
-  border-top:1px solid var(--line);border-bottom:1px solid var(--line);margin-bottom:.9rem}
-.control{display:flex;flex-direction:column;gap:.3rem;min-width:170px}
+.status-banner{font-weight:700;font-size:.85rem;padding:.5em .8em;border-radius:8px;
+  margin-bottom:.8rem}
+.status-banner.sb-cancelled{background:#fdecea;color:var(--danger)}
+.status-banner.sb-completed{background:#eafaf1;color:var(--ok)}
+
+.card-controls{padding:.9rem 0;border-top:1px solid var(--line);
+  border-bottom:1px solid var(--line);margin-bottom:.9rem}
+.control{display:flex;flex-direction:column;gap:.3rem;max-width:260px}
 .control label{font-size:.75rem;font-weight:700;text-transform:uppercase;
   letter-spacing:.04em;color:var(--muted)}
 .boat-select{font:inherit;padding:.4em .5em;border-radius:6px;border:1px solid var(--line);
   background:#fff}
-
-select.status-select{font:inherit;font-weight:600;padding:.4em .5em;border-radius:6px;
-  border:1px solid var(--line);background:#fff}
-select.status-select.st-requested{color:var(--warn);border-color:var(--warn)}
-select.status-select.st-quoted{color:var(--teal);border-color:var(--teal)}
-select.status-select.st-confirmed,select.status-select.st-assigned{color:var(--deep);border-color:var(--deep)}
-select.status-select.st-in_progress{color:#7a3fb8;border-color:#7a3fb8}
-select.status-select.st-completed{color:var(--ok);border-color:var(--ok)}
-select.status-select.st-cancelled{color:var(--danger);border-color:var(--danger)}
-.cancel-reason-shown{margin-top:.2rem;font-size:.78rem;color:var(--danger);font-style:italic}
+.fare-row{display:flex;align-items:center;gap:.5rem;margin-top:.5rem}
+.fare-row label{margin:0}
 
 .price-input{width:100px;font:inherit;padding:.4em .5em;border-radius:6px;border:1px solid var(--line);
   -moz-appearance:textfield}
@@ -107,8 +104,7 @@ select.status-select.st-cancelled{color:var(--danger);border-color:var(--danger)
 .btn-complete-row:hover{background:#eafaf1}
 
 @media(max-width:640px){
-  .card-controls{gap:.9rem}
-  .control{min-width:140px;flex:1 1 140px}
+  .control{max-width:none}
   .card-footer{flex-direction:column;align-items:stretch}
   .cancel-group{width:100%}
   .cancel-reason{flex:1}
