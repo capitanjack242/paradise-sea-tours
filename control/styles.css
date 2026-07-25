@@ -73,3 +73,15 @@ select.status-select.st-cancelled{color:var(--danger);border-color:var(--danger)
 .price-input{width:80px;font:inherit;padding:.35em .5em;border-radius:6px;border:1px solid var(--line)}
 .empty-state{padding:3rem;text-align:center;color:var(--muted)}
 .row-saving{opacity:.5}
+
+.actions-cell{min-width:190px}
+.action-row{display:flex;gap:.35rem;margin-bottom:.4rem}
+.cancel-reason{font:inherit;font-size:.82rem;padding:.35em .5em;border-radius:6px;
+  border:1px solid var(--line);width:130px}
+.btn-cancel-row,.btn-complete-row{font:inherit;font-weight:600;font-size:.82rem;
+  border-radius:6px;padding:.4em .7em;cursor:pointer;white-space:nowrap}
+.btn-cancel-row{background:#fff;color:var(--danger);border:1px solid var(--danger)}
+.btn-cancel-row:hover{background:#fdecea}
+.btn-complete-row{background:#fff;color:var(--ok);border:1px solid var(--ok);width:100%}
+.btn-complete-row:hover{background:#eafaf1}
+.cancel-reason-shown{margin-top:.3rem;font-size:.78rem;color:var(--danger);font-style:italic}

@@ -130,6 +130,18 @@ function renderBookings(all) {
       }
     });
   });
+  bookingsBody.querySelectorAll("button.btn-cancel-row").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const tr = btn.closest("tr");
+      const reason = tr.querySelector("input.cancel-reason").value.trim() || null;
+      updateBooking(btn.dataset.id, { status: "cancelled", cancellation_reason: reason }, tr);
+    });
+  });
+  bookingsBody.querySelectorAll("button.btn-complete-row").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      updateBooking(btn.dataset.id, { status: "completed" }, btn.closest("tr"));
+    });
+  });
 }
 
 async function updateBooking(id, patch, rowEl) {
@@ -209,8 +221,18 @@ function rowHtml(b) {
         <select class="status-select" data-id="${b.id}">
           ${STATUSES.map((s) => `<option value="${s}" ${s === b.status ? "selected" : ""}>${s.replace("_", " ")}</option>`).join("")}
         </select>
+        ${b.status === "cancelled" && b.cancellation_reason
+          ? `<div class="cancel-reason-shown">Reason: ${esc(b.cancellation_reason)}</div>`
+          : ""}
       </td>
       <td><input type="number" step="0.01" min="0" class="price-input" data-id="${b.id}" value="${price}" placeholder="—"></td>
+      <td class="actions-cell">
+        <div class="action-row">
+          <input type="text" class="cancel-reason" placeholder="Cancel reason (optional)">
+          <button type="button" class="btn-cancel-row" data-id="${b.id}">Cancel</button>
+        </div>
+        <button type="button" class="btn-complete-row" data-id="${b.id}">✓ Complete</button>
+      </td>
     </tr>`;
 }
 
