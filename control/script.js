@@ -146,6 +146,23 @@ async function updateBooking(id, patch, rowEl) {
 }
 
 // ── rendering helpers ────────────────────────────────────────────────────
+function customerConfirmMessage(b) {
+  const when = b.scheduled_at
+    ? new Date(b.scheduled_at).toLocaleString(undefined, {
+        weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit",
+      })
+    : null;
+  const lines = [`Hi ${b.contact_name || "there"}! This is Paradise Sea Tours confirming your booking:`];
+  lines.push(`${b.pickup || "?"} → ${b.destination || "?"}`);
+  if (when) lines.push(when);
+  if (b.boats?.name) {
+    lines.push(`Boat: ${b.boats.name}${b.boats.captain_name ? ` (Capt. ${b.boats.captain_name})` : ""}`);
+  }
+  if (b.quoted_price_cents != null) lines.push(`Price: $${(b.quoted_price_cents / 100).toFixed(2)}`);
+  lines.push("See you soon!");
+  return lines.join("\n");
+}
+
 function rowHtml(b) {
   const when = b.scheduled_at
     ? new Date(b.scheduled_at).toLocaleString(undefined, {
@@ -163,6 +180,9 @@ function rowHtml(b) {
       <td>
         <div class="contact-name">${esc(b.contact_name || "—")}</div>
         <div class="contact-phone">${esc(b.contact_phone || "")}</div>
+        ${b.contact_phone
+          ? `<div class="assign-whatsapp"><a href="https://wa.me/${b.contact_phone.replace(/\D/g, "")}?text=${encodeURIComponent(customerConfirmMessage(b))}" target="_blank" rel="noopener">💬 Message customer</a></div>`
+          : ""}
       </td>
       <td>
         <div class="trip">

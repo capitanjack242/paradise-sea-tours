@@ -242,7 +242,7 @@
     <form class="booking-form" id="bookingForm" novalidate>
       <div class="row">
         <label>Name<input name="name" type="text" required></label>
-        <label>Phone / WhatsApp<input name="phone" type="tel" required></label>
+        <label>Phone / WhatsApp<input name="phone" type="tel" placeholder="+1 242 555 0100" required></label>
       </div>
       <div class="row">
         <label>Pickup
@@ -361,6 +361,7 @@
 <a href="#" class="fab" data-call aria-label="Call or WhatsApp">💬</a>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/libphonenumber-js@1/bundle/libphonenumber-js.min.js"></script>
 <script src="script.js"></script>
 </body>
 </html>

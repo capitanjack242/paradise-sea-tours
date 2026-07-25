@@ -66,6 +66,15 @@ form.addEventListener("submit", async (e) => {
     return;
   }
 
+  // Format-validate the phone number (catches typos/garbage). This can't
+  // confirm the number is actually registered on WhatsApp — that needs
+  // WhatsApp's Business API, which we don't have wired up.
+  if (!window.libphonenumber.isValidPhoneNumber(data.phone)) {
+    status.textContent = "Please enter a valid phone number, including country code (e.g. +1 242 555 0100).";
+    status.classList.add("err");
+    return;
+  }
+
   status.textContent = "Sending your request…";
 
   const { error } = await db.from("bookings").insert({
