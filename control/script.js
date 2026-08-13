@@ -50,7 +50,11 @@ async function showDashboard(session) {
   await loadBoats();
   await loadBookings();
   clearInterval(pollTimer);
-  pollTimer = setInterval(loadBookings, 15000);
+  // Auto-refresh, but never clobber a field you're actively typing in.
+  pollTimer = setInterval(() => {
+    if (bookingsBody.contains(document.activeElement)) return;
+    loadBookings();
+  }, 15000);
 }
 
 async function loadBoats() {
