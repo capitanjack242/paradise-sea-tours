@@ -110,10 +110,11 @@ function escHtml(s) {
 
 async function loadFleet() {
   const wrap = document.getElementById("fleetCards");
+  // public_boats is a view that deliberately omits captain_whatsapp — the
+  // boats table itself is staff-only so captains' numbers can't be scraped.
   const { data, error } = await db
-    .from("boats")
+    .from("public_boats")
     .select("name, kind, capacity, captain_name, description, photo_url")
-    .eq("is_active", true)
     .order("name");
 
   if (error || !data || data.length === 0) {
