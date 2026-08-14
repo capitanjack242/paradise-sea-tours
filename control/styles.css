@@ -38,6 +38,10 @@ h1{font-family:'Baloo 2','Inter',sans-serif;margin:0}
 .topbar{display:flex;align-items:center;justify-content:space-between;
   padding-bottom:1rem;margin-bottom:1rem;border-bottom:1px solid var(--line);flex-wrap:wrap;gap:.8rem}
 .topbar-right{display:flex;align-items:center;gap:.8rem}
+.live-status{font-size:.78rem;font-weight:700;letter-spacing:.02em}
+.live-status.live{color:var(--ok)}
+.live-status.polling{color:var(--warn)}
+.live-status.off{display:none}
 .toolbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:.6rem}
 .filter-tabs{display:flex;gap:.4rem}
 .tab{background:#fff;border:1px solid var(--line);border-radius:999px;padding:.4em 1em;

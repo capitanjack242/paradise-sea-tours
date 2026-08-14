@@ -18,6 +18,9 @@ const countInfo = document.getElementById("countInfo");
 let currentFilter = "active";
 let pollTimer = null;
 let boatsList = []; // active boats available to assign, loaded once per session
+let realtimeChannel = null;
+let refreshTimer = null;
+let pendingRefresh = false; // a change landed while the user was typing
 
 // ── auth ─────────────────────────────────────────────────────────────────
 loginForm.addEventListener("submit", async (e) => {
@@ -30,7 +33,7 @@ loginForm.addEventListener("submit", async (e) => {
 });
 
 document.getElementById("logoutBtn").addEventListener("click", async () => {
-  clearInterval(pollTimer);
+  teardownLiveUpdates();
   await db.auth.signOut();
 });
 
@@ -38,6 +41,7 @@ db.auth.onAuthStateChange((_event, session) => {
   if (session) {
     showDashboard(session);
   } else {
+    teardownLiveUpdates();
     dashView.style.display = "none";
     loginView.style.display = "grid";
   }
@@ -49,12 +53,75 @@ async function showDashboard(session) {
   whoami.textContent = session.user.email;
   await loadBoats();
   await loadBookings();
+  startLiveUpdates();
+}
+
+// ── live updates ─────────────────────────────────────────────────────────
+// Realtime is the fast path: new bookings and edits (including ones made by
+// the other dispatcher) appear within a second. A slow poll stays as a safety
+// net in case the websocket drops.
+function startLiveUpdates() {
+  teardownLiveUpdates();
+
+  realtimeChannel = db
+    .channel("dispatch-bookings")
+    .on(
+      "postgres_changes",
+      { event: "*", schema: "public", table: "bookings" },
+      () => scheduleRefresh()
+    )
+    .subscribe((status) => {
+      setLiveStatus(status === "SUBSCRIBED" ? "live" : "polling");
+    });
+
+  pollTimer = setInterval(() => refreshUnlessTyping(), 60000);
+}
+
+function teardownLiveUpdates() {
   clearInterval(pollTimer);
-  // Auto-refresh, but never clobber a field you're actively typing in.
-  pollTimer = setInterval(() => {
-    if (bookingsBody.contains(document.activeElement)) return;
-    loadBookings();
-  }, 15000);
+  clearTimeout(refreshTimer);
+  pollTimer = refreshTimer = null;
+  pendingRefresh = false;
+  if (realtimeChannel) {
+    db.removeChannel(realtimeChannel);
+    realtimeChannel = null;
+  }
+  setLiveStatus("off");
+}
+
+// Coalesce bursts (a single edit can emit several events) into one reload.
+function scheduleRefresh() {
+  clearTimeout(refreshTimer);
+  refreshTimer = setTimeout(() => refreshUnlessTyping(), 400);
+}
+
+function refreshUnlessTyping() {
+  // Never rebuild the list out from under a field being edited. Re-check on a
+  // short timer rather than waiting on a blur/focusout event — if that event
+  // never fires the deferred reload would be stuck and the board would go
+  // stale without anyone noticing.
+  if (bookingsBody.contains(document.activeElement)) {
+    pendingRefresh = true;
+    clearTimeout(refreshTimer);
+    refreshTimer = setTimeout(() => refreshUnlessTyping(), 1500);
+    return;
+  }
+  pendingRefresh = false;
+  loadBookings();
+}
+
+function setLiveStatus(state) {
+  const el = document.getElementById("liveStatus");
+  if (!el) return;
+  el.className = "live-status " + state;
+  el.textContent =
+    state === "live" ? "● Live" : state === "polling" ? "● Reconnecting…" : "";
+  el.title =
+    state === "live"
+      ? "Connected — new bookings appear instantly"
+      : state === "polling"
+      ? "Live connection lost; refreshing every 60s instead"
+      : "";
 }
 
 async function loadBoats() {
