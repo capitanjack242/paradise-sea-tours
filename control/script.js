@@ -209,12 +209,12 @@ async function loadBookings() {
 }
 
 /* ── boats ────────────────────────────────────────────────────────────────
-   Who is actually working. A captain switches himself on before he leaves the
-   house; without this, dispatch would offer a run to someone who went home an
-   hour ago and only find out by ringing him. */
+   Who is available to be given work. Deliberately not "out" — a boat can be
+   available and tied up at the dock, or unavailable and out fishing. This is
+   about whether dispatch may offer them a run, nothing else. */
 function renderBoats() {
   boatsEmpty.style.display = boatsList.length ? "none" : "block";
-  countInfo.textContent = `${boatsList.filter((b) => b.is_available).length} of ${boatsList.length} out today`;
+  countInfo.textContent = `${boatsList.filter((b) => b.is_available).length} of ${boatsList.length} available`;
 
   const runsToday = new Map();
   for (const bk of window.__allBookings || []) {
@@ -241,8 +241,8 @@ function boatHtml(b, runs) {
   const state = noLogin
     ? `<span class="boat-state st-nologin">No login yet</span>`
     : on
-    ? `<span class="boat-state st-on">● Out today</span>`
-    : `<span class="boat-state st-off">Not out</span>`;
+    ? `<span class="boat-state st-on">● Available</span>`
+    : `<span class="boat-state st-off">Unavailable</span>`;
 
   const changed = b.availability_changed_at
     ? new Date(b.availability_changed_at).toLocaleString(undefined, {
@@ -267,10 +267,10 @@ function boatHtml(b, runs) {
       <div class="boat-foot">
         ${noLogin
           ? `<span class="boat-warn">Can't be asked or close out a trip until they have a login</span>`
-          : `<span>${changed ? `${on ? "On" : "Off"} since ${changed}` : "Never set"}</span>`}
+          : `<span>${changed ? `${on ? "Available" : "Unavailable"} since ${changed}` : "Never set"}</span>`}
         <span class="boat-runs">${runs} run${runs === 1 ? "" : "s"} today</span>
       </div>
-      ${stale ? `<div class="boat-stale">⚠ Left on since ${changed} — worth checking he's really out</div>` : ""}
+      ${stale ? `<div class="boat-stale">⚠ Set available on ${changed} and never changed — worth checking he still is</div>` : ""}
     </article>`;
 }
 
@@ -614,7 +614,7 @@ function cardHtml(b) {
           <select class="boat-select" data-id="${b.id}">
             <option value="">— Unassigned —</option>
             ${boatsList.map((boat) =>
-              `<option value="${boat.id}" ${boat.id === b.assigned_boat_id ? "selected" : ""}>${esc(boat.name)} — Capt. ${esc(boat.captain_name || "?")}${boat.is_available ? "" : " (not out today)"}</option>`
+              `<option value="${boat.id}" ${boat.id === b.assigned_boat_id ? "selected" : ""}>${esc(boat.name)} — Capt. ${esc(boat.captain_name || "?")}${boat.is_available ? "" : " (not available)"}</option>`
             ).join("")}
           </select>
           ${b.boats?.captain_whatsapp

@@ -68,8 +68,8 @@ async function showTrips(session) {
 }
 
 /* ── availability ──────────────────────────────────────────────────────────
-   The switch a captain flips before leaving the house. Dispatch reads it when
-   deciding who to offer a run to, so it's the first thing on the board. */
+   Whether dispatch may offer this captain work today — not whether he's out on
+   the water, which is a different thing and the run itself already says. */
 async function loadMyBoat(session) {
   // Filtered by owner explicitly: an admin signing in here can read every boat,
   // and "your availability" has to mean one boat, not all of them.
@@ -102,7 +102,7 @@ function renderAvailability() {
       })
     : null;
   availSub.textContent = on
-    ? `${myBoat.name} · on${since ? ` since ${since}` : ""}`
+    ? `${myBoat.name} · available${since ? ` since ${since}` : ""}`
     : `${myBoat.name} · dispatch won't offer you runs`;
 }
 

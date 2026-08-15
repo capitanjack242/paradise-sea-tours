@@ -44,8 +44,7 @@ body{margin:0;background:var(--foam);color:var(--ink);
 .live-status.polling{color:#b8860b}
 .live-status.off{display:none}
 
-/* The switch a captain flips before he leaves the house — top of the board,
-   above the work, because it decides whether there is any. */
+/* Top of the board, above the work, because it decides whether there is any. */
 .avail-row{display:flex;align-items:center;justify-content:space-between;gap:.8rem;
   background:#fff;border:1px solid var(--line);border-radius:14px;padding:.8rem .95rem;
   margin-top:.8rem}
