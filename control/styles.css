@@ -116,6 +116,8 @@ h1{font-family:'Baloo 2','Inter',sans-serif;margin:0}
 .btn-complete-row:hover{background:#eafaf1}
 .btn-confirm-row{background:var(--teal);color:#fff;border:1px solid var(--teal);font-weight:700}
 .awaiting-captain{font-size:.85rem;font-weight:600;color:var(--muted);font-style:italic}
+/* Settled facts on a closed-out trip — shown, not editable. */
+.ro-value{font-weight:600;padding:.4em 0;color:var(--ink)}
 .no-login-warn{font-size:.8rem;font-weight:600;color:#8a6d00;
   background:#fff8e1;border-radius:6px;padding:.4em .6em;margin:.5rem 0 0}
 .btn-confirm-row:hover{background:var(--deep);border-color:var(--deep)}

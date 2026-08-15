@@ -325,6 +325,42 @@ function cardHtml(b) {
   const nextAction = confirmed
     ? `<span class="awaiting-captain">Waiting on the captain to close it out</span>`
     : `<button type="button" class="btn-confirm-row" data-id="${b.id}">✓ Confirm this boat</button>`;
+  // Once a trip is closed out, the boat and the fare are a record of what
+  // happened — that fare is what the captain is owed on Friday — so they read
+  // back as plain text with nothing to nudge by accident.
+  const controls = finished
+    ? `<div class="card-controls">
+        <div class="control">
+          <label>Boat</label>
+          <div class="ro-value">${b.boats?.name
+            ? `${esc(b.boats.name)}${b.boats.captain_name ? ` — Capt. ${esc(b.boats.captain_name)}` : ""}`
+            : "No boat assigned"}</div>
+          <div class="fare-row">
+            <label>Fare</label>
+            <div class="ro-value">${price ? `$${price}` : "—"}</div>
+          </div>
+        </div>
+      </div>`
+    : `<div class="card-controls">
+        <div class="control">
+          <label>Boat</label>
+          <select class="boat-select" data-id="${b.id}">
+            <option value="">— Unassigned —</option>
+            ${boatsList.map((boat) =>
+              `<option value="${boat.id}" ${boat.id === b.assigned_boat_id ? "selected" : ""}>${esc(boat.name)} — Capt. ${esc(boat.captain_name || "?")}</option>`
+            ).join("")}
+          </select>
+          ${b.boats?.captain_whatsapp
+            ? `<a class="wa-link" href="https://wa.me/${b.boats.captain_whatsapp.replace(/\D/g, "")}" target="_blank" rel="noopener">💬 ${esc(b.boats.captain_name || "")}</a>`
+            : ""}
+          ${captainLoginMissing}
+          <div class="fare-row">
+            <label>Fare $</label>
+            <input type="number" step="0.01" min="0" class="price-input" data-id="${b.id}" value="${price}" placeholder="—">
+          </div>
+        </div>
+      </div>`;
+
   const footer = finished
     ? ""
     : `<p class="card-msg" hidden></p>
@@ -357,25 +393,7 @@ function cardHtml(b) {
           : ""}
       </div>
 
-      <div class="card-controls">
-        <div class="control">
-          <label>Boat</label>
-          <select class="boat-select" data-id="${b.id}">
-            <option value="">— Unassigned —</option>
-            ${boatsList.map((boat) =>
-              `<option value="${boat.id}" ${boat.id === b.assigned_boat_id ? "selected" : ""}>${esc(boat.name)} — Capt. ${esc(boat.captain_name || "?")}</option>`
-            ).join("")}
-          </select>
-          ${b.boats?.captain_whatsapp
-            ? `<a class="wa-link" href="https://wa.me/${b.boats.captain_whatsapp.replace(/\D/g, "")}" target="_blank" rel="noopener">💬 ${esc(b.boats.captain_name || "")}</a>`
-            : ""}
-          ${captainLoginMissing}
-          <div class="fare-row">
-            <label>Fare $</label>
-            <input type="number" step="0.01" min="0" class="price-input" data-id="${b.id}" value="${price}" placeholder="—">
-          </div>
-        </div>
-      </div>
+      ${controls}
 
       <div class="dispatch-notes-section">
         <label>Dispatch Notes</label>
