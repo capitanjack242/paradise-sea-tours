@@ -21,12 +21,11 @@ const clientsWrap = document.getElementById("clientsWrap");
 const clientsBody = document.getElementById("clientsBody");
 const clientsEmpty = document.getElementById("clientsEmpty");
 const clientSearch = document.getElementById("clientSearch");
-const clientBanner = document.getElementById("clientBanner");
 
 let currentFilter = "active";
 let currentView = "bookings";
-let clientFilterPhone = null; // set when drilling into one client's trips
 let clientQuery = "";
+const expandedClients = new Set(); // clients whose trip table is open
 let pollTimer = null;
 let boatsList = []; // active boats available to assign, loaded once per session
 let realtimeChannel = null;
@@ -161,7 +160,6 @@ document.getElementById("viewTabs").addEventListener("click", (e) => {
   if (!btn) return;
   currentView = btn.dataset.view;
   document.querySelectorAll(".vtab").forEach((t) => t.classList.toggle("active", t === btn));
-  if (currentView === "clients") clearClientFilter({ redraw: false });
   applyView();
 });
 
@@ -217,10 +215,11 @@ function buildClients(bookings) {
     if (!phone) continue; // nothing to group on
     let c = byPhone.get(phone);
     if (!c) {
-      c = { phone, name: "", bookings: 0, trips: 0, cancelled: 0, spentCents: 0, lastAt: null };
+      c = { phone, name: "", bookings: 0, trips: 0, cancelled: 0, spentCents: 0, lastAt: null, rows: [] };
       byPhone.set(phone, c);
     }
     c.bookings += 1;
+    c.rows.push(b);
     // Names get typed slightly differently each time; keep the most recent.
     const at = b.scheduled_at || b.created_at;
     if (b.contact_name && (!c.lastAt || (at && at > c.lastAt))) c.name = b.contact_name;
@@ -230,6 +229,11 @@ function buildClients(bookings) {
       c.spentCents += b.quoted_price_cents || 0;
     }
     if (b.status === "cancelled") c.cancelled += 1;
+  }
+  for (const c of byPhone.values()) {
+    c.rows.sort((x, y) =>
+      (y.scheduled_at || y.created_at || "").localeCompare(x.scheduled_at || x.created_at || "")
+    );
   }
   return [...byPhone.values()].sort((a, b) => (b.lastAt || "").localeCompare(a.lastAt || ""));
 }
@@ -250,11 +254,17 @@ function renderClients(all) {
   clientsBody.innerHTML = clients.map(clientHtml).join("");
 
   clientsBody.querySelectorAll("button.btn-client-trips").forEach((btn) => {
-    btn.addEventListener("click", () => showClientTrips(btn.dataset.phone));
+    btn.addEventListener("click", () => {
+      const phone = btn.dataset.phone;
+      if (expandedClients.has(phone)) expandedClients.delete(phone);
+      else expandedClients.add(phone);
+      renderClients(window.__allBookings || []);
+    });
   });
 }
 
 function clientHtml(c) {
+  const open = expandedClients.has(c.phone);
   // The most recent date can be a trip they haven't taken yet, so don't call
   // an upcoming booking the last time we saw them.
   const when = c.lastAt ? new Date(c.lastAt) : null;
@@ -269,7 +279,7 @@ function clientHtml(c) {
           <div class="client-name">${esc(c.name || "No name given")}</div>
           <a class="client-phone" href="tel:${esc(c.phone)}">${esc(prettyPhone(c.phone))}</a>
         </div>
-        <button type="button" class="btn-client-trips" data-phone="${esc(c.phone)}">See their trips</button>
+        <button type="button" class="btn-client-trips" data-phone="${esc(c.phone)}">${open ? "Hide trips" : "See their trips"}</button>
       </div>
       <div class="client-stats">
         <span><strong>${c.bookings}</strong> booking${c.bookings === 1 ? "" : "s"}</span>
@@ -278,21 +288,55 @@ function clientHtml(c) {
         <span><strong>${spent}</strong> spent</span>
         <span class="stat-last">${last}</span>
       </div>
+      ${open ? tripsTableHtml(c) : ""}
     </article>`;
 }
 
-function showClientTrips(phone) {
-  clientFilterPhone = phone;
-  currentView = "bookings";
-  currentFilter = "all";
-  document.querySelectorAll(".vtab").forEach((t) => t.classList.toggle("active", t.dataset.view === "bookings"));
-  document.querySelectorAll(".tab").forEach((t) => t.classList.toggle("active", t.dataset.filter === "all"));
-  applyView();
-}
+const STATUS_LABEL = {
+  requested: "Awaiting confirmation", quoted: "Quoted", confirmed: "Confirmed",
+  assigned: "Assigned", in_progress: "Under way", completed: "Completed", cancelled: "Cancelled",
+};
 
-function clearClientFilter({ redraw = true } = {}) {
-  clientFilterPhone = null;
-  if (redraw) renderBookings(window.__allBookings || []);
+/* Their trips, in place. Only completed trips count toward what they've paid —
+   a cancelled or still-upcoming booking has a fare on it, but no money. */
+function tripsTableHtml(c) {
+  const rows = c.rows.map((b) => {
+    const at = b.scheduled_at || b.created_at;
+    const when = at
+      ? new Date(at).toLocaleString(undefined, {
+          month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit",
+        })
+      : "—";
+    const paid = b.status === "completed";
+    const fare = b.quoted_price_cents != null
+      ? `$${(b.quoted_price_cents / 100).toFixed(2).replace(/\.00$/, "")}`
+      : "—";
+    return `
+      <tr>
+        <td>${esc(when)}</td>
+        <td>${esc(b.pickup || "—")} → ${esc(b.destination || "—")}</td>
+        <td>${b.passengers ?? "?"}</td>
+        <td><span class="pill pill-${esc(b.status)}">${esc(STATUS_LABEL[b.status] || b.status)}</span></td>
+        <td class="num${paid ? "" : " unpaid"}">${fare}</td>
+      </tr>`;
+  }).join("");
+
+  const paid = c.spentCents ? `$${(c.spentCents / 100).toFixed(2).replace(/\.00$/, "")}` : "$0";
+  return `
+    <div class="client-trips">
+      <table class="trips-table">
+        <thead>
+          <tr><th>When</th><th>Trip</th><th>Pax</th><th>Status</th><th class="num">Fare</th></tr>
+        </thead>
+        <tbody>${rows}</tbody>
+        <tfoot>
+          <tr>
+            <td colspan="4">Paid — completed trips only</td>
+            <td class="num">${paid}</td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>`;
 }
 
 /** Read a stored E.164 number back the way a person would write it. */
@@ -307,7 +351,6 @@ function prettyPhone(raw) {
 }
 
 function matchesFilter(b) {
-  if (clientFilterPhone && (b.contact_phone || "").trim() !== clientFilterPhone) return false;
   if (currentFilter === "all") return true;
   if (currentFilter === "completed") return b.status === "completed";
   if (currentFilter === "cancelled") return b.status === "cancelled";
@@ -318,17 +361,6 @@ function renderBookings(all) {
   const rows = all.filter(matchesFilter);
   countInfo.textContent = `${rows.length} of ${all.length} bookings`;
   emptyState.style.display = rows.length ? "none" : "block";
-
-  if (clientFilterPhone) {
-    const who = rows[0]?.contact_name || prettyPhone(clientFilterPhone);
-    clientBanner.innerHTML =
-      `<span>Showing every trip for <strong>${esc(who)}</strong></span>` +
-      `<button type="button" id="clearClientBtn">Show all bookings</button>`;
-    clientBanner.hidden = false;
-    document.getElementById("clearClientBtn").addEventListener("click", () => clearClientFilter());
-  } else {
-    clientBanner.hidden = true;
-  }
 
   bookingsBody.innerHTML = rows.map(cardHtml).join("");
 

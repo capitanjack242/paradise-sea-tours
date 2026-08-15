@@ -78,11 +78,26 @@ h1{font-family:'Baloo 2','Inter',sans-serif;margin:0}
 .stat-cancelled strong{color:var(--danger)}
 .stat-last{font-style:italic}
 
-.client-banner{display:flex;justify-content:space-between;align-items:center;gap:.8rem;
-  flex-wrap:wrap;background:#e8f4fd;border-radius:8px;padding:.6em .9em;margin-bottom:1rem;
-  font-size:.9rem;color:var(--deep)}
-.client-banner button{font:inherit;font-weight:600;font-size:.82rem;background:#fff;
-  color:var(--deep);border:1px solid var(--line);border-radius:6px;padding:.4em .8em;cursor:pointer}
+/* Their trips, opened in place. Narrow screens scroll the table rather than
+   letting it push the card wider than the page. */
+.client-trips{margin-top:.9rem;border-top:1px solid var(--line);padding-top:.9rem;
+  overflow-x:auto}
+.trips-table{border-collapse:collapse;width:100%;font-size:.85rem;min-width:520px}
+.trips-table th{text-align:left;font-size:.72rem;text-transform:uppercase;letter-spacing:.04em;
+  color:var(--muted);padding:.3em .6em .5em 0;border-bottom:1px solid var(--line)}
+.trips-table td{padding:.5em .6em .5em 0;border-bottom:1px solid var(--line);vertical-align:middle}
+.trips-table tbody tr:last-child td{border-bottom:0}
+.trips-table .num{text-align:right;padding-right:0;font-variant-numeric:tabular-nums;font-weight:600}
+.trips-table .num.unpaid{color:var(--muted);font-weight:400}
+.trips-table tfoot td{border-top:2px solid var(--line);border-bottom:0;padding-top:.6em;
+  font-weight:700;color:var(--muted);font-size:.8rem}
+.trips-table tfoot .num{font-size:.95rem;color:var(--ink)}
+
+.pill{display:inline-block;font-size:.72rem;font-weight:700;padding:.25em .6em;border-radius:999px;
+  white-space:nowrap;background:var(--foam);color:var(--muted)}
+.pill-completed{background:#eafaf1;color:var(--ok)}
+.pill-cancelled{background:#fdecea;color:var(--danger)}
+.pill-confirmed,.pill-in_progress{background:#e8f4fd;color:var(--deep)}
 
 .bookings-wrap{display:block}
 .cards-list{display:flex;flex-direction:column;gap:1rem}
