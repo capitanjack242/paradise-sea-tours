@@ -15,7 +15,18 @@ const bookingsBody = document.getElementById("bookingsBody");
 const emptyState = document.getElementById("emptyState");
 const countInfo = document.getElementById("countInfo");
 
+const bookingFilters = document.getElementById("bookingFilters");
+const bookingsWrap = document.getElementById("bookingsWrap");
+const clientsWrap = document.getElementById("clientsWrap");
+const clientsBody = document.getElementById("clientsBody");
+const clientsEmpty = document.getElementById("clientsEmpty");
+const clientSearch = document.getElementById("clientSearch");
+const clientBanner = document.getElementById("clientBanner");
+
 let currentFilter = "active";
+let currentView = "bookings";
+let clientFilterPhone = null; // set when drilling into one client's trips
+let clientQuery = "";
 let pollTimer = null;
 let boatsList = []; // active boats available to assign, loaded once per session
 let realtimeChannel = null;
@@ -144,7 +155,25 @@ async function loadBoats() {
   boatsList = data;
 }
 
-// ── filters ──────────────────────────────────────────────────────────────
+// ── views and filters ────────────────────────────────────────────────────
+document.getElementById("viewTabs").addEventListener("click", (e) => {
+  const btn = e.target.closest("button[data-view]");
+  if (!btn) return;
+  currentView = btn.dataset.view;
+  document.querySelectorAll(".vtab").forEach((t) => t.classList.toggle("active", t === btn));
+  if (currentView === "clients") clearClientFilter({ redraw: false });
+  applyView();
+});
+
+function applyView() {
+  const onClients = currentView === "clients";
+  bookingsWrap.style.display = onClients ? "none" : "";
+  bookingFilters.style.display = onClients ? "none" : "";
+  clientsWrap.style.display = onClients ? "" : "none";
+  if (onClients) renderClients(window.__allBookings || []);
+  else renderBookings(window.__allBookings || []);
+}
+
 document.getElementById("filterTabs").addEventListener("click", (e) => {
   const btn = e.target.closest("button[data-filter]");
   if (!btn) return;
@@ -152,6 +181,12 @@ document.getElementById("filterTabs").addEventListener("click", (e) => {
   document.querySelectorAll(".tab").forEach((t) => t.classList.toggle("active", t === btn));
   renderBookings(window.__allBookings || []);
 });
+
+clientSearch.addEventListener("input", () => {
+  clientQuery = clientSearch.value.trim().toLowerCase();
+  renderClients(window.__allBookings || []);
+});
+
 document.getElementById("refreshBtn").addEventListener("click", loadBookings);
 
 // ── data ─────────────────────────────────────────────────────────────────
@@ -165,10 +200,114 @@ async function loadBookings() {
     return;
   }
   window.__allBookings = data;
-  renderBookings(data);
+  if (currentView === "clients") renderClients(data);
+  else renderBookings(data);
+}
+
+/* ── clients ──────────────────────────────────────────────────────────────
+   There is no customer table — a booking carries a name and a number and
+   nothing links one booking to the next. The phone number is the closest thing
+   to an identity we have, and it's dependable now that every number is stored
+   the same way, so the client list is built by grouping on it. When app sign-in
+   is switched on this gets replaced by real customer records. */
+function buildClients(bookings) {
+  const byPhone = new Map();
+  for (const b of bookings) {
+    const phone = (b.contact_phone || "").trim();
+    if (!phone) continue; // nothing to group on
+    let c = byPhone.get(phone);
+    if (!c) {
+      c = { phone, name: "", bookings: 0, trips: 0, cancelled: 0, spentCents: 0, lastAt: null };
+      byPhone.set(phone, c);
+    }
+    c.bookings += 1;
+    // Names get typed slightly differently each time; keep the most recent.
+    const at = b.scheduled_at || b.created_at;
+    if (b.contact_name && (!c.lastAt || (at && at > c.lastAt))) c.name = b.contact_name;
+    if (at && (!c.lastAt || at > c.lastAt)) c.lastAt = at;
+    if (b.status === "completed") {
+      c.trips += 1;
+      c.spentCents += b.quoted_price_cents || 0;
+    }
+    if (b.status === "cancelled") c.cancelled += 1;
+  }
+  return [...byPhone.values()].sort((a, b) => (b.lastAt || "").localeCompare(a.lastAt || ""));
+}
+
+function renderClients(all) {
+  let clients = buildClients(all);
+  if (clientQuery) {
+    const digits = clientQuery.replace(/\D/g, "");
+    clients = clients.filter(
+      (c) =>
+        c.name.toLowerCase().includes(clientQuery) ||
+        (digits && c.phone.replace(/\D/g, "").includes(digits))
+    );
+  }
+  countInfo.textContent = `${clients.length} client${clients.length === 1 ? "" : "s"}`;
+  clientsEmpty.style.display = clients.length ? "none" : "block";
+  clientsEmpty.textContent = clientQuery ? "Nobody matches that." : "No clients yet.";
+  clientsBody.innerHTML = clients.map(clientHtml).join("");
+
+  clientsBody.querySelectorAll("button.btn-client-trips").forEach((btn) => {
+    btn.addEventListener("click", () => showClientTrips(btn.dataset.phone));
+  });
+}
+
+function clientHtml(c) {
+  // The most recent date can be a trip they haven't taken yet, so don't call
+  // an upcoming booking the last time we saw them.
+  const when = c.lastAt ? new Date(c.lastAt) : null;
+  const last = when
+    ? `${when > new Date() ? "next" : "last"} ${when.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}`
+    : "—";
+  const spent = c.spentCents ? `$${(c.spentCents / 100).toFixed(2).replace(/\.00$/, "")}` : "—";
+  return `
+    <article class="client-card">
+      <div class="client-top">
+        <div>
+          <div class="client-name">${esc(c.name || "No name given")}</div>
+          <a class="client-phone" href="tel:${esc(c.phone)}">${esc(prettyPhone(c.phone))}</a>
+        </div>
+        <button type="button" class="btn-client-trips" data-phone="${esc(c.phone)}">See their trips</button>
+      </div>
+      <div class="client-stats">
+        <span><strong>${c.bookings}</strong> booking${c.bookings === 1 ? "" : "s"}</span>
+        <span><strong>${c.trips}</strong> taken</span>
+        ${c.cancelled ? `<span class="stat-cancelled"><strong>${c.cancelled}</strong> cancelled</span>` : ""}
+        <span><strong>${spent}</strong> spent</span>
+        <span class="stat-last">${last}</span>
+      </div>
+    </article>`;
+}
+
+function showClientTrips(phone) {
+  clientFilterPhone = phone;
+  currentView = "bookings";
+  currentFilter = "all";
+  document.querySelectorAll(".vtab").forEach((t) => t.classList.toggle("active", t.dataset.view === "bookings"));
+  document.querySelectorAll(".tab").forEach((t) => t.classList.toggle("active", t.dataset.filter === "all"));
+  applyView();
+}
+
+function clearClientFilter({ redraw = true } = {}) {
+  clientFilterPhone = null;
+  if (redraw) renderBookings(window.__allBookings || []);
+}
+
+/** Read a stored E.164 number back the way a person would write it. */
+function prettyPhone(raw) {
+  const lp = window.libphonenumber;
+  if (!lp || !raw) return raw || "";
+  try {
+    return lp.parsePhoneNumberFromString(raw)?.formatInternational() ?? raw;
+  } catch {
+    return raw;
+  }
 }
 
 function matchesFilter(b) {
+  if (clientFilterPhone && (b.contact_phone || "").trim() !== clientFilterPhone) return false;
   if (currentFilter === "all") return true;
   if (currentFilter === "completed") return b.status === "completed";
   if (currentFilter === "cancelled") return b.status === "cancelled";
@@ -179,6 +318,18 @@ function renderBookings(all) {
   const rows = all.filter(matchesFilter);
   countInfo.textContent = `${rows.length} of ${all.length} bookings`;
   emptyState.style.display = rows.length ? "none" : "block";
+
+  if (clientFilterPhone) {
+    const who = rows[0]?.contact_name || prettyPhone(clientFilterPhone);
+    clientBanner.innerHTML =
+      `<span>Showing every trip for <strong>${esc(who)}</strong></span>` +
+      `<button type="button" id="clearClientBtn">Show all bookings</button>`;
+    clientBanner.hidden = false;
+    document.getElementById("clearClientBtn").addEventListener("click", () => clearClientFilter());
+  } else {
+    clientBanner.hidden = true;
+  }
+
   bookingsBody.innerHTML = rows.map(cardHtml).join("");
 
   bookingsBody.querySelectorAll("input.price-input").forEach((inp) => {
@@ -377,7 +528,7 @@ function cardHtml(b) {
       <div class="card-header">
         <div>
           <span class="contact-name">${esc(b.contact_name || "—")}</span>
-          <span class="contact-phone">${esc(b.contact_phone || "")}</span>
+          <span class="contact-phone">${esc(prettyPhone(b.contact_phone || ""))}</span>
         </div>
         <span class="received-at">Received ${received}</span>
       </div>

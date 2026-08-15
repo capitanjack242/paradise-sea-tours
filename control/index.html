@@ -36,22 +36,38 @@
   </header>
 
   <div class="toolbar">
+    <div class="view-tabs" id="viewTabs">
+      <button data-view="bookings" class="vtab active">Bookings</button>
+      <button data-view="clients" class="vtab">Clients</button>
+    </div>
+    <span id="countInfo" class="muted"></span>
+  </div>
+
+  <div class="toolbar" id="bookingFilters">
     <div class="filter-tabs" id="filterTabs">
       <button data-filter="active" class="tab active">Active</button>
       <button data-filter="all" class="tab">All</button>
       <button data-filter="completed" class="tab">Completed</button>
       <button data-filter="cancelled" class="tab">Cancelled</button>
     </div>
-    <span id="countInfo" class="muted"></span>
   </div>
 
   <div id="bookingsWrap" class="bookings-wrap">
+    <div id="clientBanner" class="client-banner" hidden></div>
     <div id="bookingsBody" class="cards-list"></div>
     <div id="emptyState" class="empty-state" style="display:none">No bookings yet.</div>
+  </div>
+
+  <div id="clientsWrap" style="display:none">
+    <input id="clientSearch" class="client-search" type="search"
+           placeholder="Search by name or number" autocomplete="off">
+    <div id="clientsBody" class="cards-list"></div>
+    <div id="clientsEmpty" class="empty-state" style="display:none">No clients yet.</div>
   </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/libphonenumber-js@1/bundle/libphonenumber-min.js"></script>
 <script src="script.js"></script>
 </body>
 </html>
