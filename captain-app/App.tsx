@@ -13,7 +13,9 @@ import EarningsScreen from "./src/screens/EarningsScreen";
 import SignInScreen from "./src/screens/SignInScreen";
 import TodayScreen from "./src/screens/TodayScreen";
 import { colors } from "./src/lib/theme";
+import * as Notifications from "expo-notifications";
 import { signOut, useSession } from "./src/lib/session";
+import { registerForPush, unregisterPush } from "./src/lib/push";
 import { supabase } from "./src/lib/supabase";
 import {
   awaitingReply,
@@ -44,6 +46,7 @@ export default function App() {
   const [busyTripId, setBusyTripId] = React.useState<string | null>(null);
   const [openTrip, setOpenTrip] = React.useState<Trip | null>(null);
   const [error, setError] = React.useState<string | null>(null);
+  const [pushNote, setPushNote] = React.useState<string | null>(null);
 
   const userId = session?.user?.id ?? null;
 
@@ -63,6 +66,40 @@ export default function App() {
   React.useEffect(() => {
     if (userId) load();
   }, [userId, load]);
+
+  // Ask for push once signed in — at which point the reason for it is obvious,
+  // rather than on first launch when it looks like any other app begging.
+  React.useEffect(() => {
+    if (!userId) return;
+    let cancelled = false;
+    registerForPush(userId).then((r) => {
+      if (cancelled || r.ok) return;
+      // Silent for the ordinary cases: a simulator, or a captain who said no
+      // and can turn it on in Settings. Only surface a broken setup.
+      if (r.reason === "no-project-id" || r.reason === "failed") {
+        setPushNote(r.detail ?? "Notifications couldn't be switched on.");
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [userId]);
+
+  // Tapping a notification should land on the thing it was about.
+  React.useEffect(() => {
+    const sub = Notifications.addNotificationResponseReceivedListener((response) => {
+      const data = response.notification.request.content.data as { bookingId?: string };
+      if (!data?.bookingId) return;
+      load().then(() => {
+        setTrips((current) => {
+          const hit = current.find((t) => t.id === data.bookingId);
+          if (hit) setOpenTrip(hit);
+          return current;
+        });
+      });
+    });
+    return () => sub.remove();
+  }, [load]);
 
   // A new job, or a passenger's reply, should arrive without anyone asking.
   React.useEffect(() => {
@@ -140,7 +177,13 @@ export default function App() {
         <Text style={s.brand}>
           Paradise<Text style={s.brandAccent}>Sea Tours</Text>
         </Text>
-        <Pressable onPress={signOut} hitSlop={10}>
+        <Pressable
+          onPress={async () => {
+            if (userId) await unregisterPush(userId);
+            await signOut();
+          }}
+          hitSlop={10}
+        >
           <Text style={s.signout}>Sign out</Text>
         </Pressable>
       </View>
@@ -148,6 +191,12 @@ export default function App() {
       {error ? (
         <Pressable onPress={() => setError(null)} style={s.errorBar}>
           <Text style={s.errorText}>{error}</Text>
+        </Pressable>
+      ) : null}
+
+      {pushNote ? (
+        <Pressable onPress={() => setPushNote(null)} style={s.noteBar}>
+          <Text style={s.noteText}>{pushNote}</Text>
         </Pressable>
       ) : null}
 
@@ -240,6 +289,8 @@ const s = StyleSheet.create({
 
   errorBar: { backgroundColor: "#fdecea", paddingVertical: 10, paddingHorizontal: 16 },
   errorText: { color: colors.danger, fontWeight: "600", fontSize: 13.5 },
+  noteBar: { backgroundColor: colors.amberBg, paddingVertical: 10, paddingHorizontal: 16 },
+  noteText: { color: colors.amber, fontWeight: "600", fontSize: 13 },
 
   body: { flex: 1 },
 

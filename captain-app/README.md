@@ -26,10 +26,29 @@ but it waits on an SMS provider being connected. Captains are staff whose
 logins are made for them anyway, so this ships now and the swap later touches
 only `src/lib/session.ts`.
 
+## Push notifications
+
+Coded, and needs three things switched on before it can deliver:
+
+1. `supabase/migrations/0015_push_tokens.sql` — where a device is recorded.
+2. An **EAS project id**. Push tokens are issued against an Expo account:
+   `npx eas init` inside this folder writes `extra.eas.projectId` into app.json.
+   Without it the app says so on a yellow bar rather than failing silently.
+3. The **notify-captain** Edge Function deployed, with two Database Webhooks
+   pointed at it — `messages` on INSERT, `bookings` on UPDATE — each sending
+   the `x-webhook-secret` header.
+
+**Expo Go cannot receive remote push.** Testing needs a development build
+(`npx expo run:ios`, `npx expo run:android`, or an EAS build). Registration
+failing never blocks the app: a captain who declined notifications, or is on a
+simulator, still gets every screen.
+
+A captain is told when a run is confirmed to them and when anyone messages a
+trip they're running — never about their own messages. Tapping the notification
+opens that trip's thread.
+
 ## Not built yet
 
-- **Push notifications.** The reason to be native at all. Needs Expo push
-  credentials and a real device; a captain currently has to open the app.
 - **The offer/accept step.** Dispatch assigns and confirms today; the app has
   no "you've been offered a run, yes or no" screen. That's the piece that
   turns the phone call into a record.
