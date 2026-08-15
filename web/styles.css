@@ -136,6 +136,10 @@ img{max-width:100%}
 .form-status{font-weight:600;margin:0;min-height:1.2em}
 .form-status.ok{color:#1a9d63}.form-status.err{color:#d6453a}
 
+/* [hidden] must beat any display rule below — several selectors here set
+   display:grid on elements we toggle, which silently overrides it. */
+[hidden]{display:none!important}
+
 /* Booking form — mirrors the app: trip first with a live fare, identity last */
 #tripStep,#identityStep{display:grid;gap:1rem}
 .seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--foam)}
