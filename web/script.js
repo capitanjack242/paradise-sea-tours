@@ -2,7 +2,6 @@
 const CONFIG = {
   phone: "+50764819290",          // tel: dialable, no spaces
   phoneDisplay: "+507 6481-9290",
-  whatsapp: "50764819290",        // digits only, country code first
   email: "hello@paradiseseatours.com",
   // Publishable (anon) key — safe to expose client-side, access is scoped by RLS.
   supabaseUrl: "https://fjdoaonnoezbbitbawzs.supabase.co",
@@ -22,19 +21,20 @@ document.getElementById("navToggle").addEventListener("click", () =>
 navLinks.querySelectorAll("a").forEach((a) =>
   a.addEventListener("click", () => navLinks.classList.remove("open")));
 
-// wire up phone / whatsapp / call links
+// wire up phone / call links
 document.querySelectorAll("[data-phone]").forEach((el) => {
   el.href = "tel:" + CONFIG.phone;
   if (el.textContent.includes("000")) el.textContent = "📞 " + CONFIG.phoneDisplay;
 });
-const waLink = (text) =>
-  `https://wa.me/${CONFIG.whatsapp}?text=${encodeURIComponent(text)}`;
-document.querySelectorAll("[data-whatsapp]").forEach((el) =>
-  (el.href = waLink("Hi! I'd like to book a boat tour.")));
-document.querySelectorAll("[data-call]").forEach((el) =>
-  (el.href = waLink("Hi! I'd like to book a boat tour.")));
-document.querySelectorAll("[data-captain]").forEach((el) =>
-  (el.href = waLink("Hi! I own a boat in Nassau and want to join the Paradise Sea Tours network.")));
+document.querySelectorAll("[data-call]").forEach((el) => (el.href = "tel:" + CONFIG.phone));
+// Captains reaching out about joining the network — email keeps it out of the
+// booking line and gives them somewhere to send boat details.
+document.querySelectorAll("[data-captain]").forEach(
+  (el) =>
+    (el.href =
+      `mailto:${CONFIG.email}?subject=` +
+      encodeURIComponent("Joining the Paradise Sea Tours network"))
+);
 
 // booking form: writes a real booking record; staff get an automatic
 // Telegram alert the instant it lands (see supabase/functions/notify-booking).
@@ -46,7 +46,7 @@ const phoneInput = form.querySelector('[name="phone"]');
 // Don't let the date picker itself offer past dates.
 dateInput.min = new Date().toLocaleDateString("en-CA"); // YYYY-MM-DD, local time
 
-// ── WhatsApp number confirmation ─────────────────────────────────────────
+// ── Mobile number confirmation ───────────────────────────────────────────
 // The confirmation and the payment link both go to this number, so a typo
 // means a captain gets committed to a trip the customer never hears about.
 // Make them eyeball the parsed number before anything is submitted.
@@ -116,16 +116,16 @@ form.addEventListener("submit", async (e) => {
     return;
   }
 
-  // Format-validate the phone number (catches typos/garbage). This can't
-  // confirm the number is actually registered on WhatsApp — that needs
-  // WhatsApp's Business API, which we don't have wired up.
+  // Format-validate the phone number (catches typos and garbage). It can't
+  // tell us the number is switched on or belongs to them — only that it's a
+  // real, well-formed number.
   if (!window.libphonenumber.isValidPhoneNumber(data.phone)) {
-    status.textContent = "Please enter a valid WhatsApp number, including country code (e.g. +1 242 555 0100).";
+    status.textContent = "Please enter a valid mobile number, including country code (e.g. +1 242 555 0100).";
     status.classList.add("err");
     return;
   }
 
-  // Everything reaches the customer on WhatsApp — make them confirm the number
+  // This number is how we reach them about the trip — make them confirm it
   // before a request goes anywhere.
   if (!phoneConfirmed) {
     status.textContent = "";
@@ -149,12 +149,12 @@ form.addEventListener("submit", async (e) => {
   if (error) {
     console.error("booking insert failed:", error);
     status.textContent =
-      `Something went wrong sending your request. Please call or WhatsApp us at ${CONFIG.phoneDisplay} instead.`;
+      `Something went wrong sending your request. Please call us at ${CONFIG.phoneDisplay} instead.`;
     status.classList.add("err");
     return;
   }
 
-  status.textContent = "Thanks! We've received your request and will confirm shortly on WhatsApp.";
+  status.textContent = "Thanks! We've received your request and will confirm shortly.";
   status.classList.add("ok");
   form.reset();
   phoneConfirmed = false; // next booking must confirm its own number

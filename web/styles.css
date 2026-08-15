@@ -136,7 +136,7 @@ img{max-width:100%}
 .form-status{font-weight:600;margin:0;min-height:1.2em}
 .form-status.ok{color:#1a9d63}.form-status.err{color:#d6453a}
 
-/* WhatsApp number confirmation — everything (payment link included) is sent
+/* Mobile number confirmation — everything (payment link included) is sent
    to this number, so a typo has to be caught before a captain is committed. */
 .field-hint{font-weight:500;font-size:.75rem;color:var(--muted);line-height:1.35}
 .phone-confirm{
@@ -176,7 +176,7 @@ img{max-width:100%}
 /* floating action button */
 .fab{position:fixed;right:18px;bottom:18px;width:56px;height:56px;border-radius:50%;
   display:grid;place-items:center;font-size:1.5rem;color:#fff;z-index:60;
-  background:linear-gradient(135deg,#25d366,#128c4a);box-shadow:0 10px 24px rgba(18,140,74,.5)}
+  background:linear-gradient(135deg,var(--teal),var(--deep));box-shadow:0 10px 24px rgba(11,188,214,.45)}
 .fab:hover{transform:scale(1.06)}
 
 /* responsive */
