@@ -21,6 +21,9 @@ const clientsWrap = document.getElementById("clientsWrap");
 const clientsBody = document.getElementById("clientsBody");
 const clientsEmpty = document.getElementById("clientsEmpty");
 const clientSearch = document.getElementById("clientSearch");
+const boatsWrap = document.getElementById("boatsWrap");
+const boatsBody = document.getElementById("boatsBody");
+const boatsEmpty = document.getElementById("boatsEmpty");
 
 let currentFilter = "active";
 let currentView = "bookings";
@@ -144,7 +147,7 @@ function setLiveStatus(state) {
 async function loadBoats() {
   const { data, error } = await db
     .from("boats")
-    .select("id, name, captain_name, captain_whatsapp, owner_id")
+    .select("id, name, kind, capacity, home_dock, captain_name, captain_whatsapp, owner_id, is_available, availability_changed_at")
     .eq("is_active", true)
     .order("name");
   if (error) {
@@ -164,11 +167,13 @@ document.getElementById("viewTabs").addEventListener("click", (e) => {
 });
 
 function applyView() {
-  const onClients = currentView === "clients";
-  bookingsWrap.style.display = onClients ? "none" : "";
-  bookingFilters.style.display = onClients ? "none" : "";
-  clientsWrap.style.display = onClients ? "" : "none";
-  if (onClients) renderClients(window.__allBookings || []);
+  const on = (v) => (currentView === v ? "" : "none");
+  bookingsWrap.style.display = on("bookings");
+  bookingFilters.style.display = on("bookings");
+  clientsWrap.style.display = on("clients");
+  boatsWrap.style.display = on("boats");
+  if (currentView === "clients") renderClients(window.__allBookings || []);
+  else if (currentView === "boats") renderBoats();
   else renderBookings(window.__allBookings || []);
 }
 
@@ -199,7 +204,74 @@ async function loadBookings() {
   }
   window.__allBookings = data;
   if (currentView === "clients") renderClients(data);
+  else if (currentView === "boats") renderBoats();
   else renderBookings(data);
+}
+
+/* ── boats ────────────────────────────────────────────────────────────────
+   Who is actually working. A captain switches himself on before he leaves the
+   house; without this, dispatch would offer a run to someone who went home an
+   hour ago and only find out by ringing him. */
+function renderBoats() {
+  boatsEmpty.style.display = boatsList.length ? "none" : "block";
+  countInfo.textContent = `${boatsList.filter((b) => b.is_available).length} of ${boatsList.length} out today`;
+
+  const runsToday = new Map();
+  for (const bk of window.__allBookings || []) {
+    if (!bk.assigned_boat_id) continue;
+    if (["cancelled"].includes(bk.status)) continue;
+    const at = bk.scheduled_at ? new Date(bk.scheduled_at) : null;
+    if (!at || at.toDateString() !== new Date().toDateString()) continue;
+    runsToday.set(bk.assigned_boat_id, (runsToday.get(bk.assigned_boat_id) || 0) + 1);
+  }
+
+  const sorted = [...boatsList].sort((a, b) => {
+    if (!!a.is_available !== !!b.is_available) return a.is_available ? -1 : 1;
+    return (a.name || "").localeCompare(b.name || "", undefined, { sensitivity: "base" });
+  });
+  boatsBody.innerHTML = sorted.map((b) => boatHtml(b, runsToday.get(b.id) || 0)).join("");
+}
+
+function boatHtml(b, runs) {
+  const noLogin = !b.owner_id;
+  const on = !!b.is_available;
+
+  // "Never said" is not the same as "said no" — a captain with no login has
+  // never been asked, and showing that as Off would read as a decision.
+  const state = noLogin
+    ? `<span class="boat-state st-nologin">No login yet</span>`
+    : on
+    ? `<span class="boat-state st-on">● Out today</span>`
+    : `<span class="boat-state st-off">Not out</span>`;
+
+  const changed = b.availability_changed_at
+    ? new Date(b.availability_changed_at).toLocaleString(undefined, {
+        weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit",
+      })
+    : null;
+
+  // A switch left on since yesterday is a claim worth doubting.
+  const stale =
+    on && b.availability_changed_at &&
+    new Date(b.availability_changed_at).toDateString() !== new Date().toDateString();
+
+  return `
+    <article class="boat-card${on ? " is-out" : ""}">
+      <div class="boat-top">
+        <div>
+          <div class="boat-name">${esc(b.name || "—")}</div>
+          <div class="boat-cap">Capt. ${esc(b.captain_name || "—")} · ${b.capacity ?? "?"} seats${b.home_dock ? ` · ${esc(b.home_dock)}` : ""}</div>
+        </div>
+        ${state}
+      </div>
+      <div class="boat-foot">
+        ${noLogin
+          ? `<span class="boat-warn">Can't be asked or close out a trip until they have a login</span>`
+          : `<span>${changed ? `${on ? "On" : "Off"} since ${changed}` : "Never set"}</span>`}
+        <span class="boat-runs">${runs} run${runs === 1 ? "" : "s"} today</span>
+      </div>
+      ${stale ? `<div class="boat-stale">⚠ Left on since ${changed} — worth checking he's really out</div>` : ""}
+    </article>`;
 }
 
 /* ── clients ──────────────────────────────────────────────────────────────
@@ -542,7 +614,7 @@ function cardHtml(b) {
           <select class="boat-select" data-id="${b.id}">
             <option value="">— Unassigned —</option>
             ${boatsList.map((boat) =>
-              `<option value="${boat.id}" ${boat.id === b.assigned_boat_id ? "selected" : ""}>${esc(boat.name)} — Capt. ${esc(boat.captain_name || "?")}</option>`
+              `<option value="${boat.id}" ${boat.id === b.assigned_boat_id ? "selected" : ""}>${esc(boat.name)} — Capt. ${esc(boat.captain_name || "?")}${boat.is_available ? "" : " (not out today)"}</option>`
             ).join("")}
           </select>
           ${b.boats?.captain_whatsapp

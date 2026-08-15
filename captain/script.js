@@ -16,9 +16,13 @@ const loginForm = document.getElementById("loginForm");
 const loginError = document.getElementById("loginError");
 const whoami = document.getElementById("whoami");
 const tripsBody = document.getElementById("tripsBody");
+const availRow = document.getElementById("availRow");
+const availSub = document.getElementById("availSub");
+const availToggle = document.getElementById("availToggle");
 const emptyState = document.getElementById("emptyState");
 
 let currentTab = "today";
+let myBoat = null;
 let realtimeChannel = null;
 let pollTimer = null;
 let refreshTimer = null;
@@ -59,9 +63,63 @@ async function showTrips(session) {
   loginView.style.display = "none";
   tripsView.style.display = "";
   whoami.textContent = session.user.email;
-  await loadTrips();
+  await Promise.all([loadMyBoat(session), loadTrips()]);
   startLiveUpdates();
 }
+
+/* ── availability ──────────────────────────────────────────────────────────
+   The switch a captain flips before leaving the house. Dispatch reads it when
+   deciding who to offer a run to, so it's the first thing on the board. */
+async function loadMyBoat(session) {
+  // Filtered by owner explicitly: an admin signing in here can read every boat,
+  // and "your availability" has to mean one boat, not all of them.
+  const { data, error } = await db
+    .from("boats")
+    .select("id, name, capacity, is_available, availability_changed_at")
+    .eq("owner_id", session.user.id)
+    .limit(1);
+  if (error) {
+    console.error("load boat failed:", error);
+    return;
+  }
+  myBoat = data?.[0] ?? null;
+  renderAvailability();
+}
+
+function renderAvailability() {
+  if (!myBoat) {
+    availRow.hidden = true; // an admin, or a login not yet tied to a boat
+    return;
+  }
+  availRow.hidden = false;
+  const on = !!myBoat.is_available;
+  availToggle.setAttribute("aria-checked", String(on));
+  availRow.classList.toggle("is-on", on);
+
+  const since = myBoat.availability_changed_at
+    ? new Date(myBoat.availability_changed_at).toLocaleString(undefined, {
+        weekday: "short", hour: "numeric", minute: "2-digit",
+      })
+    : null;
+  availSub.textContent = on
+    ? `${myBoat.name} · on${since ? ` since ${since}` : ""}`
+    : `${myBoat.name} · dispatch won't offer you runs`;
+}
+
+availToggle.addEventListener("click", async () => {
+  if (!myBoat) return;
+  const next = !myBoat.is_available;
+  availToggle.disabled = true;
+  const { error } = await db.from("boats").update({ is_available: next }).eq("id", myBoat.id);
+  availToggle.disabled = false;
+  if (error) {
+    availSub.textContent = "Couldn't save that — check your signal and try again.";
+    return;
+  }
+  myBoat.is_available = next;
+  myBoat.availability_changed_at = new Date().toISOString();
+  renderAvailability();
+});
 
 // ── live updates ─────────────────────────────────────────────────────────
 // A captain wants a new job to appear without thinking about it, so the same

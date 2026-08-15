@@ -39,6 +39,7 @@
     <div class="view-tabs" id="viewTabs">
       <button data-view="bookings" class="vtab active">Bookings</button>
       <button data-view="clients" class="vtab">Clients</button>
+      <button data-view="boats" class="vtab">Boats</button>
     </div>
     <span id="countInfo" class="muted"></span>
   </div>
@@ -62,6 +63,11 @@
            placeholder="Search by name or number" autocomplete="off">
     <div id="clientsBody" class="cards-list"></div>
     <div id="clientsEmpty" class="empty-state" style="display:none">No clients yet.</div>
+  </div>
+
+  <div id="boatsWrap" style="display:none">
+    <div id="boatsBody" class="cards-list"></div>
+    <div id="boatsEmpty" class="empty-state" style="display:none">No boats yet.</div>
   </div>
 </div>
 

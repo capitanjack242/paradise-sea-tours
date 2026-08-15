@@ -38,6 +38,15 @@
     <button id="refreshBtn" class="btn btn-ghost btn-sm">Refresh</button>
   </div>
 
+  <div id="availRow" class="avail-row" hidden>
+    <div>
+      <div class="avail-title">Taking runs today</div>
+      <div class="avail-sub" id="availSub"></div>
+    </div>
+    <button type="button" id="availToggle" class="switch" role="switch" aria-checked="false"
+            aria-label="Taking runs today"></button>
+  </div>
+
   <div class="tabs" id="tabs">
     <button data-tab="today" class="tab active">Today</button>
     <button data-tab="upcoming" class="tab">Coming up</button>
