@@ -40,6 +40,7 @@
       <button data-view="bookings" class="vtab active">Bookings</button>
       <button data-view="clients" class="vtab">Clients</button>
       <button data-view="boats" class="vtab">Boats</button>
+      <button data-view="payout" class="vtab">Payout</button>
     </div>
     <span id="countInfo" class="muted"></span>
   </div>
@@ -68,6 +69,20 @@
   <div id="boatsWrap" style="display:none">
     <div id="boatsBody" class="cards-list"></div>
     <div id="boatsEmpty" class="empty-state" style="display:none">No boats yet.</div>
+  </div>
+
+  <div id="payoutWrap" style="display:none">
+    <div class="week-bar">
+      <button type="button" id="weekPrev" class="week-nav" aria-label="Earlier week">‹</button>
+      <div class="week-label">
+        <div id="weekRange"></div>
+        <div id="weekPayday" class="week-payday"></div>
+      </div>
+      <button type="button" id="weekNext" class="week-nav" aria-label="Later week">›</button>
+    </div>
+    <div id="payoutTotals" class="payout-totals"></div>
+    <div id="payoutBody" class="cards-list"></div>
+    <div id="payoutEmpty" class="empty-state" style="display:none">No completed trips this week.</div>
   </div>
 </div>
 

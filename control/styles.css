@@ -101,6 +101,42 @@ h1{font-family:'Baloo 2','Inter',sans-serif;margin:0}
 .pill-cancelled{background:#fdecea;color:var(--danger)}
 .pill-confirmed,.pill-in_progress{background:#e8f4fd;color:var(--deep)}
 
+/* Friday payout — one number per boat, and a way to record that it went out. */
+.week-bar{display:flex;align-items:center;gap:.8rem;background:#fff;border:1px solid var(--line);
+  border-radius:12px;padding:.6rem .8rem;margin-bottom:1rem}
+.week-nav{font:inherit;font-size:1.3rem;line-height:1;font-weight:700;width:2rem;height:2rem;
+  border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--deep);cursor:pointer}
+.week-nav:hover:not(:disabled){background:var(--foam);border-color:var(--teal)}
+.week-nav:disabled{opacity:.35;cursor:default}
+.week-label{flex:1;text-align:center;font-weight:700}
+.week-payday{font-size:.78rem;font-weight:600;color:var(--muted);margin-top:.1rem}
+
+.payout-totals{display:flex;flex-wrap:wrap;gap:.6rem;margin-bottom:1rem}
+.tot{flex:1;min-width:120px;background:var(--navy);color:#fff;border-radius:12px;padding:.7rem .9rem}
+.tot-lab{display:block;font-size:.7rem;font-weight:800;letter-spacing:.08em;
+  text-transform:uppercase;color:var(--aqua)}
+.tot-val{display:block;font-size:1.35rem;font-variant-numeric:tabular-nums;margin-top:.15rem}
+.tot-val.muted-val{color:#9dc3d6}
+
+.payout-card{background:#fff;border:1px solid var(--line);border-radius:12px;
+  padding:.9rem 1.1rem;box-shadow:0 1px 3px rgba(6,36,59,.06)}
+.payout-card.is-settled{opacity:.72}
+.payout-top{display:flex;justify-content:space-between;align-items:flex-start;gap:.8rem;flex-wrap:wrap}
+.payout-boat{font-weight:700;font-size:1.02rem}
+.payout-cap{font-size:.85rem;color:var(--muted);margin-top:.1rem}
+.payout-amount{text-align:right}
+.payout-owed{font-size:1.35rem;font-variant-numeric:tabular-nums}
+.payout-already{font-size:.75rem;color:var(--muted);font-weight:600}
+.payout-actions{display:flex;justify-content:space-between;align-items:center;gap:.6rem;
+  flex-wrap:wrap;margin-top:.7rem}
+.btn-payout-trips{font:inherit;font-weight:600;font-size:.82rem;background:#fff;color:var(--deep);
+  border:1px solid var(--line);border-radius:6px;padding:.45em .8em;cursor:pointer}
+.btn-payout-trips:hover{background:var(--foam);border-color:var(--teal)}
+.btn-mark-paid{font:inherit;font-weight:700;font-size:.85rem;background:var(--ok);color:#fff;
+  border:1px solid var(--ok);border-radius:6px;padding:.5em 1em;cursor:pointer;white-space:nowrap}
+.btn-mark-paid:hover{filter:brightness(.94)}
+.payout-done{font-size:.85rem;font-weight:700;color:var(--ok)}
+
 /* Boats — who is working, read at a glance before assigning anything. */
 .boat-card{background:#fff;border:1px solid var(--line);border-radius:12px;
   padding:.85rem 1.1rem;box-shadow:0 1px 3px rgba(6,36,59,.06)}

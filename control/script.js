@@ -24,11 +24,17 @@ const clientSearch = document.getElementById("clientSearch");
 const boatsWrap = document.getElementById("boatsWrap");
 const boatsBody = document.getElementById("boatsBody");
 const boatsEmpty = document.getElementById("boatsEmpty");
+const payoutWrap = document.getElementById("payoutWrap");
+const payoutBody = document.getElementById("payoutBody");
+const payoutEmpty = document.getElementById("payoutEmpty");
+const payoutTotals = document.getElementById("payoutTotals");
 
 let currentFilter = "active";
 let currentView = "bookings";
 let clientQuery = "";
 const expandedClients = new Set(); // clients whose trip table is open
+const expandedPayouts = new Set(); // boats whose week's trips are open
+let weekOffset = 0;                // 0 = the pay week running now
 let pollTimer = null;
 let boatsList = []; // active boats available to assign, loaded once per session
 let realtimeChannel = null;
@@ -172,8 +178,10 @@ function applyView() {
   bookingFilters.style.display = on("bookings");
   clientsWrap.style.display = on("clients");
   boatsWrap.style.display = on("boats");
+  payoutWrap.style.display = on("payout");
   if (currentView === "clients") renderClients(window.__allBookings || []);
   else if (currentView === "boats") renderBoats();
+  else if (currentView === "payout") renderPayout();
   else renderBookings(window.__allBookings || []);
 }
 
@@ -205,7 +213,219 @@ async function loadBookings() {
   window.__allBookings = data;
   if (currentView === "clients") renderClients(data);
   else if (currentView === "boats") renderBoats();
+  else if (currentView === "payout") renderPayout();
   else renderBookings(data);
+}
+
+/* ── Friday payout ────────────────────────────────────────────────────────
+   Boats are paid every Friday, so a pay week runs Friday to Thursday and is
+   settled on the Friday straight after it closes. Nothing is ever paid before
+   it's earned, and there's no gap between one week and the next.
+
+   Change PAY_WEEK_ENDS_ON if the real week runs differently — it's the only
+   place the boundary is decided. */
+const PAY_WEEK_ENDS_ON = 5; // 0 Sun … 5 Fri: the day a week is paid out
+
+/** Midnight on the payday-weekday that opens the pay week `offset` weeks away. */
+function payWeekStart(offset = 0) {
+  const d = new Date();
+  d.setHours(0, 0, 0, 0);
+  const back = (d.getDay() - PAY_WEEK_ENDS_ON + 7) % 7;
+  d.setDate(d.getDate() - back + offset * 7);
+  return d;
+}
+
+function payWeek(offset = 0) {
+  const start = payWeekStart(offset);
+  const end = new Date(start);
+  end.setDate(end.getDate() + 7); // exclusive: the payday itself opens the next week
+  const lastDay = new Date(end);
+  lastDay.setDate(lastDay.getDate() - 1);
+  return { start, end, payday: end, lastDay };
+}
+
+const dayMonth = (d) =>
+  d.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
+
+document.getElementById("weekPrev").addEventListener("click", () => {
+  weekOffset -= 1;
+  expandedPayouts.clear();
+  renderPayout();
+});
+document.getElementById("weekNext").addEventListener("click", () => {
+  if (weekOffset >= 0) return; // nothing to show for a week that hasn't started
+  weekOffset += 1;
+  expandedPayouts.clear();
+  renderPayout();
+});
+
+function buildPayout() {
+  const { start, end } = payWeek(weekOffset);
+  const byBoat = new Map();
+
+  for (const b of window.__allBookings || []) {
+    if (b.status !== "completed") continue; // only trips actually run are owed
+    const at = b.scheduled_at ? new Date(b.scheduled_at) : null;
+    if (!at || at < start || at >= end) continue;
+
+    const key = b.assigned_boat_id || "unassigned";
+    let row = byBoat.get(key);
+    if (!row) {
+      row = {
+        key,
+        name: b.boats?.name || "No boat assigned",
+        captain: b.boats?.captain_name || null,
+        trips: [],
+        owedCents: 0,
+        paidCents: 0,
+      };
+      byBoat.set(key, row);
+    }
+    row.trips.push(b);
+    const cents = b.quoted_price_cents || 0;
+    if (b.paid_out_at) row.paidCents += cents;
+    else row.owedCents += cents;
+  }
+
+  for (const row of byBoat.values()) {
+    row.trips.sort((x, y) => (x.scheduled_at || "").localeCompare(y.scheduled_at || ""));
+    row.unpaid = row.trips.filter((t) => !t.paid_out_at);
+    row.settled = row.unpaid.length === 0;
+  }
+  return [...byBoat.values()].sort((a, b) =>
+    a.name.localeCompare(b.name, undefined, { sensitivity: "base" })
+  );
+}
+
+function renderPayout() {
+  const { start, lastDay, payday } = payWeek(weekOffset);
+  const rows = buildPayout();
+
+  document.getElementById("weekRange").textContent = `${dayMonth(start)} — ${dayMonth(lastDay)}`;
+  const paydayText =
+    weekOffset === 0
+      ? `Still running · pay out ${dayMonth(payday)}`
+      : `Paid out ${dayMonth(payday)}`;
+  document.getElementById("weekPayday").textContent = paydayText;
+  document.getElementById("weekNext").disabled = weekOffset >= 0;
+
+  const owed = rows.reduce((n, r) => n + r.owedCents, 0);
+  const paid = rows.reduce((n, r) => n + r.paidCents, 0);
+  const trips = rows.reduce((n, r) => n + r.trips.length, 0);
+
+  payoutTotals.innerHTML = rows.length
+    ? `<div class="tot">
+         <span class="tot-lab">To pay</span>
+         <span class="tot-val money">${dollars(owed)}</span>
+       </div>
+       <div class="tot">
+         <span class="tot-lab">Already paid</span>
+         <span class="tot-val money muted-val">${dollars(paid)}</span>
+       </div>
+       <div class="tot">
+         <span class="tot-lab">Trips</span>
+         <span class="tot-val money">${trips}</span>
+       </div>
+       <div class="tot">
+         <span class="tot-lab">Boats</span>
+         <span class="tot-val money">${rows.length}</span>
+       </div>`
+    : "";
+
+  countInfo.textContent = rows.length ? `${dollars(owed)} to pay` : "";
+  payoutEmpty.style.display = rows.length ? "none" : "block";
+  payoutBody.innerHTML = rows.map(payoutHtml).join("");
+
+  payoutBody.querySelectorAll("button.btn-payout-trips").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const k = btn.dataset.key;
+      expandedPayouts.has(k) ? expandedPayouts.delete(k) : expandedPayouts.add(k);
+      renderPayout();
+    });
+  });
+  payoutBody.querySelectorAll("button.btn-mark-paid").forEach((btn) => {
+    btn.addEventListener("click", () => markPaid(btn.dataset.key, btn.closest(".payout-card")));
+  });
+}
+
+function dollars(cents) {
+  return `$${((cents || 0) / 100).toFixed(2).replace(/\.00$/, "")}`;
+}
+
+function payoutHtml(r) {
+  const open = expandedPayouts.has(r.key);
+  const tripRows = r.trips
+    .map((t) => {
+      const when = t.scheduled_at
+        ? new Date(t.scheduled_at).toLocaleString(undefined, {
+            weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit",
+          })
+        : "—";
+      return `
+        <tr>
+          <td>${esc(when)}</td>
+          <td>${esc(t.pickup || "—")} → ${esc(t.destination || "—")}</td>
+          <td>${t.passengers ?? "?"}</td>
+          <td>${t.paid_out_at ? `<span class="pill pill-completed">Paid</span>` : ""}</td>
+          <td class="num${t.paid_out_at ? " unpaid" : ""}">${dollars(t.quoted_price_cents)}</td>
+        </tr>`;
+    })
+    .join("");
+
+  return `
+    <article class="payout-card${r.settled ? " is-settled" : ""}">
+      <div class="payout-top">
+        <div>
+          <div class="payout-boat">${esc(r.name)}</div>
+          <div class="payout-cap">${r.captain ? `Capt. ${esc(r.captain)} · ` : ""}${r.trips.length} trip${r.trips.length === 1 ? "" : "s"}</div>
+        </div>
+        <div class="payout-amount">
+          <div class="money payout-owed">${dollars(r.owedCents)}</div>
+          ${r.paidCents ? `<div class="payout-already">${dollars(r.paidCents)} already paid</div>` : ""}
+        </div>
+      </div>
+      <div class="payout-actions">
+        <button type="button" class="btn-payout-trips" data-key="${esc(r.key)}">
+          ${open ? "Hide trips" : "See trips"}
+        </button>
+        ${r.settled
+          ? `<span class="payout-done">✓ Settled</span>`
+          : `<button type="button" class="btn-mark-paid" data-key="${esc(r.key)}">
+               Mark ${dollars(r.owedCents)} paid
+             </button>`}
+      </div>
+      ${open
+        ? `<div class="client-trips">
+             <table class="trips-table">
+               <thead><tr><th>When</th><th>Trip</th><th>Pax</th><th></th><th class="num">Fare</th></tr></thead>
+               <tbody>${tripRows}</tbody>
+             </table>
+           </div>`
+        : ""}
+    </article>`;
+}
+
+async function markPaid(key, card) {
+  const row = buildPayout().find((r) => r.key === key);
+  if (!row || !row.unpaid.length) return;
+
+  const stamp = new Date().toISOString();
+  card?.classList.add("row-saving");
+  const { error } = await db
+    .from("bookings")
+    .update({ paid_out_at: stamp })
+    .in("id", row.unpaid.map((t) => t.id));
+  card?.classList.remove("row-saving");
+
+  if (error) {
+    alert("Couldn't record that payout: " + error.message);
+    return;
+  }
+  for (const t of row.unpaid) {
+    const b = (window.__allBookings || []).find((x) => x.id === t.id);
+    if (b) b.paid_out_at = stamp;
+  }
+  renderPayout();
 }
 
 /* ── boats ────────────────────────────────────────────────────────────────
