@@ -362,12 +362,13 @@ function tripHtml(b) {
       <div class="trip-when">${when}${aboard ? ` <span class="aboard-tag">• Aboard</span>` : ""}</div>
       <div class="trip-route">${esc(b.pickup || "—")} <span class="arrow">→</span> ${esc(b.destination || "—")}</div>
       <div class="trip-meta">${b.passengers ?? "?"} passengers · ${esc(b.trip_type || "")} · ${fare}</div>
+      ${b.return_at
+        ? `<div class="return-leg">↩ Collect them again at ${esc(new Date(b.return_at).toLocaleString(undefined, {
+             weekday: "short", hour: "numeric", minute: "2-digit" }))}</div>`
+        : b.trip_type === "Round trip"
+        ? `<div class="return-leg missing">↩ Round trip — no return time given, check with the office</div>`
+        : ""}
       ${b.notes ? `<div class="trip-notes">${esc(b.notes)}</div>` : ""}
-
-      <div class="trip-pax">
-        <span class="pax-name">${esc(b.contact_name || "Passenger")}</span>
-        ${b.contact_phone ? `<a class="call" href="tel:${esc(b.contact_phone)}">📞 Call</a>` : ""}
-      </div>
 
       <div class="trip-pax">
         <span class="pax-name">${esc(b.contact_name || "Passenger")}</span>

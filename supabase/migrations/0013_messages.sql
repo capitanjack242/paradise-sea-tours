@@ -70,6 +70,7 @@ returns jsonb as $$
     'pickup',      b.pickup,
     'destination', b.destination,
     'scheduled_at', b.scheduled_at,
+    'return_at',   b.return_at,
     'passengers',  b.passengers,
     'trip_type',   b.trip_type,
     'status',      b.status,

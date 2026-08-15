@@ -135,7 +135,8 @@ function validateTrip() {
   const scheduledAt = new Date(`${d.date}T${d.time}`);
   if (scheduledAt.getTime() <= Date.now()) return "Please choose a date and time in the future.";
 
-  if (d.triptype === "Round trip" && d.returntime) {
+  if (d.triptype === "Round trip") {
+    if (!d.returntime) return "Tell us what time you'd like collecting again.";
     const back = new Date(`${d.date}T${d.returntime}`);
     if (back <= scheduledAt) return "The return has to be after you head out.";
   }
@@ -292,10 +293,12 @@ form.addEventListener("submit", async (e) => {
 
   status.textContent = "Sending your request…";
 
-  const notes = [
-    d.notes?.trim(),
-    d.triptype === "Round trip" && d.returntime ? `Return leg: ${d.returntime}` : null,
-  ].filter(Boolean).join(" · ");
+  // The return time is its own field, not a line of prose in the notes — it
+  // decides whether a captain goes back for someone.
+  const returnAt =
+    d.triptype === "Round trip" && d.returntime
+      ? new Date(`${d.date}T${d.returntime}`).toISOString()
+      : null;
 
   const { error } = await db.from("bookings").insert({
     contact_name: d.name.trim(),
@@ -303,9 +306,10 @@ form.addEventListener("submit", async (e) => {
     pickup: d.pickup,
     destination: d.destination,
     scheduled_at: new Date(`${d.date}T${d.time}`).toISOString(),
+    return_at: returnAt,
     passengers: Number(d.guests) || 1,
     trip_type: d.triptype,
-    notes: notes || null,
+    notes: d.notes?.trim() || null,
   });
 
   if (error) {

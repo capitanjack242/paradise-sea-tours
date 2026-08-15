@@ -73,6 +73,17 @@ function render(t) {
   document.getElementById("meta").textContent =
     `${when} · ${t.passengers ?? "?"} ${t.passengers === 1 ? "passenger" : "passengers"}${t.trip_type ? ` · ${t.trip_type}` : ""}`;
 
+  const back = document.getElementById("returnLeg");
+  if (t.return_at) {
+    const at = new Date(t.return_at).toLocaleString(undefined, {
+      weekday: "long", hour: "numeric", minute: "2-digit",
+    });
+    back.innerHTML = `<span class="lab">Coming back</span> Your captain collects you again at ${esc(at)}`;
+    back.hidden = false;
+  } else {
+    back.hidden = true;
+  }
+
   const boat = document.getElementById("boat");
   if (t.boat) {
     boat.innerHTML = `<span class="lab">Your boat</span> ${esc(t.boat)}${t.captain ? ` · Capt. ${esc(t.captain)}` : ""}`;

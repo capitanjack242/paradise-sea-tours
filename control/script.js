@@ -899,6 +899,11 @@ function customerConfirmMessage(b) {
   const lines = [`Hi ${b.contact_name || "there"}! This is Paradise Sea Tours confirming your booking:`];
   lines.push(`${b.pickup || "?"} → ${b.destination || "?"}`);
   if (when) lines.push(when);
+  if (b.return_at) {
+    lines.push(`Back at ${new Date(b.return_at).toLocaleString(undefined, {
+      hour: "numeric", minute: "2-digit",
+    })}`);
+  }
   if (b.boats?.name) {
     lines.push(`Boat: ${b.boats.name}${b.boats.captain_name ? ` (Capt. ${b.boats.captain_name})` : ""}`);
   }
@@ -1009,6 +1014,12 @@ function cardHtml(b) {
       <div class="card-trip">
         <div class="trip-route">${esc(b.pickup || "—")} <span class="arrow">→</span> ${esc(b.destination || "—")}</div>
         <div class="trip-meta">${when} · ${b.passengers ?? "?"} pax · ${esc(b.trip_type || "")}</div>
+        ${b.return_at
+          ? `<div class="return-leg">↩ Collect again ${esc(new Date(b.return_at).toLocaleString(undefined, {
+               weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }))}</div>`
+          : b.trip_type === "Round trip"
+          ? `<div class="return-leg missing">↩ Round trip with no return time — check with the customer</div>`
+          : ""}
         ${b.notes ? `<div class="card-notes">${esc(b.notes)}</div>` : ""}
         ${(() => {
           const waiting = awaitingReply(b.id);

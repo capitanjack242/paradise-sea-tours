@@ -208,6 +208,9 @@ h1{font-family:'Baloo 2','Inter',sans-serif;margin:0}
 .trip-route{font-weight:600;font-size:1.02rem}
 .trip-route .arrow{color:var(--muted);margin:0 .2rem}
 .trip-meta{color:var(--muted);font-size:.85rem;margin-top:.15rem}
+.return-leg{margin-top:.25rem;font-size:.85rem;font-weight:600;color:var(--deep)}
+.return-leg.missing{color:#8a6d00;background:#fff8e1;border-radius:6px;padding:.25em .5em;
+  display:inline-block}
 .card-notes{margin-top:.5rem;font-size:.88rem;font-style:italic;color:var(--ink);
   background:var(--foam);border-radius:8px;padding:.5em .7em}
 .wa-link{display:inline-block;margin-top:.5rem;color:var(--ok);font-weight:600;

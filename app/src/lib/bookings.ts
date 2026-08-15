@@ -103,22 +103,18 @@ export type NewBooking = {
  * fare is confirmed by dispatch before the passenger ever pays.
  */
 export async function createBooking(b: NewBooking): Promise<void> {
-  const notes = [
-    b.notes?.trim(),
-    b.returnAt ? `Return leg: ${b.returnAt.toLocaleString()}` : null,
-  ]
-    .filter(Boolean)
-    .join(" · ");
-
   const { error } = await supabase.from("bookings").insert({
     contact_name: b.contactName,
     contact_phone: b.contactPhone,
     pickup: b.pickup,
     destination: b.destination,
     scheduled_at: b.scheduledAt.toISOString(),
+    // Its own column, not a line of prose in the notes — this is what decides
+    // whether a captain goes back for someone.
+    return_at: b.returnAt ? b.returnAt.toISOString() : null,
     passengers: b.passengers,
     trip_type: b.tripType,
-    notes: notes || null,
+    notes: b.notes?.trim() || null,
   });
   if (error) throw error;
 }
