@@ -29,6 +29,16 @@ jobs:
           cp -r web/. _site/
           mkdir -p _site/control
           cp -r control/. _site/control/
+
+          # Stamp our own CSS/JS with the commit hash so a browser can never
+          # serve a stale stylesheet or script after a deploy. Done here rather
+          # than in the source files so nobody has to remember to bump it.
+          V="${GITHUB_SHA::8}"
+          find _site -name '*.html' -print0 | xargs -0 sed -i \
+            -e "s|href=\"styles\.css\"|href=\"styles.css?v=$V\"|g" \
+            -e "s|src=\"script\.js\"|src=\"script.js?v=$V\"|g"
+          echo "Stamped assets with v=$V"
+          grep -o 'styles\.css?v=[a-f0-9]*' _site/index.html | head -1
       - uses: actions/upload-pages-artifact@v3
         with:
           path: _site
