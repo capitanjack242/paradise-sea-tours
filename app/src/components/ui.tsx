@@ -65,14 +65,20 @@ export function PickerField({
   );
 }
 
-/** Two-option toggle — one way vs round trip. */
+/**
+ * Trip-type toggle. `labels` lets a long stored value ("Private charter (whole
+ * boat)") show as something that fits a phone ("Charter") without changing what
+ * gets saved.
+ */
 export function Segmented<T extends string>({
   value,
   options,
+  labels,
   onChange,
 }: {
   value: T;
   options: readonly T[];
+  labels?: Partial<Record<T, string>>;
   onChange: (v: T) => void;
 }) {
   return (
@@ -83,7 +89,9 @@ export function Segmented<T extends string>({
           style={[s.segItem, o === value && s.segItemOn]}
           onPress={() => onChange(o)}
         >
-          <Text style={[s.segText, o === value && s.segTextOn]}>{o}</Text>
+          <Text style={[s.segText, o === value && s.segTextOn]} numberOfLines={1}>
+            {labels?.[o] ?? o}
+          </Text>
         </Pressable>
       ))}
     </View>

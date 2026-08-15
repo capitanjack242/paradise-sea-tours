@@ -7,9 +7,10 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   View,
 } from "react-native";
-import { PickerField, Segmented, Stepper } from "../components/ui";
+import { PickerField, Segmented, Stepper, Label } from "../components/ui";
 import SignInSheet from "../components/SignInSheet";
 import { fetchProfileName, prettyPhone, useSession } from "../lib/auth";
 import {
@@ -58,6 +59,7 @@ export default function BookScreen() {
   const [outTime, setOutTime] = React.useState<string>("10:30 AM");
   const [backTime, setBackTime] = React.useState<string>("4:00 PM");
   const [passengers, setPassengers] = React.useState(2);
+  const [notes, setNotes] = React.useState("");
   const { session } = useSession();
   const [profileName, setProfileName] = React.useState<string | null>(null);
   const [showSignIn, setShowSignIn] = React.useState(false);
@@ -114,6 +116,7 @@ export default function BookScreen() {
         tripType,
         contactName,
         contactPhone,
+        notes: notes.trim() || undefined,
       });
       Alert.alert(
         "Request sent",
@@ -154,7 +157,8 @@ export default function BookScreen() {
 
         <Segmented<TripType>
           value={tripType}
-          options={["One way", "Round trip"]}
+          options={["One way", "Round trip", "Private charter (whole boat)"]}
+          labels={{ "Private charter (whole boat)": "Charter" }}
           onChange={setTripType}
         />
 
@@ -176,6 +180,18 @@ export default function BookScreen() {
               <PickerField label="Come back" value={backTime} options={TIMES} onChange={setBackTime} />
             </View>
           )}
+        </View>
+
+        <View>
+          <Label>Anything else?</Label>
+          <TextInput
+            style={[s.input, s.notesInput]}
+            value={notes}
+            onChangeText={setNotes}
+            placeholder="Coolers, bags, special stops, cruise ship name…"
+            placeholderTextColor={colors.muted}
+            multiline
+          />
         </View>
 
         <View style={s.fare}>
@@ -267,6 +283,7 @@ const s = StyleSheet.create({
     color: colors.ink,
   },
   signedIn: { fontSize: 11, color: colors.muted, textAlign: "center", marginTop: 2 },
+  notesInput: { minHeight: 58, textAlignVertical: "top", fontWeight: "500" },
   fare: { borderRadius: radius.md, padding: 14, backgroundColor: colors.deep, marginTop: 4 },
   fareRow: { flexDirection: "row", alignItems: "baseline", justifyContent: "space-between" },
   fareTotal: { fontSize: 26, fontWeight: "800", color: colors.white },

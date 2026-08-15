@@ -248,14 +248,10 @@
       <p class="booking-call">Prefer to talk? <a href="#" data-call>Give us a call</a>.</p>
     </div>
     <form class="booking-form" id="bookingForm" novalidate>
-      <div class="row">
-        <label>Name<input name="name" type="text" required></label>
-        <label>Mobile number<input name="phone" type="tel" placeholder="+1 242 555 0100" required>
-          <small class="field-hint">We send your confirmation and payment link here — include your country code.</small>
-        </label>
-      </div>
-      <div class="row">
-        <label>Pickup
+      <!-- Step 1 — the trip. Same order as the app: where, what kind, when,
+           how many, then the fare, before anyone is asked who they are. -->
+      <div id="tripStep">
+        <label>Pick you up at
           <select name="pickup" required>
             <option value="" disabled selected>Select pickup…</option>
             <option>Nassau Cruise Port</option>
@@ -279,7 +275,7 @@
             <option>Other (see notes)</option>
           </select>
         </label>
-        <label>Destination
+        <label>Going to
           <select name="destination" required>
             <option value="" disabled selected>Select destination…</option>
             <option>Nassau Cruise Port</option>
@@ -303,30 +299,57 @@
             <option>Other / Custom (see notes)</option>
           </select>
         </label>
-      </div>
-      <div class="row">
-        <label>Date<input name="date" type="date" required></label>
-        <label>Time<input name="time" type="time" required></label>
-        <label>Passengers<input name="guests" type="number" min="1" max="12" value="2" required></label>
-      </div>
-      <label>Trip type
-        <select name="triptype">
-          <option>One way</option>
-          <option>Round trip</option>
-          <option>Private charter (whole boat)</option>
-        </select>
-      </label>
-      <label>Anything else?<textarea name="notes" rows="3" placeholder="Coolers, bags, special stops, cruise ship name…"></textarea></label>
-      <div id="phoneConfirm" class="phone-confirm" hidden>
-        <p class="pc-lead">We'll reach you at</p>
-        <p class="pc-number" id="pcNumber"></p>
-        <p class="pc-note">Your booking confirmation and payment link go to this number. Is it right?</p>
-        <div class="pc-actions">
-          <button type="button" class="btn btn-primary" id="pcYes">Yes, that's my number</button>
-          <button type="button" class="btn btn-ghost-line" id="pcEdit">Change number</button>
+
+        <div class="seg" id="tripSeg" role="group" aria-label="Trip type">
+          <button type="button" class="seg-item is-on" data-trip="One way">One way</button>
+          <button type="button" class="seg-item" data-trip="Round trip">Round trip</button>
+          <button type="button" class="seg-item" data-trip="Private charter (whole boat)">Charter</button>
         </div>
+        <input type="hidden" name="triptype" value="One way">
+
+        <div class="row">
+          <label>Day<input name="date" type="date" required></label>
+          <label>Passengers<input name="guests" type="number" min="1" max="12" value="2" required></label>
+        </div>
+        <div class="row">
+          <label>Go out<input name="time" type="time" value="10:30" required></label>
+          <label id="returnWrap" hidden>Come back<input name="returntime" type="time" value="16:00"></label>
+        </div>
+
+        <label>Anything else?<textarea name="notes" rows="2" placeholder="Coolers, bags, special stops, cruise ship name…"></textarea></label>
+
+        <div class="fare-box" id="fareBox">
+          <div class="fare-row">
+            <span class="fare-total" id="fareTotal">—</span>
+            <span class="fare-math" id="fareMath"></span>
+          </div>
+          <p class="fare-note" id="fareNote">Pick your route and we'll show the price.</p>
+        </div>
+
+        <button type="button" class="btn btn-primary btn-block btn-lg" id="requestBtn">Request a boat</button>
       </div>
-      <button type="submit" class="btn btn-primary btn-block btn-lg" id="submitBtn">Request booking</button>
+
+      <!-- Step 2 — who's taking it. Mirrors the app's sign-in sheet: only asked
+           once the trip is chosen, with the trip held visibly above it. -->
+      <div id="identityStep" hidden>
+        <div class="holding" id="holdingText"></div>
+        <label>Your name<input name="name" type="text" autocomplete="name"></label>
+        <label>Mobile number<input name="phone" type="tel" placeholder="+1 242 555 0100" autocomplete="tel">
+          <small class="field-hint">So we can confirm your boat, and your captain can reach you on the day.</small>
+        </label>
+        <div id="phoneConfirm" class="phone-confirm" hidden>
+          <p class="pc-lead">We'll reach you at</p>
+          <p class="pc-number" id="pcNumber"></p>
+          <p class="pc-note">Your booking confirmation and payment details go to this number. Is it right?</p>
+          <div class="pc-actions">
+            <button type="button" class="btn btn-primary" id="pcYes">Yes, that's my number</button>
+            <button type="button" class="btn btn-ghost-line" id="pcEdit">Change number</button>
+          </div>
+        </div>
+        <button type="submit" class="btn btn-primary btn-block btn-lg" id="submitBtn">Continue</button>
+        <button type="button" class="btn btn-ghost-line btn-block" id="backBtn">Back to trip</button>
+      </div>
+
       <p class="form-status" id="formStatus" role="status"></p>
     </form>
   </div>

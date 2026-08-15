@@ -14,7 +14,7 @@ export type Service = {
   est_minutes: number | null;
 };
 
-export type TripType = "One way" | "Round trip";
+export type TripType = "One way" | "Round trip" | "Private charter (whole boat)";
 
 /** The docks a passenger can be picked up from or dropped at. */
 export const LOCATIONS = [
