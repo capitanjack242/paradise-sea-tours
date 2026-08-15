@@ -134,7 +134,7 @@ function setLiveStatus(state) {
 async function loadBoats() {
   const { data, error } = await db
     .from("boats")
-    .select("id, name, captain_name, captain_whatsapp")
+    .select("id, name, captain_name, captain_whatsapp, owner_id")
     .eq("is_active", true)
     .order("name");
   if (error) {
@@ -158,7 +158,7 @@ document.getElementById("refreshBtn").addEventListener("click", loadBookings);
 async function loadBookings() {
   const { data, error } = await db
     .from("bookings")
-    .select("*, boats(name, captain_name, captain_whatsapp)")
+    .select("*, boats(name, captain_name, captain_whatsapp, owner_id)")
     .order("created_at", { ascending: false });
   if (error) {
     console.error("load bookings failed:", error);
@@ -191,7 +191,14 @@ function renderBookings(all) {
   bookingsBody.querySelectorAll("select.boat-select").forEach((sel) => {
     sel.addEventListener("change", async () => {
       const boatId = sel.value || null;
-      await updateBooking(sel.dataset.id, { assigned_boat_id: boatId }, sel.closest(".booking-card"));
+      // Assigning the boat also hands the trip to its captain — that link is
+      // what puts it on the captain's own board for them to close out.
+      const boat = boatId ? boatsList.find((x) => x.id === boatId) : null;
+      await updateBooking(
+        sel.dataset.id,
+        { assigned_boat_id: boatId, assigned_captain_id: boat?.owner_id ?? null },
+        sel.closest(".booking-card")
+      );
       const b = (window.__allBookings || []).find((x) => x.id === sel.dataset.id);
       if (b) {
         b.boats = boatId ? boatsList.find((x) => x.id === boatId) || null : null;
@@ -230,11 +237,6 @@ function renderBookings(all) {
       }
       cardMessage(card, "");
       updateBooking(btn.dataset.id, { status: "confirmed" }, card);
-    });
-  });
-  bookingsBody.querySelectorAll("button.btn-complete-row").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      updateBooking(btn.dataset.id, { status: "completed" }, btn.closest(".booking-card"));
     });
   });
   bookingsBody.querySelectorAll("textarea.dispatch-notes-input").forEach((ta) => {
@@ -304,15 +306,24 @@ function cardHtml(b) {
       : b.status === "completed"
       ? `<div class="status-banner sb-completed">✓ Trip completed</div>`
       : b.status === "confirmed"
-      ? `<div class="status-banner sb-confirmed">✓ Confirmed — boat is promised to this customer</div>`
+      ? `<div class="status-banner sb-confirmed">✓ Confirmed — ${esc(b.boats?.captain_name || "the captain")} has this trip</div>`
+      : "";
+
+  // A boat with no login can never close its own trips out, and dispatch has no
+  // Complete button to fall back on — so say so at the point of assigning.
+  const captainLoginMissing =
+    b.assigned_boat_id && !b.boats?.owner_id
+      ? `<p class="no-login-warn">⚠ ${esc(b.boats?.captain_name || "This captain")} has no login yet — they won't be able to mark the trip finished.</p>`
       : "";
 
   // A booking moves requested → confirmed → completed. Show one next step at a
   // time so it's never a guess which button applies.
   const finished = b.status === "completed" || b.status === "cancelled";
   const confirmed = b.status === "confirmed" || b.status === "in_progress";
+  // Closing the trip out is the captain's call — they're the one who knows the
+  // passengers are off the boat — so dispatch has no Complete button.
   const nextAction = confirmed
-    ? `<button type="button" class="btn-complete-row" data-id="${b.id}">✓ Trip finished</button>`
+    ? `<span class="awaiting-captain">Waiting on the captain to close it out</span>`
     : `<button type="button" class="btn-confirm-row" data-id="${b.id}">✓ Confirm this boat</button>`;
   const footer = finished
     ? ""
@@ -358,6 +369,7 @@ function cardHtml(b) {
           ${b.boats?.captain_whatsapp
             ? `<a class="wa-link" href="https://wa.me/${b.boats.captain_whatsapp.replace(/\D/g, "")}" target="_blank" rel="noopener">💬 ${esc(b.boats.captain_name || "")}</a>`
             : ""}
+          ${captainLoginMissing}
           <div class="fare-row">
             <label>Fare $</label>
             <input type="number" step="0.01" min="0" class="price-input" data-id="${b.id}" value="${price}" placeholder="—">

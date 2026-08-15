@@ -23,12 +23,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/configure-pages@v5
-      - name: Assemble site (web/ at root, control/ under /control/)
+      - name: Assemble site (web/ at root, control/ and captain/ under their paths)
         run: |
           mkdir -p _site
           cp -r web/. _site/
           mkdir -p _site/control
           cp -r control/. _site/control/
+          mkdir -p _site/captain
+          cp -r captain/. _site/captain/
 
           # Stamp our own CSS/JS with the commit hash so a browser can never
           # serve a stale stylesheet or script after a deploy. Done here rather

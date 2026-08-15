@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Paradise Sea Tours — Captain</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%E2%9A%93%3C/text%3E%3C/svg%3E">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="loginView" class="login-wrap">
+  <form id="loginForm" class="login-card">
+    <h1 class="brand">Paradise<strong>Sea Tours</strong></h1>
+    <p class="muted">Captain sign in</p>
+    <label>Email<input id="email" type="email" required autocomplete="username" autocapitalize="none"></label>
+    <label>Password<input id="password" type="password" required autocomplete="current-password"></label>
+    <button type="submit" class="btn btn-primary btn-block">Sign in</button>
+    <p id="loginError" class="err"></p>
+  </form>
+</div>
+
+<!-- TRIPS -->
+<div id="tripsView" class="wrap" style="display:none">
+  <header class="topbar">
+    <h1 class="brand">Paradise<strong>Sea Tours</strong></h1>
+    <div class="topbar-right">
+      <span id="liveStatus" class="live-status"></span>
+      <button id="logoutBtn" class="btn btn-ghost btn-sm">Sign out</button>
+    </div>
+  </header>
+
+  <div class="whoami-row">
+    <span id="whoami" class="muted"></span>
+    <button id="refreshBtn" class="btn btn-ghost btn-sm">Refresh</button>
+  </div>
+
+  <div class="tabs" id="tabs">
+    <button data-tab="today" class="tab active">Today</button>
+    <button data-tab="upcoming" class="tab">Coming up</button>
+    <button data-tab="done" class="tab">Finished</button>
+  </div>
+
+  <div id="tripsBody" class="trips"></div>
+  <div id="emptyState" class="empty" style="display:none"></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="script.js"></script>
+</body>
+</html>

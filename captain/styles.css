@@ -1,0 +1,93 @@
+/* Captain's board — read at arm's length, on a phone, in the sun, one-handed.
+   Bigger type and bigger targets than dispatch, and nothing that needs a mouse. */
+:root{
+  --navy:#06243b; --deep:#0a3b5c; --teal:#0bbcd6; --aqua:#5fe1e8; --foam:#f4fbfd;
+  --ink:#0f2733; --muted:#5b7688; --line:#dbe8ef; --danger:#d6453a; --ok:#12a05a;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;background:var(--foam);color:var(--ink);
+  font:16px/1.5 Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+  -webkit-text-size-adjust:100%}
+.brand{font-family:'Baloo 2',system-ui,sans-serif;font-weight:800;font-size:1.15rem;
+  color:var(--navy);margin:0;letter-spacing:-.02em}
+.brand strong{color:var(--teal);font-weight:800}
+.muted{color:var(--muted);font-size:.85rem}
+.err{color:var(--danger);font-size:.9rem;margin:.6rem 0 0;min-height:1.2em}
+
+/* ── login ── */
+.login-wrap{min-height:100dvh;display:grid;place-items:center;padding:1.2rem}
+.login-card{background:#fff;border:1px solid var(--line);border-radius:14px;
+  padding:1.6rem;width:100%;max-width:380px;box-shadow:0 6px 24px rgba(6,36,59,.07)}
+.login-card label{display:block;margin:1rem 0 0;font-size:.8rem;font-weight:700;
+  text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
+.login-card input{width:100%;font:inherit;font-size:1.05rem;margin-top:.3rem;
+  padding:.7em .7em;border:1px solid var(--line);border-radius:8px;background:var(--foam)}
+.login-card input:focus{outline:2px solid var(--aqua);border-color:var(--teal)}
+
+.btn{font:inherit;font-weight:700;border-radius:9px;cursor:pointer;border:1px solid transparent}
+.btn-primary{background:var(--teal);color:#fff;padding:.8em 1em;font-size:1.05rem}
+.btn-primary:hover{background:var(--deep)}
+.btn-block{display:block;width:100%;margin-top:1.3rem}
+.btn-ghost{background:#fff;border-color:var(--line);color:var(--ink)}
+.btn-sm{font-size:.85rem;padding:.45em .8em}
+
+/* ── shell ── */
+.wrap{max-width:640px;margin:0 auto;padding:0 .9rem 3rem}
+.topbar{display:flex;justify-content:space-between;align-items:center;gap:.6rem;
+  padding:.9rem 0 .5rem;position:sticky;top:0;background:var(--foam);z-index:5}
+.topbar-right{display:flex;align-items:center;gap:.6rem}
+.whoami-row{display:flex;justify-content:space-between;align-items:center;
+  padding-bottom:.7rem;border-bottom:1px solid var(--line)}
+.live-status{font-size:.75rem;font-weight:700}
+.live-status.live{color:var(--ok)}
+.live-status.polling{color:#b8860b}
+.live-status.off{display:none}
+
+.tabs{display:flex;gap:.4rem;padding:.8rem 0}
+.tab{flex:1;font:inherit;font-weight:700;font-size:.9rem;padding:.6em .3em;cursor:pointer;
+  background:#fff;border:1px solid var(--line);border-radius:999px;color:var(--muted)}
+.tab.active{background:var(--navy);border-color:var(--navy);color:#fff}
+
+.empty{padding:3rem 1rem;text-align:center;color:var(--muted)}
+
+/* ── trip cards ── */
+.trips{display:flex;flex-direction:column;gap:.9rem}
+.trip{background:#fff;border:1px solid var(--line);border-radius:14px;padding:1rem;
+  box-shadow:0 2px 10px rgba(6,36,59,.05)}
+.trip.saving{opacity:.55}
+.trip.is-done{opacity:.72}
+.trip-when{font-size:.85rem;font-weight:700;color:var(--teal);text-transform:uppercase;
+  letter-spacing:.04em}
+.trip-route{font-size:1.15rem;font-weight:700;line-height:1.3;margin:.2rem 0 .3rem}
+.trip-route .arrow{color:var(--muted);font-weight:500}
+.trip-meta{font-size:.92rem;color:var(--muted)}
+.trip-notes{margin-top:.5rem;font-size:.9rem;background:var(--foam);border-radius:8px;
+  padding:.5em .7em}
+
+.trip-pax{display:flex;align-items:center;justify-content:space-between;gap:.6rem;
+  margin-top:.8rem;padding-top:.8rem;border-top:1px solid var(--line)}
+.pax-name{font-weight:700}
+.call{text-decoration:none;font-weight:700;color:#fff;background:var(--deep);
+  padding:.55em 1.1em;border-radius:999px;white-space:nowrap}
+.call:hover{background:var(--navy)}
+
+.trip-msg{margin:.7rem 0 0;font-size:.9rem;font-weight:600;color:var(--danger);
+  background:#fdecea;border-radius:8px;padding:.5em .7em}
+
+/* The main action, sized so it's hard to miss and hard to hit by accident. */
+.btn-done{width:100%;margin-top:.9rem;font:inherit;font-weight:800;font-size:1.05rem;
+  padding:.9em 1em;border-radius:10px;border:none;cursor:pointer;
+  background:var(--ok);color:#fff}
+.btn-done:hover{filter:brightness(.94)}
+.confirm-row{display:flex;align-items:center;gap:.5rem;margin-top:.9rem;flex-wrap:wrap}
+.confirm-q{font-weight:700;flex:1;min-width:100%}
+.btn-undo,.btn-really-done{flex:1;font:inherit;font-weight:700;font-size:1rem;
+  padding:.8em .6em;border-radius:10px;cursor:pointer}
+.btn-undo{background:#fff;border:1px solid var(--line);color:var(--muted)}
+.btn-really-done{background:var(--ok);border:1px solid var(--ok);color:#fff}
+
+.done-banner{margin-top:.9rem;text-align:center;font-weight:700;color:var(--ok);
+  background:#eafaf1;border-radius:9px;padding:.7em}
+.waiting-banner{margin-top:.9rem;text-align:center;font-weight:600;color:var(--muted);
+  background:var(--foam);border-radius:9px;padding:.7em;font-size:.9rem}
