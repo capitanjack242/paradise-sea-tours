@@ -100,7 +100,14 @@ function refreshUnlessTyping() {
   // short timer rather than waiting on a blur/focusout event — if that event
   // never fires the deferred reload would be stuck and the board would go
   // stale without anyone noticing.
-  if (bookingsBody.contains(document.activeElement)) {
+  //
+  // Only fields holding unsaved text count. A button keeps focus after it's
+  // clicked, so treating "anything focused" as typing meant every button press
+  // deferred the reload forever and the board never showed the result.
+  const active = document.activeElement;
+  const typing =
+    active && bookingsBody.contains(active) && active.matches("input, textarea, select");
+  if (typing) {
     pendingRefresh = true;
     clearTimeout(refreshTimer);
     refreshTimer = setTimeout(() => refreshUnlessTyping(), 1500);
@@ -209,6 +216,22 @@ function renderBookings(all) {
       updateBooking(btn.dataset.id, { status: "cancelled", cancellation_reason: reason }, card);
     });
   });
+  // Confirming is the promise to the customer, so it needs the two things the
+  // confirmation actually tells them: which boat, and what it costs.
+  bookingsBody.querySelectorAll("button.btn-confirm-row").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const card = btn.closest(".booking-card");
+      const b = (window.__allBookings || []).find((x) => x.id === btn.dataset.id);
+      if (!b?.assigned_boat_id) {
+        return cardMessage(card, "Pick the boat first — the customer needs to know who's collecting them.");
+      }
+      if (b.quoted_price_cents == null) {
+        return cardMessage(card, "Put the fare in first — it goes in the confirmation.");
+      }
+      cardMessage(card, "");
+      updateBooking(btn.dataset.id, { status: "confirmed" }, card);
+    });
+  });
   bookingsBody.querySelectorAll("button.btn-complete-row").forEach((btn) => {
     btn.addEventListener("click", () => {
       updateBooking(btn.dataset.id, { status: "completed" }, btn.closest(".booking-card"));
@@ -231,7 +254,19 @@ async function updateBooking(id, patch, cardEl) {
   } else {
     const b = (window.__allBookings || []).find((x) => x.id === id);
     if (b) Object.assign(b, patch);
+    // A status change moves the card between Active / Completed / Cancelled and
+    // changes which buttons apply, so redraw straight away instead of waiting
+    // on the realtime round trip.
+    if (patch.status) renderBookings(window.__allBookings || []);
   }
+}
+
+/** Inline note on one card — used when an action needs something filled in first. */
+function cardMessage(card, text) {
+  const el = card?.querySelector(".card-msg");
+  if (!el) return;
+  el.textContent = text || "";
+  el.hidden = !text;
 }
 
 // ── rendering helpers ────────────────────────────────────────────────────
@@ -267,8 +302,28 @@ function cardHtml(b) {
     b.status === "cancelled"
       ? `<div class="status-banner sb-cancelled">✗ Cancelled${b.cancellation_reason ? ` — ${esc(b.cancellation_reason)}` : ""}</div>`
       : b.status === "completed"
-      ? `<div class="status-banner sb-completed">✓ Completed</div>`
+      ? `<div class="status-banner sb-completed">✓ Trip completed</div>`
+      : b.status === "confirmed"
+      ? `<div class="status-banner sb-confirmed">✓ Confirmed — boat is promised to this customer</div>`
       : "";
+
+  // A booking moves requested → confirmed → completed. Show one next step at a
+  // time so it's never a guess which button applies.
+  const finished = b.status === "completed" || b.status === "cancelled";
+  const confirmed = b.status === "confirmed" || b.status === "in_progress";
+  const nextAction = confirmed
+    ? `<button type="button" class="btn-complete-row" data-id="${b.id}">✓ Trip finished</button>`
+    : `<button type="button" class="btn-confirm-row" data-id="${b.id}">✓ Confirm this boat</button>`;
+  const footer = finished
+    ? ""
+    : `<p class="card-msg" hidden></p>
+      <div class="card-footer">
+        <div class="cancel-group">
+          <input type="text" class="cancel-reason" placeholder="Cancel reason (required)">
+          <button type="button" class="btn-cancel-row" data-id="${b.id}">Cancel</button>
+        </div>
+        ${nextAction}
+      </div>`;
 
   return `
     <article class="booking-card">
@@ -287,7 +342,7 @@ function cardHtml(b) {
         <div class="trip-meta">${when} · ${b.passengers ?? "?"} pax · ${esc(b.trip_type || "")}</div>
         ${b.notes ? `<div class="card-notes">${esc(b.notes)}</div>` : ""}
         ${b.contact_phone
-          ? `<a class="wa-link" href="https://wa.me/${b.contact_phone.replace(/\D/g, "")}?text=${encodeURIComponent(customerConfirmMessage(b))}" target="_blank" rel="noopener">💬 Message customer</a>`
+          ? `<a class="wa-link${confirmed ? " wa-send" : ""}" href="https://wa.me/${b.contact_phone.replace(/\D/g, "")}?text=${encodeURIComponent(customerConfirmMessage(b))}" target="_blank" rel="noopener">💬 ${confirmed ? "Send the boat details" : "Message customer"}</a>`
           : ""}
       </div>
 
@@ -316,13 +371,7 @@ function cardHtml(b) {
           placeholder="Internal notes — call attempts, special arrangements, etc.">${esc(b.dispatch_notes || "")}</textarea>
       </div>
 
-      <div class="card-footer">
-        <div class="cancel-group">
-          <input type="text" class="cancel-reason" placeholder="Cancel reason (required)">
-          <button type="button" class="btn-cancel-row" data-id="${b.id}">Cancel</button>
-        </div>
-        <button type="button" class="btn-complete-row" data-id="${b.id}">✓ Complete</button>
-      </div>
+      ${footer}
     </article>`;
 }
 
