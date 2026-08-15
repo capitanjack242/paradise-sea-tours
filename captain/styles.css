@@ -76,6 +76,14 @@ body{margin:0;background:var(--foam);color:var(--ink);
   background:#fdecea;border-radius:8px;padding:.5em .7em}
 
 /* The main action, sized so it's hard to miss and hard to hit by accident. */
+/* Getting under way is a plain single tap — it isn't final and pressing it a
+   minute early costs nothing. Finishing a run is the one that asks twice. */
+.btn-aboard{width:100%;margin-top:.9rem;font:inherit;font-weight:800;font-size:1.05rem;
+  padding:.9em 1em;border-radius:10px;border:none;cursor:pointer;
+  background:var(--deep);color:#fff}
+.btn-aboard:hover{background:var(--navy)}
+.trip.is-aboard{border-color:var(--teal);box-shadow:0 0 0 2px rgba(11,188,214,.15)}
+.aboard-tag{color:var(--ok)}
 .btn-done{width:100%;margin-top:.9rem;font:inherit;font-weight:800;font-size:1.05rem;
   padding:.9em 1em;border-radius:10px;border:none;cursor:pointer;
   background:var(--ok);color:#fff}

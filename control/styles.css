@@ -130,6 +130,7 @@ h1{font-family:'Baloo 2','Inter',sans-serif;margin:0}
 .status-banner.sb-cancelled{background:#fdecea;color:var(--danger)}
 .status-banner.sb-completed{background:#eafaf1;color:var(--ok)}
 .status-banner.sb-confirmed{background:#e8f4fd;color:var(--deep)}
+.status-banner.sb-underway{background:#e0f7fa;color:#0a7a8c}
 
 .card-controls{padding:.9rem 0;border-top:1px solid var(--line);
   border-bottom:1px solid var(--line);margin-bottom:.9rem}

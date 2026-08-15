@@ -145,6 +145,9 @@ function renderTrips(all) {
     currentTab === "today" ? "Nothing on today. Dispatch will send jobs here." :
     "Nothing booked ahead yet.";
 
+  tripsBody.querySelectorAll("button.btn-aboard").forEach((btn) => {
+    btn.addEventListener("click", () => setStatus(btn.dataset.id, "in_progress", btn.closest(".trip")));
+  });
   tripsBody.querySelectorAll("button.btn-done").forEach((btn) => {
     btn.addEventListener("click", () => confirmDone(btn));
   });
@@ -156,7 +159,7 @@ function renderTrips(all) {
     });
   });
   tripsBody.querySelectorAll("button.btn-really-done").forEach((btn) => {
-    btn.addEventListener("click", () => markFinished(btn.dataset.id, btn.closest(".trip")));
+    btn.addEventListener("click", () => setStatus(btn.dataset.id, "completed", btn.closest(".trip")));
   });
 }
 
@@ -168,9 +171,9 @@ function confirmDone(btn) {
   card.querySelector(".confirm-row").hidden = false;
 }
 
-async function markFinished(id, card) {
+async function setStatus(id, status, card) {
   card.classList.add("saving");
-  const { error } = await db.from("bookings").update({ status: "completed" }).eq("id", id);
+  const { error } = await db.from("bookings").update({ status }).eq("id", id);
   card.classList.remove("saving");
   if (error) {
     const msg = card.querySelector(".trip-msg");
@@ -179,7 +182,7 @@ async function markFinished(id, card) {
     return;
   }
   const b = (window.__trips || []).find((x) => x.id === id);
-  if (b) b.status = "completed";
+  if (b) b.status = status;
   renderTrips(window.__trips || []);
 }
 
@@ -192,11 +195,12 @@ function tripHtml(b) {
     : "No time given";
   const fare = b.quoted_price_cents != null ? `$${(b.quoted_price_cents / 100).toFixed(2).replace(/\.00$/, "")}` : "—";
   const done = b.status === "completed";
-  const waiting = b.status !== "confirmed" && b.status !== "in_progress" && !done;
+  const aboard = b.status === "in_progress";
+  const waiting = b.status !== "confirmed" && !aboard && !done;
 
   return `
-    <article class="trip${done ? " is-done" : ""}">
-      <div class="trip-when">${when}</div>
+    <article class="trip${done ? " is-done" : ""}${aboard ? " is-aboard" : ""}">
+      <div class="trip-when">${when}${aboard ? ` <span class="aboard-tag">• Aboard</span>` : ""}</div>
       <div class="trip-route">${esc(b.pickup || "—")} <span class="arrow">→</span> ${esc(b.destination || "—")}</div>
       <div class="trip-meta">${b.passengers ?? "?"} passengers · ${esc(b.trip_type || "")} · ${fare}</div>
       ${b.notes ? `<div class="trip-notes">${esc(b.notes)}</div>` : ""}
@@ -212,12 +216,14 @@ function tripHtml(b) {
         ? `<div class="done-banner">✓ Finished</div>`
         : waiting
         ? `<div class="waiting-banner">Not confirmed by the office yet</div>`
-        : `<button type="button" class="btn-done" data-id="${b.id}">Passengers dropped off</button>
+        : aboard
+        ? `<button type="button" class="btn-done" data-id="${b.id}">Passengers dropped off</button>
            <div class="confirm-row" hidden>
-             <span class="confirm-q">Trip finished?</span>
-             <button type="button" class="btn-undo">No</button>
+             <span class="confirm-q">Everyone off the boat?</span>
+             <button type="button" class="btn-undo">Not yet</button>
              <button type="button" class="btn-really-done" data-id="${b.id}">Yes, finished</button>
-           </div>`}
+           </div>`
+        : `<button type="button" class="btn-aboard" data-id="${b.id}">Passengers aboard</button>`}
     </article>`;
 }
 

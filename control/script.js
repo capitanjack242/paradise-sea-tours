@@ -496,6 +496,8 @@ function cardHtml(b) {
       ? `<div class="status-banner sb-cancelled">✗ Cancelled${b.cancellation_reason ? ` — ${esc(b.cancellation_reason)}` : ""}</div>`
       : b.status === "completed"
       ? `<div class="status-banner sb-completed">✓ Trip completed</div>`
+      : b.status === "in_progress"
+      ? `<div class="status-banner sb-underway">⛵ Under way — passengers are aboard</div>`
       : b.status === "confirmed"
       ? `<div class="status-banner sb-confirmed">✓ Confirmed — ${esc(b.boats?.captain_name || "the captain")} has this trip</div>`
       : "";
@@ -514,7 +516,9 @@ function cardHtml(b) {
   // Closing the trip out is the captain's call — they're the one who knows the
   // passengers are off the boat — so dispatch has no Complete button.
   const nextAction = confirmed
-    ? `<span class="awaiting-captain">Waiting on the captain to close it out</span>`
+    ? `<span class="awaiting-captain">${b.status === "in_progress"
+        ? "On the water — the captain closes it out"
+        : "Waiting on the captain to pick them up"}</span>`
     : `<button type="button" class="btn-confirm-row" data-id="${b.id}">✓ Confirm this boat</button>`;
   // Once a trip is closed out, the boat and the fare are a record of what
   // happened — that fare is what the captain is owed on Friday — so they read
