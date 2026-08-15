@@ -220,10 +220,8 @@ async function loadBookings() {
 /* ── Friday payout ────────────────────────────────────────────────────────
    Boats are paid every Friday, so a pay week runs Friday to Thursday and is
    settled on the Friday straight after it closes. Nothing is ever paid before
-   it's earned, and there's no gap between one week and the next.
-
-   Change PAY_WEEK_ENDS_ON if the real week runs differently — it's the only
-   place the boundary is decided. */
+   it's earned, and there's no gap between one week and the next. Confirmed
+   with Jack as how the business actually runs, not an assumption. */
 const PAY_WEEK_ENDS_ON = 5; // 0 Sun … 5 Fri: the day a week is paid out
 
 /** Midnight on the payday-weekday that opens the pay week `offset` weeks away. */
