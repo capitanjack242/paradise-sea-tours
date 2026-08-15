@@ -7,10 +7,11 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   View,
 } from "react-native";
-import { PickerField, Segmented, Stepper, Label } from "../components/ui";
+import { PickerField, Segmented, Stepper } from "../components/ui";
+import SignInSheet from "../components/SignInSheet";
+import { fetchProfileName, prettyPhone, useSession } from "../lib/auth";
 import {
   createBooking,
   fetchRoutes,
@@ -57,8 +58,16 @@ export default function BookScreen() {
   const [outTime, setOutTime] = React.useState<string>("10:30 AM");
   const [backTime, setBackTime] = React.useState<string>("4:00 PM");
   const [passengers, setPassengers] = React.useState(2);
-  const [name, setName] = React.useState("");
-  const [phone, setPhone] = React.useState("");
+  const { session } = useSession();
+  const [profileName, setProfileName] = React.useState<string | null>(null);
+  const [showSignIn, setShowSignIn] = React.useState(false);
+
+  const signedIn = !!session;
+  const myPhone = session?.user?.phone ? `+${session.user.phone}` : "";
+
+  React.useEffect(() => {
+    if (signedIn) fetchProfileName().then(setProfileName).catch(() => {});
+  }, [signedIn]);
 
   React.useEffect(() => {
     fetchRoutes()
@@ -71,49 +80,63 @@ export default function BookScreen() {
   const fare = quoteCents(route, passengers, tripType);
   const perPerson = route?.price_cents ?? null;
 
-  async function onSubmit() {
+  /** Everything about the trip except who's taking it — checked before sign-in. */
+  function validateTrip(): { scheduledAt: Date; returnAt: Date | null } | null {
     if (pickup === destination) {
       Alert.alert("Pick two different docks", "Your pickup and destination are the same.");
-      return;
-    }
-    if (!name.trim() || !phone.trim()) {
-      Alert.alert("Almost there", "We need a name and a number so your captain can reach you.");
-      return;
+      return null;
     }
     const scheduledAt = toDate(day, outTime);
     if (scheduledAt.getTime() <= Date.now()) {
       Alert.alert("Pick a later time", "That time has already passed today.");
-      return;
+      return null;
     }
     const returnAt = tripType === "Round trip" ? toDate(day, backTime) : null;
     if (returnAt && returnAt <= scheduledAt) {
       Alert.alert("Check your return time", "The return has to be after you head out.");
-      return;
+      return null;
     }
+    return { scheduledAt, returnAt };
+  }
+
+  async function submitTrip(contactName: string, contactPhone: string) {
+    const when = validateTrip();
+    if (!when) return;
 
     setSubmitting(true);
     try {
       await createBooking({
         pickup,
         destination,
-        scheduledAt,
-        returnAt,
+        scheduledAt: when.scheduledAt,
+        returnAt: when.returnAt,
         passengers,
         tripType,
-        contactName: name.trim(),
-        contactPhone: phone.trim(),
+        contactName,
+        contactPhone,
       });
       Alert.alert(
         "Request sent",
         "We're confirming a captain now. You'll hear from us shortly — and you don't pay anything until a captain says yes."
       );
-      setName("");
-      setPhone("");
     } catch (e: any) {
       Alert.alert("Couldn't send that", e?.message ?? "Please try again in a moment.");
     } finally {
       setSubmitting(false);
     }
+  }
+
+  /**
+   * Sign-in is deferred to here rather than the front door: validate the trip
+   * first, then ask who they are only if we don't already know.
+   */
+  function onRequest() {
+    if (!validateTrip()) return;
+    if (!signedIn) {
+      setShowSignIn(true);
+      return;
+    }
+    submitTrip(profileName ?? "Guest", myPhone);
   }
 
   return (
@@ -155,32 +178,6 @@ export default function BookScreen() {
           )}
         </View>
 
-        <View>
-          <Label>Your name</Label>
-          <TextInput
-            style={s.input}
-            value={name}
-            onChangeText={setName}
-            placeholder="Sarah Mitchell"
-            placeholderTextColor={colors.muted}
-          />
-        </View>
-        <View>
-          <Label>Mobile number</Label>
-          <TextInput
-            style={s.input}
-            value={phone}
-            onChangeText={setPhone}
-            placeholder="+1 242 555 0142"
-            placeholderTextColor={colors.muted}
-            keyboardType="phone-pad"
-            autoComplete="tel"
-          />
-          <Text style={s.hint}>
-            Your confirmation goes here — include your country code.
-          </Text>
-        </View>
-
         <View style={s.fare}>
           {loading ? (
             <ActivityIndicator color={colors.white} />
@@ -206,12 +203,31 @@ export default function BookScreen() {
 
         <Pressable
           style={[s.cta, submitting && s.ctaOff]}
-          onPress={onSubmit}
+          onPress={onRequest}
           disabled={submitting}
         >
           <Text style={s.ctaText}>{submitting ? "Sending…" : "Request a boat"}</Text>
         </Pressable>
+
+        {signedIn && (
+          <Text style={s.signedIn}>
+            Booking as {profileName ?? "you"} · {prettyPhone(myPhone)}
+          </Text>
+        )}
       </ScrollView>
+
+      <SignInSheet
+        visible={showSignIn}
+        holdingText={`${pickup} → ${destination}, ${day.toLowerCase()} ${outTime}${
+          fare != null ? ` · ${formatMoney(fare)}` : ""
+        }`}
+        onCancel={() => setShowSignIn(false)}
+        onSignedIn={(newName, newPhone) => {
+          setShowSignIn(false);
+          setProfileName(newName);
+          submitTrip(newName, newPhone);
+        }}
+      />
     </View>
   );
 }
@@ -250,7 +266,7 @@ const s = StyleSheet.create({
     fontWeight: "600",
     color: colors.ink,
   },
-  hint: { fontSize: 11, color: colors.muted, marginTop: 4, lineHeight: 15 },
+  signedIn: { fontSize: 11, color: colors.muted, textAlign: "center", marginTop: 2 },
   fare: { borderRadius: radius.md, padding: 14, backgroundColor: colors.deep, marginTop: 4 },
   fareRow: { flexDirection: "row", alignItems: "baseline", justifyContent: "space-between" },
   fareTotal: { fontSize: 26, fontWeight: "800", color: colors.white },
