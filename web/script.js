@@ -41,9 +41,59 @@ document.querySelectorAll("[data-captain]").forEach((el) =>
 const form = document.getElementById("bookingForm");
 const status = document.getElementById("formStatus");
 const dateInput = form.querySelector('[name="date"]');
+const phoneInput = form.querySelector('[name="phone"]');
 
 // Don't let the date picker itself offer past dates.
 dateInput.min = new Date().toLocaleDateString("en-CA"); // YYYY-MM-DD, local time
+
+// ── WhatsApp number confirmation ─────────────────────────────────────────
+// The confirmation and the payment link both go to this number, so a typo
+// means a captain gets committed to a trip the customer never hears about.
+// Make them eyeball the parsed number before anything is submitted.
+const phoneConfirm = document.getElementById("phoneConfirm");
+const pcNumber = document.getElementById("pcNumber");
+const submitBtn = document.getElementById("submitBtn");
+let phoneConfirmed = false;
+
+function prettyPhone(raw) {
+  try {
+    const p = window.libphonenumber.parsePhoneNumber(raw);
+    return p ? p.formatInternational() : raw;
+  } catch {
+    return raw;
+  }
+}
+
+function askPhoneConfirm(raw) {
+  pcNumber.textContent = prettyPhone(raw);
+  phoneConfirm.hidden = false;
+  submitBtn.hidden = true;
+  phoneConfirm.scrollIntoView({ block: "nearest", behavior: "smooth" });
+}
+
+function hidePhoneConfirm() {
+  phoneConfirm.hidden = true;
+  submitBtn.hidden = false;
+}
+
+document.getElementById("pcYes").addEventListener("click", () => {
+  phoneConfirmed = true;
+  hidePhoneConfirm();
+  form.requestSubmit();
+});
+
+document.getElementById("pcEdit").addEventListener("click", () => {
+  phoneConfirmed = false;
+  hidePhoneConfirm();
+  phoneInput.focus();
+  phoneInput.select();
+});
+
+// Editing the number invalidates any previous confirmation.
+phoneInput.addEventListener("input", () => {
+  phoneConfirmed = false;
+  if (!phoneConfirm.hidden) hidePhoneConfirm();
+});
 
 form.addEventListener("submit", async (e) => {
   e.preventDefault();
@@ -70,8 +120,16 @@ form.addEventListener("submit", async (e) => {
   // confirm the number is actually registered on WhatsApp — that needs
   // WhatsApp's Business API, which we don't have wired up.
   if (!window.libphonenumber.isValidPhoneNumber(data.phone)) {
-    status.textContent = "Please enter a valid phone number, including country code (e.g. +1 242 555 0100).";
+    status.textContent = "Please enter a valid WhatsApp number, including country code (e.g. +1 242 555 0100).";
     status.classList.add("err");
+    return;
+  }
+
+  // Everything reaches the customer on WhatsApp — make them confirm the number
+  // before a request goes anywhere.
+  if (!phoneConfirmed) {
+    status.textContent = "";
+    askPhoneConfirm(data.phone);
     return;
   }
 
@@ -96,9 +154,11 @@ form.addEventListener("submit", async (e) => {
     return;
   }
 
-  status.textContent = "Thanks! We've received your request and will confirm shortly.";
+  status.textContent = "Thanks! We've received your request and will confirm shortly on WhatsApp.";
   status.classList.add("ok");
   form.reset();
+  phoneConfirmed = false; // next booking must confirm its own number
+  dateInput.min = new Date().toLocaleDateString("en-CA");
 });
 
 // fleet: pull real active boats/captains instead of showing generic placeholders

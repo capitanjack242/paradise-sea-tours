@@ -136,6 +136,26 @@ img{max-width:100%}
 .form-status{font-weight:600;margin:0;min-height:1.2em}
 .form-status.ok{color:#1a9d63}.form-status.err{color:#d6453a}
 
+/* WhatsApp number confirmation — everything (payment link included) is sent
+   to this number, so a typo has to be caught before a captain is committed. */
+.field-hint{font-weight:500;font-size:.75rem;color:var(--muted);line-height:1.35}
+.phone-confirm{
+  border:2px solid var(--teal);border-radius:var(--radius);
+  background:#f1fbfd;padding:1.1rem 1.2rem;text-align:center;
+}
+.pc-lead{margin:0;font-size:.85rem;color:var(--muted);font-weight:600}
+.pc-number{
+  margin:.25rem 0 .5rem;font-family:'Baloo 2','Inter',sans-serif;
+  font-size:1.7rem;font-weight:800;color:var(--navy);letter-spacing:.01em;
+  font-variant-numeric:tabular-nums;
+}
+.pc-note{margin:0 0 1rem;font-size:.82rem;color:var(--muted);line-height:1.45}
+.pc-actions{display:flex;flex-direction:column;gap:.5rem}
+.btn-ghost-line{
+  background:#fff;color:var(--deep);border:1.5px solid var(--line);
+}
+.btn-ghost-line:hover{background:var(--foam);border-color:var(--teal)}
+
 /* captains band */
 .captains{background:linear-gradient(135deg,var(--navy),var(--deep));color:#fff}
 .captains-inner{display:flex;align-items:center;justify-content:space-between;gap:2rem;flex-wrap:wrap}

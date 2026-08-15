@@ -250,7 +250,9 @@
     <form class="booking-form" id="bookingForm" novalidate>
       <div class="row">
         <label>Name<input name="name" type="text" required></label>
-        <label>Phone / WhatsApp<input name="phone" type="tel" placeholder="+1 242 555 0100" required></label>
+        <label>WhatsApp number<input name="phone" type="tel" placeholder="+1 242 555 0100" required>
+          <small class="field-hint">We send your confirmation and payment link here — include your country code.</small>
+        </label>
       </div>
       <div class="row">
         <label>Pickup
@@ -315,7 +317,16 @@
         </select>
       </label>
       <label>Anything else?<textarea name="notes" rows="3" placeholder="Coolers, bags, special stops, cruise ship name…"></textarea></label>
-      <button type="submit" class="btn btn-primary btn-block btn-lg">Request booking</button>
+      <div id="phoneConfirm" class="phone-confirm" hidden>
+        <p class="pc-lead">We'll message you on WhatsApp at</p>
+        <p class="pc-number" id="pcNumber"></p>
+        <p class="pc-note">Your booking confirmation and payment link go to this number. Is it right?</p>
+        <div class="pc-actions">
+          <button type="button" class="btn btn-primary" id="pcYes">Yes, that's my WhatsApp</button>
+          <button type="button" class="btn btn-ghost-line" id="pcEdit">Change number</button>
+        </div>
+      </div>
+      <button type="submit" class="btn btn-primary btn-block btn-lg" id="submitBtn">Request booking</button>
       <p class="form-status" id="formStatus" role="status"></p>
     </form>
   </div>
