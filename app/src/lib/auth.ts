@@ -1,5 +1,6 @@
 import React from "react";
 import type { Session } from "@supabase/supabase-js";
+import { parsePhoneNumberFromString, type PhoneNumber } from "libphonenumber-js";
 import { supabase } from "./supabase";
 
 /**
@@ -11,26 +12,51 @@ import { supabase } from "./supabase";
  * Phone). Without one the API returns `phone_provider_disabled`.
  */
 
-/** Supabase wants E.164 — "+12425550142", no spaces or punctuation. */
-export function normalisePhone(input: string): string {
-  const trimmed = input.trim();
-  const digits = trimmed.replace(/[^\d]/g, "");
-  return trimmed.startsWith("+") ? `+${digits}` : `+${digits}`;
+/**
+ * Work out what number someone meant, rather than making them format it.
+ * People leave off the "+", write 00 instead, or type a local number with no
+ * country code — all answerable. Local numbers are tried first (Bahamas, then
+ * US, the two biggest sources of passengers), because "2425550100" is a
+ * Bahamian number, not country code 242.
+ */
+export function parsePhone(input: string): PhoneNumber | null {
+  const text = (input || "").trim();
+  if (!text) return null;
+  const digits = text.replace(/[^\d+]/g, "");
+
+  const attempts: Array<[string, "BS" | "US" | undefined]> = digits.startsWith("+")
+    ? [[digits, undefined]]
+    : digits.startsWith("00")
+    ? [["+" + digits.slice(2), undefined]]
+    : [
+        [digits, "BS"],
+        [digits, "US"],
+        ["+" + digits, undefined],
+      ];
+
+  for (const [value, country] of attempts) {
+    try {
+      const p = parsePhoneNumberFromString(value, country);
+      if (p?.isValid()) return p;
+    } catch {
+      /* try the next interpretation */
+    }
+  }
+  return null;
+}
+
+/** Supabase wants E.164 — "+12425550142". Null when we can't read it. */
+export function normalisePhone(input: string): string | null {
+  return parsePhone(input)?.number ?? null;
 }
 
 export function isPlausiblePhone(input: string): boolean {
-  const digits = normalisePhone(input).slice(1);
-  // Country code + number: 8 digits (short national) to 15 (E.164 maximum).
-  return digits.length >= 8 && digits.length <= 15;
+  return parsePhone(input) !== null;
 }
 
 /** Pretty-print for reading back to the customer: +1 242 555 0142 */
 export function prettyPhone(input: string): string {
-  const d = normalisePhone(input).slice(1);
-  if (d.length === 11 && d.startsWith("1")) {
-    return `+1 ${d.slice(1, 4)} ${d.slice(4, 7)} ${d.slice(7)}`;
-  }
-  return `+${d}`;
+  return parsePhone(input)?.formatInternational() ?? input;
 }
 
 export class AuthNotConfiguredError extends Error {
@@ -44,9 +70,9 @@ export class AuthNotConfiguredError extends Error {
 
 /** Ask Supabase to text a login code. Creates the account if it's a new number. */
 export async function sendCode(phone: string): Promise<void> {
-  const { error } = await supabase.auth.signInWithOtp({
-    phone: normalisePhone(phone),
-  });
+  const e164 = normalisePhone(phone);
+  if (!e164) throw new Error("We couldn't read that as a phone number.");
+  const { error } = await supabase.auth.signInWithOtp({ phone: e164 });
   if (error) {
     if ((error as any).code === "phone_provider_disabled") throw new AuthNotConfiguredError();
     throw error;
@@ -55,8 +81,10 @@ export async function sendCode(phone: string): Promise<void> {
 
 /** Exchange the texted code for a session. */
 export async function verifyCode(phone: string, code: string): Promise<Session> {
+  const e164 = normalisePhone(phone);
+  if (!e164) throw new Error("We couldn't read that as a phone number.");
   const { data, error } = await supabase.auth.verifyOtp({
-    phone: normalisePhone(phone),
+    phone: e164,
     token: code.trim(),
     type: "sms",
   });

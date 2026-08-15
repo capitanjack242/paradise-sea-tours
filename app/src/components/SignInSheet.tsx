@@ -10,13 +10,7 @@ import {
   TextInput,
   View,
 } from "react-native";
-import {
-  isPlausiblePhone,
-  prettyPhone,
-  saveName,
-  sendCode,
-  verifyCode,
-} from "../lib/auth";
+import { parsePhone, prettyPhone, saveName, sendCode, verifyCode } from "../lib/auth";
 import { colors, radius } from "../lib/theme";
 
 type Props = {
@@ -49,15 +43,26 @@ export default function SignInSheet({ visible, holdingText, onCancel, onSignedIn
     }
   }, [visible]);
 
+  /** Tidy the number into international form as soon as they leave the field. */
+  function onPhoneBlur() {
+    const p = parsePhone(phone);
+    if (p) setPhone(p.formatInternational());
+  }
+
   async function onContinue() {
     setError(null);
     if (!name.trim()) return setError("We need a name so your captain knows who to look for.");
-    if (!isPlausiblePhone(phone))
-      return setError("Enter your number with the country code, like +1 242 555 0142.");
+    const parsed = parsePhone(phone);
+    if (!parsed)
+      return setError(
+        "We couldn't read that as a phone number — try it with your country code, like +1 242 555 0142."
+      );
+    // Show them the tidied version, and work from it from here on.
+    setPhone(parsed.formatInternational());
 
     setBusy(true);
     try {
-      await sendCode(phone);
+      await sendCode(parsed.number);
       setStep("code");
     } catch (e: any) {
       setError(e?.message ?? "Couldn't send the code. Try again in a moment.");
@@ -74,7 +79,8 @@ export default function SignInSheet({ visible, holdingText, onCancel, onSignedIn
     try {
       await verifyCode(phone, code);
       await saveName(name);
-      onSignedIn(name.trim(), phone.trim());
+      // Hand back E.164 so the booking stores one canonical form of the number.
+      onSignedIn(name.trim(), parsePhone(phone)?.number ?? phone.trim());
     } catch (e: any) {
       setError(e?.message ?? "That code didn't work. Try again.");
     } finally {
@@ -111,6 +117,7 @@ export default function SignInSheet({ visible, holdingText, onCancel, onSignedIn
                 style={[s.input, s.inputFocusRing]}
                 value={phone}
                 onChangeText={setPhone}
+                onBlur={onPhoneBlur}
                 placeholder="+1 242 555 0142"
                 placeholderTextColor={colors.muted}
                 keyboardType="phone-pad"

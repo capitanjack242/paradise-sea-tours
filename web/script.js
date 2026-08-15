@@ -184,14 +184,49 @@ const pcNumber = document.getElementById("pcNumber");
 const submitBtn = document.getElementById("submitBtn");
 let phoneConfirmed = false;
 
-function prettyPhone(raw) {
-  try {
-    const p = window.libphonenumber.parsePhoneNumber(raw);
-    return p ? p.formatInternational() : raw;
-  } catch {
-    return raw;
+/**
+ * Work out what number someone meant and hand back a parsed one.
+ * People leave off the "+", write 00 for it, or type a local number with no
+ * country code at all — all of those are answerable, so answer them instead of
+ * making the customer guess the format.
+ *
+ * Local numbers are tried first (Bahamas, then US — the two biggest sources of
+ * passengers), because "2425550100" is a Bahamian number, not country code 242.
+ */
+function parsePhone(raw) {
+  const text = (raw || "").trim();
+  if (!text) return null;
+  const lp = window.libphonenumber;
+  const digits = text.replace(/[^\d+]/g, "");
+
+  const attempts = [];
+  if (digits.startsWith("+")) attempts.push([digits, undefined]);
+  else if (digits.startsWith("00")) attempts.push(["+" + digits.slice(2), undefined]);
+  else {
+    attempts.push([digits, "BS"], [digits, "US"], ["+" + digits, undefined]);
   }
+
+  for (const [value, country] of attempts) {
+    try {
+      const p = lp.parsePhoneNumberFromString(value, country);
+      if (p?.isValid()) return p;
+    } catch {
+      /* try the next interpretation */
+    }
+  }
+  return null;
 }
+
+function prettyPhone(raw) {
+  return parsePhone(raw)?.formatInternational() ?? raw;
+}
+
+// Tidy the number as soon as they move on, so they see it accepted rather than
+// being told off for the formatting.
+phoneInput.addEventListener("blur", () => {
+  const p = parsePhone(phoneInput.value);
+  if (p) phoneInput.value = p.formatInternational();
+});
 
 function askPhoneConfirm(raw) {
   pcNumber.textContent = prettyPhone(raw);
@@ -234,11 +269,14 @@ form.addEventListener("submit", async (e) => {
     status.classList.add("err");
     return;
   }
-  if (!window.libphonenumber.isValidPhoneNumber(d.phone)) {
-    status.textContent = "Please enter a valid mobile number, including country code (e.g. +1 242 555 0100).";
+  const parsedPhone = parsePhone(d.phone);
+  if (!parsedPhone) {
+    status.textContent = "We couldn't read that as a phone number — try it with your country code, like +1 242 555 0100.";
     status.classList.add("err");
     return;
   }
+  // Show them the tidied version, and store the unambiguous form.
+  phoneInput.value = parsedPhone.formatInternational();
   if (!phoneConfirmed) {
     status.textContent = "";
     askPhoneConfirm(d.phone);
@@ -261,7 +299,7 @@ form.addEventListener("submit", async (e) => {
 
   const { error } = await db.from("bookings").insert({
     contact_name: d.name.trim(),
-    contact_phone: d.phone.trim(),
+    contact_phone: parsedPhone.number, // E.164
     pickup: d.pickup,
     destination: d.destination,
     scheduled_at: new Date(`${d.date}T${d.time}`).toISOString(),
