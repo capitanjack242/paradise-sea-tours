@@ -21,6 +21,7 @@ import {
   awaitingReply,
   fetchMessages,
   fetchMyBoat,
+  answerOffer,
   fetchTrips,
   groupByBooking,
   sendMessage,
@@ -134,6 +135,18 @@ export default function App() {
     }
   }
 
+  async function answer(trip: Trip, choice: "accepted" | "declined") {
+    setBusyTripId(trip.id);
+    try {
+      await answerOffer(trip.id, choice, null);
+      await load();
+    } catch (e: any) {
+      setError(e?.message ?? "That didn't save — check your signal and try again.");
+    } finally {
+      setBusyTripId(null);
+    }
+  }
+
   async function toggleAvailability() {
     if (!boat) return;
     const next = !boat.is_available;
@@ -213,6 +226,7 @@ export default function App() {
             onAboard={(t) => move(t, "in_progress")}
             onFinish={(t) => move(t, "completed")}
             onOpenMessages={setOpenTrip}
+            onAnswer={answer}
           />
         ) : (
           <EarningsScreen trips={trips} refreshing={refreshing} onRefresh={refresh} />

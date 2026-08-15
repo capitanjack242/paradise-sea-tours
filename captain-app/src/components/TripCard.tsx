@@ -2,7 +2,7 @@ import React from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { BigButton, Card, Pill } from "./ui";
 import { colors, radius } from "../lib/theme";
-import { money, type Message, type Trip } from "../lib/data";
+import { isBeingAsked, money, type Message, type Trip } from "../lib/data";
 
 /* One job. At most one action is ever offered — whichever the trip is actually
    ready for — so there's nothing to read or choose between mid-run. */
@@ -23,6 +23,7 @@ export default function TripCard({
   onAboard,
   onFinish,
   onOpenMessages,
+  onAnswer,
   busy,
 }: {
   trip: Trip;
@@ -31,6 +32,7 @@ export default function TripCard({
   onAboard: () => void;
   onFinish: () => void;
   onOpenMessages: () => void;
+  onAnswer: (answer: "accepted" | "declined") => void;
   busy?: boolean;
 }) {
   // Two taps to finish a run. A phone in a wet pocket presses things by itself,
@@ -38,7 +40,8 @@ export default function TripCard({
   const [confirming, setConfirming] = React.useState(false);
 
   const aboard = trip.status === "in_progress";
-  const waitingOnOffice = !["confirmed", "in_progress"].includes(trip.status);
+  const asked = isBeingAsked(trip);
+  const waitingOnOffice = !asked && !["confirmed", "in_progress"].includes(trip.status);
 
   return (
     <Card style={[s.card, aboard && s.cardAboard, busy && s.busy]}>
@@ -82,7 +85,23 @@ export default function TripCard({
         </Pressable>
       </View>
 
-      {waitingOnOffice ? (
+      {asked ? (
+        <View style={s.askBox}>
+          <Text style={s.askQ}>Can you take this one?</Text>
+          <Text style={s.askSub}>
+            Nobody's been promised a boat yet — the office is waiting on you.
+          </Text>
+          <BigButton label="Yes, I'll take it" onPress={() => onAnswer("accepted")} disabled={busy} />
+          <View style={s.declineWrap}>
+            <BigButton
+              label="Can't take this one"
+              tone="quiet"
+              onPress={() => onAnswer("declined")}
+              disabled={busy}
+            />
+          </View>
+        </View>
+      ) : waitingOnOffice ? (
         <View style={s.waitBox}>
           <Text style={s.waitText}>Not confirmed by the office yet</Text>
         </View>
@@ -170,6 +189,18 @@ const s = StyleSheet.create({
   confirmQ: { fontSize: 15, fontWeight: "800", color: colors.ink, marginTop: 12, marginBottom: 8 },
   confirmRow: { flexDirection: "row", gap: 8 },
   half: { flex: 1 },
+
+  askBox: {
+    marginTop: 12,
+    borderWidth: 2,
+    borderColor: colors.teal,
+    borderRadius: radius.md,
+    backgroundColor: "#f2fcfe",
+    padding: 12,
+  },
+  askQ: { fontSize: 17, fontWeight: "800", color: colors.ink },
+  askSub: { fontSize: 13.5, color: colors.muted, marginTop: 3, marginBottom: 12, lineHeight: 19 },
+  declineWrap: { marginTop: 8 },
 
   waitBox: {
     marginTop: 12,

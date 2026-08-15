@@ -740,6 +740,53 @@ function threadHtml(b) {
     </div>`;
 }
 
+/* ── asking a captain ─────────────────────────────────────────────────────
+   Nothing is promised to a passenger before a boat has agreed to run it. Most
+   captains have no app, so the office asking on the phone and writing down the
+   answer is the normal path, not a workaround — but it's recorded either way,
+   and it's recorded who said it. */
+function offerHtml(b) {
+  if (!b.assigned_boat_id) return "";
+  const who = esc(b.boats?.captain_name || "the captain");
+
+  if (b.captain_response === "accepted") {
+    const how = b.response_by === "captain" ? "in the app" : "on the phone";
+    return `<p class="offer-state offer-yes">✓ ${who} accepted ${how}${
+      b.responded_at ? ` · ${shortTime(b.responded_at)}` : ""
+    }</p>`;
+  }
+
+  if (b.captain_response === "declined") {
+    return `<div class="offer-state offer-no">
+        <strong>✗ ${who} can't take this one</strong>
+        ${b.decline_reason ? `<span>${esc(b.decline_reason)}</span>` : ""}
+        <span class="offer-hint">Pick another boat — changing it asks them fresh.</span>
+      </div>`;
+  }
+
+  if (b.offered_at) {
+    return `<div class="offer-state offer-waiting">
+        <strong>Asked ${who} · ${shortTime(b.offered_at)}</strong>
+        <span class="offer-hint">Waiting on an answer. If you get them on the phone:</span>
+        <span class="offer-actions">
+          <button type="button" class="btn-said-yes" data-id="${b.id}">They said yes</button>
+          <button type="button" class="btn-said-no" data-id="${b.id}">They said no</button>
+        </span>
+      </div>`;
+  }
+
+  return `<div class="offer-state offer-ask">
+      <button type="button" class="btn-ask-captain" data-id="${b.id}">Ask ${who}</button>
+      <span class="offer-hint">Nothing is promised until they say yes.</span>
+    </div>`;
+}
+
+function shortTime(iso) {
+  return new Date(iso).toLocaleString(undefined, {
+    weekday: "short", hour: "numeric", minute: "2-digit",
+  });
+}
+
 function matchesFilter(b) {
   if (currentFilter === "all") return true;
   if (currentFilter === "completed") return b.status === "completed";
@@ -843,6 +890,39 @@ function renderBookings(all) {
   });
   // Confirming is the promise to the customer, so it needs the two things the
   // confirmation actually tells them: which boat, and what it costs.
+  bookingsBody.querySelectorAll("button.btn-ask-captain").forEach((btn) => {
+    btn.addEventListener("click", () =>
+      updateBooking(
+        btn.dataset.id,
+        { offered_at: new Date().toISOString() },
+        btn.closest(".booking-card")
+      )
+    );
+  });
+  bookingsBody.querySelectorAll("button.btn-said-yes").forEach((btn) => {
+    btn.addEventListener("click", () =>
+      updateBooking(
+        btn.dataset.id,
+        { captain_response: "accepted", response_by: "dispatch", responded_at: new Date().toISOString() },
+        btn.closest(".booking-card")
+      )
+    );
+  });
+  bookingsBody.querySelectorAll("button.btn-said-no").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const reason = prompt("Why can't they take it? (optional)") ?? "";
+      updateBooking(
+        btn.dataset.id,
+        {
+          captain_response: "declined",
+          response_by: "dispatch",
+          responded_at: new Date().toISOString(),
+          decline_reason: reason.trim() || null,
+        },
+        btn.closest(".booking-card")
+      );
+    });
+  });
   bookingsBody.querySelectorAll("button.btn-confirm-row").forEach((btn) => {
     btn.addEventListener("click", () => {
       const card = btn.closest(".booking-card");
@@ -852,6 +932,14 @@ function renderBookings(all) {
       }
       if (b.quoted_price_cents == null) {
         return cardMessage(card, "Put the fare in first — it goes in the confirmation.");
+      }
+      if (b.captain_response !== "accepted") {
+        return cardMessage(
+          card,
+          b.captain_response === "declined"
+            ? "That captain turned this down — pick another boat."
+            : "Ask the captain first. Nothing gets promised before a boat says yes."
+        );
       }
       cardMessage(card, "");
       updateBooking(btn.dataset.id, { status: "confirmed" }, card);
@@ -877,7 +965,9 @@ async function updateBooking(id, patch, cardEl) {
     // A status change moves the card between Active / Completed / Cancelled and
     // changes which buttons apply, so redraw straight away instead of waiting
     // on the realtime round trip.
-    if (patch.status) renderBookings(window.__allBookings || []);
+    if (patch.status || "offered_at" in patch || "captain_response" in patch) {
+      renderBookings(window.__allBookings || []);
+    }
   }
 }
 
@@ -981,6 +1071,7 @@ function cardHtml(b) {
             ? `<a class="wa-link" href="https://wa.me/${b.boats.captain_whatsapp.replace(/\D/g, "")}" target="_blank" rel="noopener">💬 ${esc(b.boats.captain_name || "")}</a>`
             : ""}
           ${captainLoginMissing}
+          ${offerHtml(b)}
           <div class="fare-row">
             <label>Fare $</label>
             <input type="number" step="0.01" min="0" class="price-input" data-id="${b.id}" value="${price}" placeholder="—">

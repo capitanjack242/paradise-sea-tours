@@ -31,6 +31,7 @@ export default function TodayScreen({
   onAboard,
   onFinish,
   onOpenMessages,
+  onAnswer,
 }: {
   trips: Trip[];
   messages: Map<string, Message[]>;
@@ -42,6 +43,7 @@ export default function TodayScreen({
   onAboard: (t: Trip) => void;
   onFinish: (t: Trip) => void;
   onOpenMessages: (t: Trip) => void;
+  onAnswer: (t: Trip, answer: "accepted" | "declined") => void;
 }) {
   const today = todaysTrips(trips);
   const ahead = upcomingTrips(trips);
@@ -109,6 +111,7 @@ export default function TodayScreen({
             onAboard={() => onAboard(t)}
             onFinish={() => onFinish(t)}
             onOpenMessages={() => onOpenMessages(t)}
+            onAnswer={(a) => onAnswer(t, a)}
           />
         ))
       )}
@@ -126,6 +129,7 @@ export default function TodayScreen({
               onAboard={() => onAboard(t)}
               onFinish={() => onFinish(t)}
               onOpenMessages={() => onOpenMessages(t)}
+              onAnswer={(a) => onAnswer(t, a)}
             />
           ))}
         </>

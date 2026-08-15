@@ -101,6 +101,23 @@ h1{font-family:'Baloo 2','Inter',sans-serif;margin:0}
 .pill-cancelled{background:#fdecea;color:var(--danger)}
 .pill-confirmed,.pill-in_progress{background:#e8f4fd;color:var(--deep)}
 
+/* Asking a captain, and what came back. */
+.offer-state{margin:.6rem 0 0;display:flex;flex-direction:column;gap:.25rem;
+  border-radius:8px;padding:.55em .7em;font-size:.85rem}
+.offer-ask{background:var(--foam);align-items:flex-start}
+.offer-waiting{background:#fff8e1;color:#8a6d00}
+.offer-yes{background:#eafaf1;color:var(--ok);font-weight:700}
+.offer-no{background:#fdecea;color:var(--danger)}
+.offer-hint{font-size:.78rem;opacity:.85;font-weight:500}
+.offer-actions{display:flex;gap:.4rem;margin-top:.25rem;flex-wrap:wrap}
+.btn-ask-captain{font:inherit;font-weight:700;font-size:.85rem;background:var(--deep);color:#fff;
+  border:none;border-radius:6px;padding:.5em 1em;cursor:pointer}
+.btn-ask-captain:hover{background:var(--navy)}
+.btn-said-yes,.btn-said-no{font:inherit;font-weight:700;font-size:.78rem;background:#fff;
+  border:1px solid var(--line);border-radius:6px;padding:.35em .75em;cursor:pointer}
+.btn-said-yes{color:var(--ok);border-color:var(--ok)}
+.btn-said-no{color:var(--danger);border-color:var(--danger)}
+
 /* Messages — the only channel between a passenger and their captain now that
    nobody hands out phone numbers. */
 .msg-toggle{display:inline-block;margin-top:.5rem;font:inherit;font-weight:600;font-size:.82rem;

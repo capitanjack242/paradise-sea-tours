@@ -304,6 +304,17 @@ function renderTrips(all) {
   tripsBody.querySelectorAll("button.quick").forEach((btn) => {
     btn.addEventListener("click", () => sendMessage(btn.dataset.id, btn.dataset.text, btn.closest(".trip")));
   });
+  tripsBody.querySelectorAll("button.btn-accept").forEach((btn) => {
+    btn.addEventListener("click", () =>
+      answerOffer(btn.dataset.id, "accepted", null, btn.closest(".trip"))
+    );
+  });
+  tripsBody.querySelectorAll("button.btn-decline").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const reason = prompt("Anything the office should know? (optional)") ?? "";
+      answerOffer(btn.dataset.id, "declined", reason.trim() || null, btn.closest(".trip"));
+    });
+  });
   tripsBody.querySelectorAll("button.btn-aboard").forEach((btn) => {
     btn.addEventListener("click", () => setStatus(btn.dataset.id, "in_progress", btn.closest(".trip")));
   });
@@ -328,6 +339,27 @@ function confirmDone(btn) {
   const card = btn.closest(".trip");
   btn.hidden = true;
   card.querySelector(".confirm-row").hidden = false;
+}
+
+async function answerOffer(id, answer, reason, card) {
+  card.classList.add("saving");
+  const { error } = await db
+    .from("bookings")
+    .update({
+      captain_response: answer,
+      response_by: "captain",
+      responded_at: new Date().toISOString(),
+      decline_reason: reason,
+    })
+    .eq("id", id);
+  card.classList.remove("saving");
+  if (error) {
+    const msg = card.querySelector(".trip-msg");
+    msg.textContent = "That didn't save — check your signal and try again.";
+    msg.hidden = false;
+    return;
+  }
+  await loadTrips();
 }
 
 async function setStatus(id, status, card) {
@@ -355,7 +387,11 @@ function tripHtml(b) {
   const fare = b.quoted_price_cents != null ? `$${(b.quoted_price_cents / 100).toFixed(2).replace(/\.00$/, "")}` : "—";
   const done = b.status === "completed";
   const aboard = b.status === "in_progress";
-  const waiting = b.status !== "confirmed" && !aboard && !done;
+  // Being asked comes before everything else: until he answers, there is no
+  // job, only a question.
+  const beingAsked = !!b.offered_at && !b.captain_response && !done;
+  const declined = b.captain_response === "declined" && !done;
+  const waiting = b.status !== "confirmed" && !aboard && !done && !beingAsked && !declined;
 
   return `
     <article class="trip${done ? " is-done" : ""}${aboard ? " is-aboard" : ""}">
@@ -386,6 +422,15 @@ function tripHtml(b) {
 
       ${done
         ? `<div class="done-banner">✓ Finished</div>`
+        : beingAsked
+        ? `<div class="ask-box">
+             <div class="ask-q">Can you take this one?</div>
+             <div class="ask-sub">Nobody's been promised a boat yet — the office is waiting on you.</div>
+             <button type="button" class="btn-accept" data-id="${b.id}">Yes, I'll take it</button>
+             <button type="button" class="btn-decline" data-id="${b.id}">Can't take this one</button>
+           </div>`
+        : declined
+        ? `<div class="waiting-banner">You turned this one down${b.decline_reason ? ` — ${esc(b.decline_reason)}` : ""}</div>`
         : waiting
         ? `<div class="waiting-banner">Not confirmed by the office yet</div>`
         : aboard

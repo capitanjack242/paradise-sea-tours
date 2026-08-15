@@ -19,6 +19,9 @@ export type Trip = {
   notes: string | null;
   quoted_price_cents: number | null;
   paid_out_at: string | null;
+  offered_at: string | null;
+  captain_response: "accepted" | "declined" | null;
+  decline_reason: string | null;
   assigned_boat_id: string | null;
   boats: { name: string | null } | null;
 };
@@ -44,7 +47,8 @@ export async function fetchTrips(): Promise<Trip[]> {
     .from("bookings")
     .select(
       "id, status, pickup, destination, scheduled_at, return_at, passengers, trip_type, " +
-        "contact_name, notes, quoted_price_cents, paid_out_at, assigned_boat_id, boats(name)"
+        "contact_name, notes, quoted_price_cents, paid_out_at, offered_at, captain_response, " +
+        "decline_reason, assigned_boat_id, boats(name)"
     )
     .order("scheduled_at", { ascending: true });
   if (error) throw error;
@@ -68,6 +72,28 @@ export async function sendMessage(bookingId: string, body: string): Promise<void
     .insert({ booking_id: bookingId, sender: "captain", body: text });
   if (error) throw error;
 }
+
+/** Answer an offer. The database checks it was actually offered to them. */
+export async function answerOffer(
+  id: string,
+  answer: "accepted" | "declined",
+  reason: string | null
+): Promise<void> {
+  const { error } = await supabase
+    .from("bookings")
+    .update({
+      captain_response: answer,
+      response_by: "captain",
+      responded_at: new Date().toISOString(),
+      decline_reason: reason,
+    })
+    .eq("id", id);
+  if (error) throw error;
+}
+
+/** A run that's been offered and not yet answered is a question, not a job. */
+export const isBeingAsked = (t: Trip): boolean =>
+  !!t.offered_at && !t.captain_response && t.status !== "completed" && t.status !== "cancelled";
 
 /** Move a trip along. The database refuses anything else a captain might try. */
 export async function setTripStatus(id: string, status: "in_progress" | "completed"): Promise<void> {
@@ -103,6 +129,7 @@ export const isToday = (iso: string | null): boolean => {
 export function todaysTrips(trips: Trip[]): Trip[] {
   return trips.filter((t) => {
     if (t.status === "completed" || t.status === "cancelled") return false;
+    if (t.captain_response === "declined") return false;
     const at = t.scheduled_at ? new Date(t.scheduled_at) : null;
     return isToday(t.scheduled_at) || (at !== null && at < new Date());
   });
@@ -111,6 +138,7 @@ export function todaysTrips(trips: Trip[]): Trip[] {
 export function upcomingTrips(trips: Trip[]): Trip[] {
   return trips.filter((t) => {
     if (t.status === "completed" || t.status === "cancelled") return false;
+    if (t.captain_response === "declined") return false;
     const at = t.scheduled_at ? new Date(t.scheduled_at) : null;
     return !isToday(t.scheduled_at) && at !== null && at >= new Date();
   });
