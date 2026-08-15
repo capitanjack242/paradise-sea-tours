@@ -53,8 +53,8 @@ export default function BookScreen() {
   const [submitting, setSubmitting] = React.useState(false);
 
   const [pickup, setPickup] = React.useState<string>("Nassau Cruise Port");
-  const [destination, setDestination] = React.useState<string>("Rose Island & Cays");
-  const [tripType, setTripType] = React.useState<TripType>("Round trip");
+  const [destination, setDestination] = React.useState<string>("Paradise Island & Atlantis");
+  const [tripType, setTripType] = React.useState<TripType>("One way");
   const [day, setDay] = React.useState<string>("Today");
   const [outTime, setOutTime] = React.useState<string>("10:30 AM");
   const [backTime, setBackTime] = React.useState<string>("4:00 PM");
