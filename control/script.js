@@ -235,7 +235,15 @@ function buildClients(bookings) {
       (y.scheduled_at || y.created_at || "").localeCompare(x.scheduled_at || x.created_at || "")
     );
   }
-  return [...byPhone.values()].sort((a, b) => (b.lastAt || "").localeCompare(a.lastAt || ""));
+  // Alphabetical by the name on screen, so a dispatcher scanning for someone
+  // finds them where they expect. Anyone who booked without giving a name goes
+  // to the bottom rather than filing under "N".
+  return [...byPhone.values()].sort((a, b) => {
+    const an = a.name.trim();
+    const bn = b.name.trim();
+    if (!an !== !bn) return an ? -1 : 1;
+    return an.localeCompare(bn, undefined, { sensitivity: "base" });
+  });
 }
 
 function renderClients(all) {

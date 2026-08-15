@@ -57,8 +57,10 @@ h1{font-family:'Baloo 2','Inter',sans-serif;margin:0}
   margin-right:.8rem;font:inherit;font-weight:700;font-size:.95rem;cursor:pointer;color:var(--muted)}
 .vtab.active{color:var(--navy);border-bottom-color:var(--teal)}
 
-.client-search{width:100%;max-width:420px;font:inherit;font-size:.95rem;padding:.6em .8em;
-  border:1px solid var(--line);border-radius:8px;background:#fff;margin-bottom:1rem}
+.client-search{width:100%;max-width:420px;font:inherit;font-size:.95rem;
+  padding:.6em .8em .6em 2.3em;border:1px solid var(--line);border-radius:8px;background:#fff;
+  margin-bottom:1rem;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%235a7184' stroke-width='2.2' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='M20 20l-3.5-3.5'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:.7em center;background-size:1.05em}
 .client-search:focus{outline:2px solid var(--aqua);border-color:var(--teal)}
 
 .client-card{background:#fff;border:1px solid var(--line);border-radius:12px;
