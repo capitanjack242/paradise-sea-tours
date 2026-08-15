@@ -101,6 +101,41 @@ h1{font-family:'Baloo 2','Inter',sans-serif;margin:0}
 .pill-cancelled{background:#fdecea;color:var(--danger)}
 .pill-confirmed,.pill-in_progress{background:#e8f4fd;color:var(--deep)}
 
+/* Messages — the only channel between a passenger and their captain now that
+   nobody hands out phone numbers. */
+.msg-toggle{display:inline-block;margin-top:.5rem;font:inherit;font-weight:600;font-size:.82rem;
+  background:#fff;color:var(--deep);border:1px solid var(--line);border-radius:6px;
+  padding:.4em .8em;cursor:pointer}
+.msg-toggle:hover{background:var(--foam);border-color:var(--teal)}
+.msg-toggle.has-waiting{background:#fff4e5;border-color:#e0a03c;color:#8a5a00;font-weight:700}
+
+.thread-box{margin-top:.6rem;border:1px solid var(--line);border-radius:10px;background:var(--foam);
+  padding:.6rem}
+.thread-scroll{max-height:230px;overflow-y:auto;display:flex;flex-direction:column;gap:.4rem}
+.thread-empty{margin:.4rem 0;font-size:.85rem;color:var(--muted);text-align:center}
+.bub{max-width:78%;padding:.4em .65em;border-radius:11px;font-size:.87rem;line-height:1.4}
+.bub-who{font-size:.68rem;font-weight:700;opacity:.75;margin-bottom:.1rem}
+.bub-customer{background:#fff;border:1px solid var(--line);align-self:flex-start;
+  border-bottom-left-radius:4px}
+.bub-dispatch{background:var(--teal);color:#fff;align-self:flex-end;border-bottom-right-radius:4px}
+.bub-captain{background:var(--deep);color:#fff;align-self:flex-end;border-bottom-right-radius:4px}
+.bub-body{white-space:pre-wrap;overflow-wrap:anywhere}
+
+.thread-compose{display:flex;gap:.4rem;margin-top:.5rem}
+.thread-input{flex:1;min-width:0;font:inherit;font-size:.88rem;padding:.45em .6em;
+  border:1px solid var(--line);border-radius:8px;background:#fff}
+.thread-input:focus{outline:2px solid var(--aqua);border-color:var(--teal)}
+.thread-send{font:inherit;font-weight:700;font-size:.85rem;background:var(--teal);color:#fff;
+  border:none;border-radius:8px;padding:.45em 1em;cursor:pointer}
+.thread-send:hover{background:var(--deep)}
+
+.thread-link{display:flex;align-items:center;gap:.4rem;flex-wrap:wrap;margin:.55rem 0 0;
+  font-size:.72rem;color:var(--muted)}
+.thread-link code{background:#fff;border:1px solid var(--line);border-radius:5px;
+  padding:.2em .45em;font-size:.7rem;overflow-wrap:anywhere;max-width:100%}
+.thread-copy{font:inherit;font-size:.7rem;font-weight:700;background:#fff;color:var(--deep);
+  border:1px solid var(--line);border-radius:5px;padding:.2em .5em;cursor:pointer}
+
 /* Friday payout — one number per boat, and a way to record that it went out. */
 .week-bar{display:flex;align-items:center;gap:.8rem;background:#fff;border:1px solid var(--line);
   border-radius:12px;padding:.6rem .8rem;margin-bottom:1rem}

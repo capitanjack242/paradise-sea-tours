@@ -23,6 +23,8 @@ const emptyState = document.getElementById("emptyState");
 
 let currentTab = "today";
 let myBoat = null;
+let threads = new Map();          // booking id -> messages
+const openThreads = new Set();    // trips whose thread is showing
 let realtimeChannel = null;
 let pollTimer = null;
 let refreshTimer = null;
@@ -175,7 +177,88 @@ async function loadTrips() {
     return;
   }
   window.__trips = data;
+  await loadMessages();
   renderTrips(data);
+}
+
+/* Messages are how a captain and a passenger find each other — nobody is given
+   a phone number, so this is the whole channel. */
+async function loadMessages() {
+  const { data, error } = await db
+    .from("messages")
+    .select("id, booking_id, sender, body, created_at")
+    .order("created_at");
+  if (error) {
+    console.error("load messages failed:", error);
+    return;
+  }
+  const byBooking = new Map();
+  for (const m of data || []) {
+    if (!byBooking.has(m.booking_id)) byBooking.set(m.booking_id, []);
+    byBooking.get(m.booking_id).push(m);
+  }
+  threads = byBooking;
+}
+
+/** Passenger messages sitting since anyone last answered. */
+function awaitingReply(id) {
+  const t = threads.get(id) || [];
+  let n = 0;
+  for (let i = t.length - 1; i >= 0; i--) {
+    if (t[i].sender === "customer") n++; else break;
+  }
+  return n;
+}
+
+async function sendMessage(id, body, card) {
+  const text = (body || "").trim();
+  if (!text) return;
+  card?.classList.add("saving");
+  const { error } = await db.from("messages").insert({ booking_id: id, sender: "captain", body: text });
+  card?.classList.remove("saving");
+  if (error) {
+    const msg = card.querySelector(".trip-msg");
+    msg.textContent = "Message didn't send — check your signal and try again.";
+    msg.hidden = false;
+    return;
+  }
+  await loadMessages();
+  renderTrips(window.__trips || []);
+}
+
+function threadHtml(b) {
+  const t = threads.get(b.id) || [];
+  const bubbles = t.length
+    ? t.map((m) => {
+        const at = new Date(m.created_at).toLocaleString(undefined, {
+          hour: "numeric", minute: "2-digit",
+        });
+        const who = m.sender === "customer" ? esc(b.contact_name || "Passenger")
+                  : m.sender === "dispatch" ? "Office" : "You";
+        return `<div class="bub bub-${esc(m.sender)}">
+                  <div class="bub-who">${who} · ${at}</div>
+                  <div class="bub-body">${esc(m.body)}</div>
+                </div>`;
+      }).join("")
+    : `<p class="thread-empty">Nothing said yet.</p>`;
+
+  const closed = b.status === "completed" || b.status === "cancelled";
+  return `
+    <div class="thread-box">
+      <div class="thread-scroll">${bubbles}</div>
+      ${closed
+        ? `<p class="thread-empty">This trip is finished — the thread is closed.</p>`
+        : `<div class="quicks">
+             ${["On my way", "At the dock", "Running 10 min late"]
+               .map((q) => `<button type="button" class="quick" data-id="${b.id}" data-text="${esc(q)}">${esc(q)}</button>`)
+               .join("")}
+           </div>
+           <div class="thread-compose">
+             <input type="text" class="thread-input" data-id="${b.id}"
+                    placeholder="Message ${esc(b.contact_name || "passenger")}…" maxlength="2000">
+             <button type="button" class="thread-send" data-id="${b.id}">Send</button>
+           </div>`}
+    </div>`;
 }
 
 function isToday(iso) {
@@ -203,6 +286,24 @@ function renderTrips(all) {
     currentTab === "today" ? "Nothing on today. Dispatch will send jobs here." :
     "Nothing booked ahead yet.";
 
+  tripsBody.querySelectorAll("button.msg-toggle").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const id = btn.dataset.id;
+      openThreads.has(id) ? openThreads.delete(id) : openThreads.add(id);
+      renderTrips(window.__trips || []);
+      const box = tripsBody.querySelector(`.trip .thread-scroll`);
+      if (box) box.scrollTop = box.scrollHeight;
+    });
+  });
+  tripsBody.querySelectorAll("button.thread-send").forEach((btn) => {
+    const input = tripsBody.querySelector(`.thread-input[data-id="${btn.dataset.id}"]`);
+    const fire = () => { const v = input.value; input.value = ""; sendMessage(btn.dataset.id, v, btn.closest(".trip")); };
+    btn.addEventListener("click", fire);
+    input?.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); fire(); } });
+  });
+  tripsBody.querySelectorAll("button.quick").forEach((btn) => {
+    btn.addEventListener("click", () => sendMessage(btn.dataset.id, btn.dataset.text, btn.closest(".trip")));
+  });
   tripsBody.querySelectorAll("button.btn-aboard").forEach((btn) => {
     btn.addEventListener("click", () => setStatus(btn.dataset.id, "in_progress", btn.closest(".trip")));
   });
@@ -267,6 +368,18 @@ function tripHtml(b) {
         <span class="pax-name">${esc(b.contact_name || "Passenger")}</span>
         ${b.contact_phone ? `<a class="call" href="tel:${esc(b.contact_phone)}">📞 Call</a>` : ""}
       </div>
+
+      <div class="trip-pax">
+        <span class="pax-name">${esc(b.contact_name || "Passenger")}</span>
+        ${(() => {
+          const waiting = awaitingReply(b.id);
+          const count = (threads.get(b.id) || []).length;
+          return `<button type="button" class="msg-toggle${waiting ? " has-waiting" : ""}" data-id="${b.id}">
+            ✉ ${waiting ? `${waiting} new` : count ? "Messages" : "Message"}
+          </button>`;
+        })()}
+      </div>
+      ${openThreads.has(b.id) ? threadHtml(b) : ""}
 
       <p class="trip-msg" hidden></p>
 

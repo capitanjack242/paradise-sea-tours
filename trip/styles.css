@@ -1,0 +1,68 @@
+/* The passenger's trip page — opened on a phone, probably standing on a dock,
+   probably one-handed. Big type, one column, nothing to hunt for. */
+:root{
+  --navy:#06243b; --deep:#0a3b5c; --teal:#0bbcd6; --aqua:#5fe1e8; --foam:#f4fbfd;
+  --ink:#0f2733; --muted:#5b7688; --line:#dbe8ef; --ok:#12a05a; --danger:#d6453a;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;background:var(--foam);color:var(--ink);
+  font:16px/1.5 Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+  -webkit-text-size-adjust:100%}
+.wrap{max-width:560px;margin:0 auto;padding:0 .9rem 2.5rem}
+
+.topbar{padding:1.1rem 0 .8rem}
+.brand{font-family:'Baloo 2',system-ui,sans-serif;font-weight:800;font-size:1.2rem;
+  color:var(--navy);margin:0;letter-spacing:-.02em}
+.brand strong{color:var(--teal);font-weight:800}
+
+.notice{background:#fff;border:1px solid var(--line);border-radius:14px;padding:1.4rem;
+  text-align:center;color:var(--muted)}
+.notice h2{margin:0 0 .5rem;font-size:1.1rem;color:var(--ink)}
+.notice p{margin:0;font-size:.95rem;line-height:1.55}
+
+.trip-card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:1.1rem;
+  box-shadow:0 2px 10px rgba(6,36,59,.05)}
+.status{display:flex;flex-direction:column;gap:.15rem;border-radius:10px;padding:.7em .85em;
+  margin-bottom:.9rem}
+.status strong{font-size:1rem}
+.status span{font-size:.88rem;opacity:.9}
+.s-requested,.s-quoted{background:#fff8e1;color:#8a6d00}
+.s-confirmed,.s-assigned{background:#eafaf1;color:var(--ok)}
+.s-in_progress{background:#e0f7fa;color:#0a7a8c}
+.s-completed{background:var(--foam);color:var(--muted)}
+.s-cancelled{background:#fdecea;color:var(--danger)}
+
+.route{font-size:1.25rem;font-weight:700;line-height:1.3;letter-spacing:-.01em}
+.route .arw{color:var(--muted);font-weight:500}
+.meta{color:var(--muted);font-size:.95rem;margin-top:.25rem}
+.boat,.fare{margin-top:.7rem;padding-top:.7rem;border-top:1px solid var(--line);font-weight:600}
+.lab{display:block;font-size:.7rem;font-weight:800;letter-spacing:.09em;text-transform:uppercase;
+  color:var(--muted);margin-bottom:.1rem}
+
+.chat{margin-top:1rem;background:#fff;border:1px solid var(--line);border-radius:14px;
+  padding:1rem;box-shadow:0 2px 10px rgba(6,36,59,.05)}
+.chat-title{margin:0 0 .7rem;font-size:.72rem;font-weight:800;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--muted)}
+.thread{display:flex;flex-direction:column;gap:.5rem;max-height:44vh;overflow-y:auto;
+  padding-right:.2rem}
+.empty{margin:.5rem 0;font-size:.92rem;color:var(--muted);text-align:center;line-height:1.5}
+.bub{max-width:82%;padding:.5em .75em;border-radius:14px;font-size:.95rem;line-height:1.4}
+.bub .who{font-size:.7rem;font-weight:700;opacity:.75;margin-bottom:.12rem}
+.bub .body{white-space:pre-wrap;overflow-wrap:anywhere}
+.bub.theirs{background:var(--foam);border:1px solid var(--line);align-self:flex-start;
+  border-bottom-left-radius:4px}
+.bub.mine{background:var(--teal);color:#fff;align-self:flex-end;border-bottom-right-radius:4px}
+
+.composer{display:flex;gap:.45rem;margin-top:.8rem}
+.composer input{flex:1;min-width:0;font:inherit;font-size:1rem;padding:.65em .8em;
+  border:1px solid var(--line);border-radius:999px;background:var(--foam)}
+.composer input:focus{outline:2px solid var(--aqua);border-color:var(--teal);background:#fff}
+.composer button{font:inherit;font-weight:800;font-size:.95rem;background:var(--teal);color:#fff;
+  border:none;border-radius:999px;padding:.65em 1.3em;cursor:pointer}
+.composer button:hover{background:var(--deep)}
+
+.closed-note{margin:.8rem 0 0;font-size:.9rem;color:var(--muted);line-height:1.5}
+.closed-note a{color:var(--deep);font-weight:600}
+.chat-err{margin:.6rem 0 0;font-size:.9rem;font-weight:600;color:var(--danger);
+  background:#fdecea;border-radius:8px;padding:.5em .7em}

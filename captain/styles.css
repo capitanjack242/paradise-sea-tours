@@ -92,6 +92,35 @@ body{margin:0;background:var(--foam);color:var(--ink);
 .trip-msg{margin:.7rem 0 0;font-size:.9rem;font-weight:600;color:var(--danger);
   background:#fdecea;border-radius:8px;padding:.5em .7em}
 
+/* Messages — the whole channel to the passenger, since no numbers change hands. */
+.msg-toggle{font:inherit;font-weight:700;font-size:.85rem;background:var(--deep);color:#fff;
+  border:none;border-radius:999px;padding:.55em 1.1em;cursor:pointer;white-space:nowrap}
+.msg-toggle:hover{background:var(--navy)}
+.msg-toggle.has-waiting{background:#e0a03c;color:#3a2600}
+.thread-box{margin-top:.8rem;border-top:1px solid var(--line);padding-top:.8rem}
+.thread-scroll{max-height:250px;overflow-y:auto;display:flex;flex-direction:column;gap:.45rem}
+.thread-empty{margin:.3rem 0;font-size:.88rem;color:var(--muted);text-align:center}
+.bub{max-width:80%;padding:.45em .7em;border-radius:12px;font-size:.92rem;line-height:1.4}
+.bub-who{font-size:.7rem;font-weight:700;opacity:.75;margin-bottom:.1rem}
+.bub-customer{background:var(--foam);border:1px solid var(--line);align-self:flex-start;
+  border-bottom-left-radius:4px}
+.bub-captain{background:var(--teal);color:#fff;align-self:flex-end;border-bottom-right-radius:4px}
+.bub-dispatch{background:var(--navy);color:#fff;align-self:flex-end;border-bottom-right-radius:4px}
+.bub-body{white-space:pre-wrap;overflow-wrap:anywhere}
+
+/* One tap beats typing when you have a line in the other hand. */
+.quicks{display:flex;gap:.35rem;flex-wrap:wrap;margin-top:.6rem}
+.quick{font:inherit;font-size:.82rem;font-weight:700;color:var(--deep);background:#fff;
+  border:1px solid var(--line);border-radius:999px;padding:.4em .8em;cursor:pointer}
+.quick:hover{border-color:var(--teal);background:var(--foam)}
+.thread-compose{display:flex;gap:.4rem;margin-top:.6rem}
+.thread-input{flex:1;min-width:0;font:inherit;font-size:1rem;padding:.6em .7em;
+  border:1px solid var(--line);border-radius:10px;background:#fff}
+.thread-input:focus{outline:2px solid var(--aqua);border-color:var(--teal)}
+.thread-send{font:inherit;font-weight:800;font-size:.95rem;background:var(--teal);color:#fff;
+  border:none;border-radius:10px;padding:.6em 1.1em;cursor:pointer}
+.thread-send:hover{background:var(--deep)}
+
 /* The main action, sized so it's hard to miss and hard to hit by accident. */
 /* Getting under way is a plain single tap — it isn't final and pressing it a
    minute early costs nothing. Finishing a run is the one that asks twice. */

@@ -29,11 +29,16 @@ const payoutBody = document.getElementById("payoutBody");
 const payoutEmpty = document.getElementById("payoutEmpty");
 const payoutTotals = document.getElementById("payoutTotals");
 
+/** Where a passenger reads their own trip. Their token is the only key. */
+const TRIP_URL = location.origin + location.pathname.replace(/control\/$/, "trip/");
+
 let currentFilter = "active";
 let currentView = "bookings";
 let clientQuery = "";
 const expandedClients = new Set(); // clients whose trip table is open
 const expandedPayouts = new Set(); // boats whose week's trips are open
+const openThreads = new Set();     // bookings whose message thread is open
+let threadsByBooking = new Map();  // booking id -> messages, loaded with the board
 let weekOffset = 0;                // 0 = the pay week running now
 let pollTimer = null;
 let boatsList = []; // active boats available to assign, loaded once per session
@@ -87,6 +92,11 @@ function startLiveUpdates() {
     .on(
       "postgres_changes",
       { event: "*", schema: "public", table: "bookings" },
+      () => scheduleRefresh()
+    )
+    .on(
+      "postgres_changes",
+      { event: "*", schema: "public", table: "messages" },
       () => scheduleRefresh()
     )
     .subscribe((status) => {
@@ -211,6 +221,7 @@ async function loadBookings() {
     return;
   }
   window.__allBookings = data;
+  await loadMessages();
   if (currentView === "clients") renderClients(data);
   else if (currentView === "boats") renderBoats();
   else if (currentView === "payout") renderPayout();
@@ -648,6 +659,87 @@ function prettyPhone(raw) {
   }
 }
 
+async function loadMessages() {
+  const { data, error } = await db
+    .from("messages")
+    .select("id, booking_id, sender, body, created_at")
+    .order("created_at");
+  if (error) {
+    console.error("load messages failed:", error);
+    return;
+  }
+  const byBooking = new Map();
+  for (const m of data || []) {
+    if (!byBooking.has(m.booking_id)) byBooking.set(m.booking_id, []);
+    byBooking.get(m.booking_id).push(m);
+  }
+  threadsByBooking = byBooking;
+}
+
+/* How many passenger messages have arrived since anyone here last replied.
+   Derived rather than stored — no read receipts to keep in step, and it answers
+   the only question that matters: is somebody waiting on us. */
+function awaitingReply(bookingId) {
+  const thread = threadsByBooking.get(bookingId) || [];
+  let n = 0;
+  for (let i = thread.length - 1; i >= 0; i--) {
+    if (thread[i].sender === "customer") n++;
+    else break;
+  }
+  return n;
+}
+
+async function sendMessage(bookingId, body, card) {
+  const text = (body || "").trim();
+  if (!text) return;
+  card?.classList.add("row-saving");
+  const { error } = await db
+    .from("messages")
+    .insert({ booking_id: bookingId, sender: "dispatch", body: text });
+  card?.classList.remove("row-saving");
+  if (error) {
+    alert("Message not sent: " + error.message);
+    return;
+  }
+  await loadMessages();
+  renderBookings(window.__allBookings || []);
+}
+
+function threadHtml(b) {
+  const thread = threadsByBooking.get(b.id) || [];
+  const bubbles = thread.length
+    ? thread
+        .map((m) => {
+          const at = new Date(m.created_at).toLocaleString(undefined, {
+            month: "short", day: "numeric", hour: "numeric", minute: "2-digit",
+          });
+          const who = m.sender === "customer" ? esc(b.contact_name || "Passenger")
+                    : m.sender === "captain" ? esc(b.boats?.captain_name || "Captain")
+                    : "You";
+          return `<div class="bub bub-${esc(m.sender)}">
+                    <div class="bub-who">${who} · ${at}</div>
+                    <div class="bub-body">${esc(m.body)}</div>
+                  </div>`;
+        })
+        .join("")
+    : `<p class="thread-empty">Nothing said yet.</p>`;
+
+  return `
+    <div class="thread-box">
+      <div class="thread-scroll">${bubbles}</div>
+      <div class="thread-compose">
+        <input type="text" class="thread-input" data-id="${b.id}"
+               placeholder="Message ${esc(b.contact_name || "the passenger")}…" maxlength="2000">
+        <button type="button" class="thread-send" data-id="${b.id}">Send</button>
+      </div>
+      <p class="thread-link">
+        Passenger's link:
+        <code>${TRIP_URL}?t=${esc(b.access_token || "")}</code>
+        <button type="button" class="thread-copy" data-token="${esc(b.access_token || "")}">Copy</button>
+      </p>
+    </div>`;
+}
+
 function matchesFilter(b) {
   if (currentFilter === "all") return true;
   if (currentFilter === "completed") return b.status === "completed";
@@ -684,6 +776,51 @@ function renderBookings(all) {
       if (b) {
         b.boats = boatId ? boatsList.find((x) => x.id === boatId) || null : null;
         renderBookings(window.__allBookings);
+      }
+    });
+  });
+  bookingsBody.querySelectorAll("button.msg-toggle").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const id = btn.dataset.id;
+      openThreads.has(id) ? openThreads.delete(id) : openThreads.add(id);
+      renderBookings(window.__allBookings || []);
+      if (openThreads.has(id)) {
+        const card = bookingsBody.querySelector(`.thread-input[data-id="${id}"]`);
+        card?.focus();
+        const scroll = card?.closest(".thread-box")?.querySelector(".thread-scroll");
+        if (scroll) scroll.scrollTop = scroll.scrollHeight;
+      }
+    });
+  });
+  bookingsBody.querySelectorAll("button.thread-send").forEach((btn) => {
+    const input = bookingsBody.querySelector(`.thread-input[data-id="${btn.dataset.id}"]`);
+    const fire = () => {
+      const text = input.value;
+      input.value = "";
+      sendMessage(btn.dataset.id, text, btn.closest(".booking-card"));
+    };
+    btn.addEventListener("click", fire);
+    input?.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") { e.preventDefault(); fire(); }
+    });
+  });
+  bookingsBody.querySelectorAll("button.thread-copy").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const link = `${TRIP_URL}?t=${btn.dataset.token}`;
+      try {
+        await navigator.clipboard.writeText(link);
+        btn.textContent = "Copied";
+        setTimeout(() => (btn.textContent = "Copy"), 1500);
+      } catch {
+        // Clipboard blocked (insecure context, or permission refused) — select
+        // the link instead so it can still be copied by hand.
+        const code = btn.previousElementSibling;
+        const range = document.createRange();
+        range.selectNodeContents(code);
+        const sel = getSelection();
+        sel.removeAllRanges();
+        sel.addRange(range);
+        btn.textContent = "Press ⌘C";
       }
     });
   });
@@ -873,9 +1010,14 @@ function cardHtml(b) {
         <div class="trip-route">${esc(b.pickup || "—")} <span class="arrow">→</span> ${esc(b.destination || "—")}</div>
         <div class="trip-meta">${when} · ${b.passengers ?? "?"} pax · ${esc(b.trip_type || "")}</div>
         ${b.notes ? `<div class="card-notes">${esc(b.notes)}</div>` : ""}
-        ${b.contact_phone
-          ? `<a class="wa-link${confirmed ? " wa-send" : ""}" href="https://wa.me/${b.contact_phone.replace(/\D/g, "")}?text=${encodeURIComponent(customerConfirmMessage(b))}" target="_blank" rel="noopener">💬 ${confirmed ? "Send the boat details" : "Message customer"}</a>`
-          : ""}
+        ${(() => {
+          const waiting = awaitingReply(b.id);
+          const count = (threadsByBooking.get(b.id) || []).length;
+          return `<button type="button" class="msg-toggle${waiting ? " has-waiting" : ""}" data-id="${b.id}">
+            ✉ Messages${count ? ` (${count})` : ""}${waiting ? ` · ${waiting} waiting on you` : ""}
+          </button>`;
+        })()}
+        ${openThreads.has(b.id) ? threadHtml(b) : ""}
       </div>
 
       ${controls}

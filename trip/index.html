@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Your trip — Paradise Sea Tours</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%E2%9A%93%3C/text%3E%3C/svg%3E">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div class="wrap">
+  <header class="topbar">
+    <h1 class="brand">Paradise<strong>Sea Tours</strong></h1>
+  </header>
+
+  <div id="loading" class="notice">Loading your trip…</div>
+
+  <div id="notFound" class="notice" hidden>
+    <h2>We couldn't find that trip</h2>
+    <p>The link may be incomplete, or the booking may have been removed.
+       Check the message it came in, or reply there and we'll sort it out.</p>
+  </div>
+
+  <main id="tripView" hidden>
+    <section class="trip-card">
+      <div id="statusBanner" class="status" hidden></div>
+      <div class="route" id="route"></div>
+      <div class="meta" id="meta"></div>
+      <div class="boat" id="boat" hidden></div>
+      <div class="fare" id="fare" hidden></div>
+    </section>
+
+    <section class="chat">
+      <h2 class="chat-title">Messages</h2>
+      <div id="thread" class="thread"></div>
+      <div id="composer" class="composer">
+        <input id="msgInput" type="text" maxlength="2000" placeholder="Type a message…"
+               autocomplete="off" aria-label="Type a message">
+        <button id="sendBtn" type="button">Send</button>
+      </div>
+      <p id="closedNote" class="closed-note" hidden>
+        This trip is finished, so the thread is closed. If something's outstanding,
+        call us on <a id="callUs" href="tel:+50764819290">+507 6481-9290</a>.
+      </p>
+      <p id="chatErr" class="chat-err" hidden></p>
+    </section>
+  </main>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="script.js"></script>
+</body>
+</html>
