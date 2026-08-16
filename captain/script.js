@@ -103,8 +103,10 @@ function renderAvailability() {
         weekday: "short", hour: "numeric", minute: "2-digit",
       })
     : null;
+  // Say the 10pm rule out loud, so being switched off overnight isn't a
+  // mystery the next morning.
   availSub.textContent = on
-    ? `${myBoat.name} · available${since ? ` since ${since}` : ""}`
+    ? `${myBoat.name} · available${since ? ` since ${since}` : ""} · off at 10pm`
     : `${myBoat.name} · dispatch won't offer you runs`;
 }
 

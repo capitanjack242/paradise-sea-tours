@@ -73,7 +73,7 @@ export default function TodayScreen({
               <Text style={s.availTitle}>Available today</Text>
               <Text style={s.availSub}>
                 {boat.is_available
-                  ? `${boat.name}${since ? ` · on since ${since}` : ""}`
+                  ? `${boat.name}${since ? ` · on since ${since}` : ""} · off at 10pm`
                   : `${boat.name} · the office won't offer you runs`}
               </Text>
             </View>
