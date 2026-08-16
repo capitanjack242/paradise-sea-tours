@@ -204,13 +204,9 @@ function renderPayment(t) {
   // The button is here before the payment provider is. Rather than let it do
   // nothing, it opens the office thread with the message already started —
   // which is how a passenger actually pays today.
-  slot.innerHTML = `
-    <button type="button" class="pay-btn" id="payBtn">Pay ${money(due)}</button>
-    <p class="pay-howto" id="payHowto" hidden>Card payments aren't switched on yet. We've
-       started a message to the office — send it and we'll take payment directly.</p>`;
+  slot.innerHTML = `<button type="button" class="pay-btn" id="payBtn">Pay ${money(due)}</button>`;
 
   document.getElementById("payBtn").onclick = () => {
-    document.getElementById("payHowto").hidden = false;
     setChannel("office");
     msgInput.value = msgInput.value || "I'd like to pay for my trip.";
     msgInput.focus();

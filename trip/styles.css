@@ -86,7 +86,6 @@ body{margin:0;background:var(--foam);color:var(--ink);
 .pay-line.pay-due strong{font-size:1.25rem}
 .pay-state{margin-top:.7rem;font-size:.88rem;font-weight:600;color:var(--deep)}
 .pay.is-paid .pay-state{color:#1a7f52}
-.pay-howto{margin:.5rem 0 0;font-size:.85rem;color:var(--muted);line-height:1.45}
 
 /* ── the two sides of the conversation ────────────────────────────────────
    The captain's tab stays visible when it's locked: a passenger should know

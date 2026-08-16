@@ -15,10 +15,8 @@ import type { TripView } from "../lib/trip";
 
 /* What's owed, and what paying unlocks.
 
-   The pay button is here ahead of the payment provider. Until a link exists it
-   says so and points at the office, which is how a passenger actually pays
-   today — a control that explains itself beats one that fails silently. When
-   the link arrives it replaces the button's action and nothing else changes. */
+   The pay button is wired to a message for now; the payment link replaces its
+   action when the provider is connected, and nothing else here changes. */
 
 export default function PaymentScreen({
   trip,
@@ -115,25 +113,18 @@ export default function PaymentScreen({
             : "Payment opens up messaging with your captain."}
         </Text>
 
-        {/* The button is here before the payment provider is. Until a link
-            exists it says so plainly rather than failing silently. */}
         {!settled && !tooEarly ? (
-          <>
-            <Pressable
-              style={({ pressed }) => [s.payBtn, pressed && s.payBtnDown]}
-              onPress={() =>
-                Alert.alert(
-                  "Card payments aren't switched on yet",
-                  "Message the office and we'll take payment directly — cash on the dock or a transfer."
-                )
-              }
-            >
-              <Text style={s.payBtnText}>Pay {formatMoney(due)}</Text>
-            </Pressable>
-            <Text style={s.howto}>
-              Card payments go live shortly. Until then the office can take payment directly.
-            </Text>
-          </>
+          <Pressable
+            style={({ pressed }) => [s.payBtn, pressed && s.payBtnDown]}
+            onPress={() =>
+              Alert.alert(
+                "Card payments aren't switched on yet",
+                "Message the office and we'll take payment directly — cash on the dock or a transfer."
+              )
+            }
+          >
+            <Text style={s.payBtnText}>Pay {formatMoney(due)}</Text>
+          </Pressable>
         ) : null}
       </View>
 
@@ -202,7 +193,6 @@ const s = StyleSheet.create({
   },
   payBtnDown: { opacity: 0.85 },
   payBtnText: { color: colors.white, fontSize: 17, fontWeight: "800" },
-  howto: { marginTop: 8, fontSize: 12.5, color: colors.muted, lineHeight: 17, textAlign: "center" },
 
   note: { marginTop: 16, fontSize: 12.5, color: colors.muted, textAlign: "center", lineHeight: 18 },
 });
