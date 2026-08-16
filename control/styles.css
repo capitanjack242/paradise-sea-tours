@@ -230,6 +230,17 @@ h1{font-family:'Baloo 2','Inter',sans-serif;margin:0}
 .return-leg{margin-top:.25rem;font-size:.85rem;font-weight:600;color:var(--deep)}
 .return-leg.missing{color:#8a6d00;background:#fff8e1;border-radius:6px;padding:.25em .5em;
   display:inline-block}
+/* Where the passenger says they're standing — what the office reads out when
+   a captain phones in unable to find anyone. */
+.shared-position{display:flex;align-items:center;gap:.5rem;margin-top:.5rem;
+  background:#e9fbf3;border:1px solid #bfe9d6;border-radius:8px;padding:.45em .7em;
+  text-decoration:none;color:inherit}
+.shared-position:hover{border-color:#8fd9b8}
+.shared-position strong{display:block;font-size:.85rem;color:#1a7f52}
+.shared-position small{display:block;font-size:.78rem;color:var(--muted);margin-top:.05rem}
+.shared-position.is-stale{background:#fff8e1;border-color:#e8d6a8}
+.shared-position.is-stale strong{color:#8a6d00}
+.position-pin{font-size:.95rem}
 .card-notes{margin-top:.5rem;font-size:.88rem;font-style:italic;color:var(--ink);
   background:var(--foam);border-radius:8px;padding:.5em .7em}
 .wa-link{display:inline-block;margin-top:.5rem;color:var(--ok);font-weight:600;

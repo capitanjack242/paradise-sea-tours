@@ -1,4 +1,5 @@
 import { supabase } from "./supabase";
+import type { Fix } from "./location";
 
 /** A bookable offering — routes, charters and fishing trips all live here. */
 export type Service = {
@@ -95,6 +96,8 @@ export type NewBooking = {
   contactName: string;
   contactPhone: string;
   notes?: string;
+  /** Where they're actually standing, if they chose to share it. */
+  location?: Fix | null;
 };
 
 /**
@@ -115,6 +118,11 @@ export async function createBooking(b: NewBooking): Promise<void> {
     passengers: b.passengers,
     trip_type: b.tripType,
     notes: b.notes?.trim() || null,
+    // Optional, and stored with the time it was taken — a captain reading a
+    // pin needs to know whether it's from a minute ago or an hour ago.
+    pickup_lat: b.location?.lat ?? null,
+    pickup_lng: b.location?.lng ?? null,
+    located_at: b.location ? b.location.at.toISOString() : null,
   });
   if (error) throw error;
 }

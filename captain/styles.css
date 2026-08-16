@@ -79,6 +79,16 @@ body{margin:0;background:var(--foam);color:var(--ink);
 .trip-route{font-size:1.15rem;font-weight:700;line-height:1.3;margin:.2rem 0 .3rem}
 .trip-route .arrow{color:var(--muted);font-weight:500}
 .trip-meta{font-size:.92rem;color:var(--muted)}
+/* Which end of the dock they're actually standing on. */
+.waiting-at{display:flex;align-items:center;gap:.55rem;margin-top:.5rem;
+  background:#e9fbf3;border:1px solid #bfe9d6;border-radius:8px;padding:.5em .7em;
+  text-decoration:none;color:inherit}
+.waiting-at:hover{border-color:#8fd9b8}
+.waiting-at strong{display:block;font-size:.95rem;color:#1a9d63}
+.waiting-at small{display:block;font-size:.8rem;color:var(--muted);margin-top:.1rem}
+.waiting-at.is-stale{background:#fff8e1;border-color:#e8d6a8}
+.waiting-at.is-stale strong{color:#8a6d00}
+.waiting-pin{font-size:1rem}
 /* The single thing that decides whether someone gets left on a beach. */
 .return-leg{margin-top:.5rem;font-weight:700;color:var(--deep);background:#e8f4fd;
   border-radius:8px;padding:.5em .7em;font-size:.95rem}

@@ -1,15 +1,21 @@
 {
   "expo": {
-    "name": "app",
-    "slug": "app",
+    "name": "Paradise Sea Tours",
+    "slug": "paradise-sea-tours",
+    "scheme": "paradiseseatours",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.paradiseseatours.app",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "So the captain picking you up can see where you're waiting on the dock. Only while the app is open, and only until your trip is finished."
+      }
     },
     "android": {
+      "package": "com.paradiseseatours.app",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/android-icon-foreground.png",
@@ -20,6 +26,16 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "plugins": [
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "So the captain picking you up can see where you're waiting on the dock. Only while the app is open, and only until your trip is finished.",
+          "isIosBackgroundLocationEnabled": false,
+          "isAndroidBackgroundLocationEnabled": false
+        }
+      ]
+    ]
   }
 }

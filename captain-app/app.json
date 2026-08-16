@@ -8,6 +8,7 @@
     "userInterfaceStyle": "light",
     "ios": {
       "supportsTablet": true,
+      "bundleIdentifier": "com.paradiseseatours.captain",
       "infoPlist": {
         "UIBackgroundModes": [
           "remote-notification"
@@ -15,6 +16,7 @@
       }
     },
     "android": {
+      "package": "com.paradiseseatours.captain",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/android-icon-foreground.png",

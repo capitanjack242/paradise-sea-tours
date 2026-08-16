@@ -23,6 +23,10 @@ export type Trip = {
   captain_response: "accepted" | "declined" | null;
   decline_reason: string | null;
   assigned_boat_id: string | null;
+  /** Where the passenger says they're standing. Null unless they shared it. */
+  pickup_lat: number | null;
+  pickup_lng: number | null;
+  located_at: string | null;
   boats: { name: string | null } | null;
 };
 
@@ -59,7 +63,7 @@ export async function fetchTrips(): Promise<Trip[]> {
     .select(
       "id, status, pickup, destination, scheduled_at, return_at, passengers, trip_type, " +
         "contact_name, notes, quoted_price_cents, paid_out_at, offered_at, captain_response, " +
-        "decline_reason, assigned_boat_id, boats(name)"
+        "decline_reason, assigned_boat_id, pickup_lat, pickup_lng, located_at, boats(name)"
     )
     .order("scheduled_at", { ascending: true });
   if (error) throw error;
@@ -100,6 +104,49 @@ export async function answerOffer(
     })
     .eq("id", id);
   if (error) throw error;
+}
+
+/* ── where the passenger is standing ──────────────────────────────────────
+   Shown only to the captain who has taken the run, and only while it's live.
+   Before he accepts, it's none of his business; after drop-off the database
+   has already thrown the coordinates away. Same rule as the phone number. */
+
+export type Waiting = {
+  lat: number;
+  lng: number;
+  /** How old the reading is. A pin without this is a lie waiting to happen. */
+  minutesOld: number;
+  stale: boolean;
+};
+
+/** Anything older than this and he should message rather than trust the pin. */
+const STALE_AFTER_MINUTES = 30;
+
+export function waitingAt(t: Trip): Waiting | null {
+  if (t.pickup_lat == null || t.pickup_lng == null) return null;
+  if (t.captain_response !== "accepted") return null;
+  if (t.status === "completed" || t.status === "cancelled") return null;
+
+  const taken = t.located_at ? new Date(t.located_at).getTime() : NaN;
+  const minutesOld = Number.isFinite(taken)
+    ? Math.max(0, Math.round((Date.now() - taken) / 60000))
+    : Infinity;
+
+  return {
+    lat: t.pickup_lat,
+    lng: t.pickup_lng,
+    minutesOld,
+    stale: minutesOld >= STALE_AFTER_MINUTES,
+  };
+}
+
+export function howOld(minutes: number): string {
+  if (!Number.isFinite(minutes)) return "time unknown";
+  if (minutes < 1) return "just now";
+  if (minutes === 1) return "a minute ago";
+  if (minutes < 60) return `${minutes} minutes ago`;
+  const hours = Math.round(minutes / 60);
+  return hours === 1 ? "an hour ago" : `${hours} hours ago`;
 }
 
 /** A run that's been offered and not yet answered is a question, not a job. */

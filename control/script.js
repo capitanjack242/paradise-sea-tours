@@ -1025,6 +1025,38 @@ function customerConfirmMessage(b) {
   return lines.join("\n");
 }
 
+/* Where the passenger said they were standing, if they shared it.
+   Dispatch sees this on any live trip, without waiting for a captain to accept
+   — when a captain phones in saying he can't find anyone, the office is who
+   has to answer. The captain's own view is stricter; see waitingAt() there. */
+const POSITION_STALE_AFTER_MINUTES = 30;
+
+function sharedPosition(b) {
+  if (b.pickup_lat == null || b.pickup_lng == null) return null;
+  if (b.status === "completed" || b.status === "cancelled") return null;
+
+  const taken = b.located_at ? new Date(b.located_at).getTime() : NaN;
+  const minutesOld = Number.isFinite(taken)
+    ? Math.max(0, Math.round((Date.now() - taken) / 60000))
+    : Infinity;
+
+  return {
+    lat: b.pickup_lat,
+    lng: b.pickup_lng,
+    minutesOld,
+    stale: minutesOld >= POSITION_STALE_AFTER_MINUTES,
+  };
+}
+
+function howOld(minutes) {
+  if (!Number.isFinite(minutes)) return "time unknown";
+  if (minutes < 1) return "just now";
+  if (minutes === 1) return "a minute ago";
+  if (minutes < 60) return `${minutes} minutes ago`;
+  const hours = Math.round(minutes / 60);
+  return hours === 1 ? "an hour ago" : `${hours} hours ago`;
+}
+
 function cardHtml(b) {
   const when = b.scheduled_at
     ? new Date(b.scheduled_at).toLocaleString(undefined, {
@@ -1134,6 +1166,21 @@ function cardHtml(b) {
           : b.trip_type === "Round trip"
           ? `<div class="return-leg missing">↩ Round trip with no return time — check with the customer</div>`
           : ""}
+        ${(() => {
+          const at = sharedPosition(b);
+          if (!at) return "";
+          return `<a class="shared-position${at.stale ? " is-stale" : ""}"
+                     href="https://www.google.com/maps/search/?api=1&query=${at.lat},${at.lng}"
+                     target="_blank" rel="noopener">
+            <span class="position-pin">📍</span>
+            <span>
+              <strong>Passenger shared where they're waiting</strong>
+              <small>${howOld(at.minutesOld)}${
+                at.stale ? " — old enough that they may have moved" : ""
+              } · Opens the map</small>
+            </span>
+          </a>`;
+        })()}
         ${b.notes ? `<div class="card-notes">${esc(b.notes)}</div>` : ""}
         ${(() => {
           const waiting = awaitingReply(b.id);

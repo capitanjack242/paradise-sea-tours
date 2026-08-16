@@ -2,7 +2,8 @@ import React from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { BigButton, Card, Pill } from "./ui";
 import { colors, radius } from "../lib/theme";
-import { isBeingAsked, money, type Message, type Trip } from "../lib/data";
+import { howOld, isBeingAsked, money, waitingAt, type Message, type Trip } from "../lib/data";
+import { openMap } from "../lib/maps";
 
 /* One job. At most one action is ever offered — whichever the trip is actually
    ready for — so there's nothing to read or choose between mid-run. */
@@ -42,6 +43,7 @@ export default function TripCard({
   const aboard = trip.status === "in_progress";
   const asked = isBeingAsked(trip);
   const waitingOnOffice = !asked && !["confirmed", "in_progress"].includes(trip.status);
+  const where = waitingAt(trip);
 
   return (
     <Card style={[s.card, aboard && s.cardAboard, busy && s.busy]}>
@@ -57,6 +59,26 @@ export default function TripCard({
         {trip.passengers ?? "?"} passengers · {trip.trip_type ?? ""} ·{" "}
         {money(trip.quoted_price_cents)}
       </Text>
+
+      {/* Which end of the dock they're actually standing on. Gone once they're
+          aboard, because by then it answers nothing. */}
+      {where && !aboard ? (
+        <Pressable
+          onPress={() => openMap(where.lat, where.lng, trip.contact_name ?? "Passenger")}
+          style={({ pressed }) => [s.whereBox, where.stale && s.whereStale, pressed && s.pressed]}
+        >
+          <Text style={s.whereIcon}>📍</Text>
+          <View style={s.whereText}>
+            <Text style={[s.whereTitle, where.stale && s.whereStaleText]}>
+              {where.stale ? "Where they were waiting" : "Where they're waiting"}
+            </Text>
+            <Text style={s.whereSub}>
+              Shared {howOld(where.minutesOld)}
+              {where.stale ? " — they may have moved" : ""} · Tap for the map
+            </Text>
+          </View>
+        </Pressable>
+      ) : null}
 
       {/* The one fact that decides whether someone gets left on a beach. */}
       {trip.return_at ? (
@@ -148,6 +170,24 @@ const s = StyleSheet.create({
   route: { fontSize: 18, fontWeight: "700", color: colors.ink, marginTop: 3, lineHeight: 24 },
   arrow: { color: colors.muted, fontWeight: "500" },
   meta: { fontSize: 14, color: colors.muted, marginTop: 3 },
+
+  whereBox: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 9,
+    backgroundColor: "#e9fbf3",
+    borderWidth: 1,
+    borderColor: "#bfe9d6",
+    borderRadius: radius.sm,
+    padding: 10,
+    marginTop: 10,
+  },
+  whereStale: { backgroundColor: colors.amberBg, borderColor: "#e8d6a8" },
+  whereIcon: { fontSize: 15 },
+  whereText: { flex: 1 },
+  whereTitle: { fontSize: 14.5, fontWeight: "700", color: colors.green },
+  whereStaleText: { color: colors.amber },
+  whereSub: { fontSize: 12.5, color: colors.muted, marginTop: 1 },
 
   returnBox: { backgroundColor: "#e8f4fd", borderRadius: radius.sm, padding: 10, marginTop: 10 },
   returnMissing: { backgroundColor: colors.amberBg },

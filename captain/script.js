@@ -380,6 +380,40 @@ async function setStatus(id, status, card) {
 }
 
 // ── rendering ────────────────────────────────────────────────────────────
+/* Where the passenger is standing, if they shared it.
+   Only once he's taken the run and only while it's live — before he accepts
+   it's none of his business, and after drop-off the database has already
+   thrown the coordinates away. Same rule as the phone number.
+   Kept in step with waitingAt() in the captain app; change one, change both. */
+const STALE_AFTER_MINUTES = 30;
+
+function waitingAt(b) {
+  if (b.pickup_lat == null || b.pickup_lng == null) return null;
+  if (b.captain_response !== "accepted") return null;
+  if (b.status === "completed" || b.status === "cancelled") return null;
+
+  const taken = b.located_at ? new Date(b.located_at).getTime() : NaN;
+  const minutesOld = Number.isFinite(taken)
+    ? Math.max(0, Math.round((Date.now() - taken) / 60000))
+    : Infinity;
+
+  return {
+    lat: b.pickup_lat,
+    lng: b.pickup_lng,
+    minutesOld,
+    stale: minutesOld >= STALE_AFTER_MINUTES,
+  };
+}
+
+function howOld(minutes) {
+  if (!Number.isFinite(minutes)) return "time unknown";
+  if (minutes < 1) return "just now";
+  if (minutes === 1) return "a minute ago";
+  if (minutes < 60) return `${minutes} minutes ago`;
+  const hours = Math.round(minutes / 60);
+  return hours === 1 ? "an hour ago" : `${hours} hours ago`;
+}
+
 function tripHtml(b) {
   const when = b.scheduled_at
     ? new Date(b.scheduled_at).toLocaleString(undefined, {
@@ -400,6 +434,22 @@ function tripHtml(b) {
       <div class="trip-when">${when}${aboard ? ` <span class="aboard-tag">• Aboard</span>` : ""}</div>
       <div class="trip-route">${esc(b.pickup || "—")} <span class="arrow">→</span> ${esc(b.destination || "—")}</div>
       <div class="trip-meta">${b.passengers ?? "?"} passengers · ${esc(b.trip_type || "")} · ${fare}</div>
+      ${(() => {
+        // Gone once they're aboard — by then the pin answers nothing.
+        const where = aboard ? null : waitingAt(b);
+        if (!where) return "";
+        return `<a class="waiting-at${where.stale ? " is-stale" : ""}"
+                   href="https://www.google.com/maps/search/?api=1&query=${where.lat},${where.lng}"
+                   target="_blank" rel="noopener">
+          <span class="waiting-pin">📍</span>
+          <span>
+            <strong>${where.stale ? "Where they were waiting" : "Where they're waiting"}</strong>
+            <small>Shared ${howOld(where.minutesOld)}${
+              where.stale ? " — they may have moved" : ""
+            } · Opens the map</small>
+          </span>
+        </a>`;
+      })()}
       ${b.return_at
         ? `<div class="return-leg">↩ Collect them again at ${esc(new Date(b.return_at).toLocaleString(undefined, {
              weekday: "short", hour: "numeric", minute: "2-digit" }))}</div>`

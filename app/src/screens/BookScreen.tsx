@@ -23,6 +23,7 @@ import {
   type Service,
   type TripType,
 } from "../lib/bookings";
+import { checkPermission, locate, type Fix } from "../lib/location";
 import { colors, radius } from "../lib/theme";
 
 const TIMES = [
@@ -64,6 +65,13 @@ export default function BookScreen() {
   const [profileName, setProfileName] = React.useState<string | null>(null);
   const [showSignIn, setShowSignIn] = React.useState(false);
 
+  // Sharing where you're standing. Off unless the passenger turns it on, and
+  // "blocked" is its own state because that one can only be undone in Settings.
+  const [fix, setFix] = React.useState<Fix | null>(null);
+  const [locating, setLocating] = React.useState(false);
+  const [locBlocked, setLocBlocked] = React.useState(false);
+  const [optedOut, setOptedOut] = React.useState(false);
+
   const signedIn = !!session;
   const myPhone = session?.user?.phone ? `+${session.user.phone}` : "";
 
@@ -77,6 +85,27 @@ export default function BookScreen() {
       .catch((e) => console.warn("could not load routes:", e?.message ?? e))
       .finally(() => setLoading(false));
   }, []);
+
+  // Reading the existing permission asks nobody anything — it just stops us
+  // offering a button that can't work.
+  React.useEffect(() => {
+    checkPermission().then((p) => setLocBlocked(p === "denied"));
+  }, []);
+
+  /** Turn sharing on (prompting if needed), or turn it back off. */
+  async function toggleLocation() {
+    if (fix) {
+      setFix(null);
+      setOptedOut(true);
+      return;
+    }
+    setOptedOut(false);
+    setLocating(true);
+    const got = await locate();
+    setLocating(false);
+    setFix(got);
+    if (!got) setLocBlocked((await checkPermission()) === "denied");
+  }
 
   const route = matchRoute(routes, pickup, destination);
   const fare = quoteCents(route, passengers, tripType);
@@ -107,6 +136,16 @@ export default function BookScreen() {
 
     setSubmitting(true);
     try {
+      // Take the reading now rather than trusting one from when the screen
+      // opened — they may have walked half the wharf since. If they never
+      // touched the row we ask once here, which is the moment it makes sense;
+      // if they turned it off or refused the phone, we don't pester them.
+      let where = fix;
+      if (!optedOut && !locBlocked) {
+        where = (await locate()) ?? fix;
+        setFix(where);
+      }
+
       await createBooking({
         pickup,
         destination,
@@ -117,6 +156,7 @@ export default function BookScreen() {
         contactName,
         contactPhone,
         notes: notes.trim() || undefined,
+        location: where,
       });
       Alert.alert(
         "Request sent",
@@ -193,6 +233,35 @@ export default function BookScreen() {
             multiline
           />
         </View>
+
+        {/* The dock is the plan; this is where they're actually standing.
+            Worth its own row so nobody is surprised by the permission box. */}
+        <Pressable
+          style={[s.loc, fix && s.locOn]}
+          onPress={toggleLocation}
+          disabled={locating || locBlocked}
+        >
+          <Text style={s.locIcon}>{fix ? "✓" : "📍"}</Text>
+          <View style={s.locText}>
+            <Text style={[s.locTitle, fix && s.locTitleOn]}>
+              {locating
+                ? "Finding you…"
+                : fix
+                ? "Your captain will see where you're waiting"
+                : locBlocked
+                ? "Location is off for this app"
+                : "Share where you're waiting"}
+            </Text>
+            <Text style={s.locSub}>
+              {locBlocked
+                ? "Turn it on in Settings if you'd like your captain to find you faster."
+                : fix
+                ? "Only while you're booking, and only until the trip is done. Tap to stop."
+                : "Helps your captain find you on a long dock. Optional."}
+            </Text>
+          </View>
+          {locating && <ActivityIndicator color={colors.teal} />}
+        </Pressable>
 
         <View style={s.fare}>
           {loading ? (
@@ -283,6 +352,23 @@ const s = StyleSheet.create({
     color: colors.ink,
   },
   signedIn: { fontSize: 11, color: colors.muted, textAlign: "center", marginTop: 2 },
+  loc: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    borderWidth: 1,
+    borderColor: colors.line,
+    borderRadius: radius.md,
+    backgroundColor: colors.foam,
+    paddingVertical: 11,
+    paddingHorizontal: 12,
+  },
+  locOn: { borderColor: colors.green, backgroundColor: colors.greenBg },
+  locIcon: { fontSize: 16 },
+  locText: { flex: 1 },
+  locTitle: { fontSize: 14, fontWeight: "700", color: colors.ink },
+  locTitleOn: { color: colors.green },
+  locSub: { fontSize: 11.5, color: colors.muted, marginTop: 1, lineHeight: 15 },
   notesInput: { minHeight: 58, textAlignVertical: "top", fontWeight: "500" },
   fare: { borderRadius: radius.md, padding: 14, backgroundColor: colors.deep, marginTop: 4 },
   fareRow: { flexDirection: "row", alignItems: "baseline", justifyContent: "space-between" },
