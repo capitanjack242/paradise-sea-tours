@@ -1,15 +1,24 @@
 import React from "react";
-import { ActivityIndicator, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
+import {
+  ActivityIndicator,
+  Alert,
+  Pressable,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 import { colors, radius } from "../lib/theme";
 import { formatMoney } from "../lib/bookings";
 import type { TripView } from "../lib/trip";
 
 /* What's owed, and what paying unlocks.
 
-   No provider is connected yet, so there is deliberately no pay button. A
-   button that does nothing is worse than a sentence that's true — when the
-   payment link exists it drops into the slot at the bottom and nothing else
-   here changes. */
+   The pay button is here ahead of the payment provider. Until a link exists it
+   says so and points at the office, which is how a passenger actually pays
+   today — a control that explains itself beats one that fails silently. When
+   the link arrives it replaces the button's action and nothing else changes. */
 
 export default function PaymentScreen({
   trip,
@@ -106,12 +115,25 @@ export default function PaymentScreen({
             : "Payment opens up messaging with your captain."}
         </Text>
 
-        {/* The slot. A payment link lands here and nothing above it changes. */}
+        {/* The button is here before the payment provider is. Until a link
+            exists it says so plainly rather than failing silently. */}
         {!settled && !tooEarly ? (
-          <Text style={s.howto}>
-            We'll send you a payment link. Until then the office can take payment
-            directly — just ask in Messages.
-          </Text>
+          <>
+            <Pressable
+              style={({ pressed }) => [s.payBtn, pressed && s.payBtnDown]}
+              onPress={() =>
+                Alert.alert(
+                  "Card payments aren't switched on yet",
+                  "Message the office and we'll take payment directly — cash on the dock or a transfer."
+                )
+              }
+            >
+              <Text style={s.payBtnText}>Pay {formatMoney(due)}</Text>
+            </Pressable>
+            <Text style={s.howto}>
+              Card payments go live shortly. Until then the office can take payment directly.
+            </Text>
+          </>
         ) : null}
       </View>
 
@@ -171,7 +193,16 @@ const s = StyleSheet.create({
 
   state: { marginTop: 12, fontSize: 14, fontWeight: "700", color: colors.deep, lineHeight: 19 },
   statePaid: { color: colors.green },
-  howto: { marginTop: 6, fontSize: 13, color: colors.muted, lineHeight: 18 },
+  payBtn: {
+    marginTop: 14,
+    paddingVertical: 15,
+    borderRadius: 12,
+    alignItems: "center",
+    backgroundColor: colors.teal,
+  },
+  payBtnDown: { opacity: 0.85 },
+  payBtnText: { color: colors.white, fontSize: 17, fontWeight: "800" },
+  howto: { marginTop: 8, fontSize: 12.5, color: colors.muted, lineHeight: 17, textAlign: "center" },
 
   note: { marginTop: 16, fontSize: 12.5, color: colors.muted, textAlign: "center", lineHeight: 18 },
 });

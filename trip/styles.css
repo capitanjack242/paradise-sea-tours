@@ -98,3 +98,11 @@ body{margin:0;background:var(--foam);color:var(--ink);
 .chan-tab.active{background:var(--deep);border-color:var(--deep);color:#fff}
 .chan-tab.locked{opacity:.6}
 .chan-tab.locked::after{content:" 🔒"}
+
+/* The pay button exists before the payment provider does. It's a real control
+   with a real destination — the office thread — rather than a dead one. */
+.pay-btn{display:block;width:100%;margin-top:.9rem;padding:.85em 1em;border:0;
+  border-radius:12px;background:var(--teal,#0bbcd6);color:#fff;font-size:1.05rem;
+  font-weight:800;cursor:pointer}
+.pay-btn:hover{filter:brightness(1.06)}
+.pay-btn:active{transform:translateY(1px)}
