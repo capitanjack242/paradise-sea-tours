@@ -34,14 +34,38 @@
       <div class="fare" id="fare" hidden></div>
     </section>
 
+    <!-- Payment. The pay action itself is deliberately an empty slot until a
+         provider is wired up — better a stated "we'll send you a link" than a
+         button that does nothing. -->
+    <section class="pay" id="paySection" hidden>
+      <h2 class="pay-title">Payment</h2>
+      <div class="pay-lines">
+        <div class="pay-line"><span>Fare</span><strong id="payFare">—</strong></div>
+        <div class="pay-line" id="payPaidLine" hidden><span>Paid</span><strong id="payPaid">—</strong></div>
+        <div class="pay-line pay-due" id="payDueLine"><span>Due</span><strong id="payDue">—</strong></div>
+      </div>
+      <div class="pay-state" id="payState"></div>
+      <div class="pay-slot" id="paySlot"></div>
+    </section>
+
     <section class="chat">
       <h2 class="chat-title">Messages</h2>
+      <!-- Two channels, not two inboxes: the office is always here, the captain
+           appears once the trip is paid for. -->
+      <div class="chan-tabs" id="chanTabs">
+        <button type="button" class="chan-tab active" data-channel="office">Paradise Sea Tours</button>
+        <button type="button" class="chan-tab" data-channel="captain" id="captainTab">Your captain</button>
+      </div>
       <div id="thread" class="thread"></div>
       <div id="composer" class="composer">
         <input id="msgInput" type="text" maxlength="2000" placeholder="Type a message…"
                autocomplete="off" aria-label="Type a message">
         <button id="sendBtn" type="button">Send</button>
       </div>
+      <p id="captainLockNote" class="closed-note" hidden>
+        Your captain opens up here once the trip is paid for. Until then we're on
+        the other tab and happy to help.
+      </p>
       <p id="closedNote" class="closed-note" hidden>
         This trip is finished, so the thread is closed. If something's outstanding,
         call us on <a id="callUs" href="tel:+50764819290">+507 6481-9290</a>.

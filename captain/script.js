@@ -188,7 +188,7 @@ async function loadTrips() {
 async function loadMessages() {
   const { data, error } = await db
     .from("messages")
-    .select("id, booking_id, sender, body, created_at")
+    .select("id, booking_id, sender, body, channel, created_at")
     .order("created_at");
   if (error) {
     console.error("load messages failed:", error);
@@ -216,7 +216,11 @@ async function sendMessage(id, body, card) {
   const text = (body || "").trim();
   if (!text) return;
   card?.classList.add("saving");
-  const { error } = await db.from("messages").insert({ booking_id: id, sender: "captain", body: text });
+  // channel is not optional here: the write policy refuses a captain any
+  // other one, so leaving it to the default would fail every send.
+  const { error } = await db
+    .from("messages")
+    .insert({ booking_id: id, sender: "captain", body: text, channel: "captain" });
   card?.classList.remove("saving");
   if (error) {
     const msg = card.querySelector(".trip-msg");

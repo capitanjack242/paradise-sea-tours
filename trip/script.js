@@ -21,6 +21,24 @@ const msgInput = document.getElementById("msgInput");
 
 let lastCount = -1;
 let pollTimer = null;
+/** Which side of the conversation is showing: the office, or the captain. */
+let channel = "office";
+let lastTrip = null;
+
+function setChannel(next) {
+  channel = next;
+  document.querySelectorAll(".chan-tab").forEach((t) =>
+    t.classList.toggle("active", t.dataset.channel === next)
+  );
+  lastCount = -1; // force a redraw; it's a different conversation
+  if (lastTrip) render(lastTrip);
+}
+
+document.getElementById("chanTabs").addEventListener("click", (e) => {
+  const btn = e.target.closest("button[data-channel]");
+  if (!btn) return;
+  setChannel(btn.dataset.channel);
+});
 
 const STATUS_TEXT = {
   requested: ["We've got your request", "We're finding you a boat — we'll confirm here shortly."],
@@ -56,6 +74,7 @@ function showNotFound() {
 }
 
 function render(t) {
+  lastTrip = t;
   const [headline, sub] = STATUS_TEXT[t.status] || ["Your trip", null];
   const banner = document.getElementById("statusBanner");
   banner.className = "status s-" + t.status;
@@ -100,21 +119,89 @@ function render(t) {
     fare.hidden = true;
   }
 
-  // Only rebuild the thread when it's actually changed, so a poll never yanks
-  // the view out from under someone reading it.
-  const msgs = t.messages || [];
-  if (msgs.length !== lastCount) {
+  renderPayment(t);
+
+  // Only the channel being looked at. The office one is always available; the
+  // captain's opens on payment, and until then the tab says why rather than
+  // disappearing — a passenger should know the captain exists.
+  const canCaptain = !!t.can_message_captain;
+  const captainTab = document.getElementById("captainTab");
+  captainTab.classList.toggle("locked", !canCaptain);
+  captainTab.title = canCaptain ? "" : "Opens once the trip is paid for";
+  // A locked tab still opens. Bouncing back to the office made the tap do
+  // nothing at all, which reads as broken rather than as locked.
+
+  const msgs = (t.messages || []).filter((m) => (m.channel || "office") === channel);
+  // Only rebuild when it's actually changed, so a poll never yanks the view out
+  // from under someone reading it.
+  const stamp = `${channel}:${msgs.length}`;
+  if (stamp !== lastCount) {
     const atBottom =
       thread.scrollHeight - thread.scrollTop - thread.clientHeight < 40 || lastCount === -1;
     thread.innerHTML = msgs.length
       ? msgs.map(bubble).join("")
-      : `<p class="empty">No messages yet. Anything you need to tell your captain, say it here.</p>`;
+      : channel === "captain" && !canCaptain
+      ? "" // the lock note below says it; inviting them to write would contradict it
+      : `<p class="empty">${
+          channel === "captain"
+            ? "Nothing here yet. Anything you need your captain to know — where you're standing, how much luggage — say it here."
+            : "No messages yet. Ask us anything about your trip."
+        }</p>`;
     if (atBottom) thread.scrollTop = thread.scrollHeight;
-    lastCount = msgs.length;
+    lastCount = stamp;
   }
 
-  composer.hidden = !t.can_reply;
+  const open = t.can_reply && (channel === "office" || canCaptain);
+  composer.hidden = !open;
   closedNote.hidden = !!t.can_reply;
+
+  // The one case the composer is hidden but the trip is live: the captain
+  // channel, not yet paid for. Say so instead of showing an empty panel.
+  const lockNote = document.getElementById("captainLockNote");
+  lockNote.hidden = !(t.can_reply && channel === "captain" && !canCaptain);
+}
+
+/** What's owed, what's been paid, and how it gets paid. */
+function renderPayment(t) {
+  const section = document.getElementById("paySection");
+  if (t.fare_cents == null) {
+    section.hidden = true;
+    return;
+  }
+  section.hidden = false;
+
+  const money = (c) => `$${((c || 0) / 100).toFixed(2).replace(/\.00$/, "")}`;
+  const paid = t.amount_paid_cents || 0;
+  const due = t.balance_cents != null ? t.balance_cents : Math.max(t.fare_cents - paid, 0);
+
+  document.getElementById("payFare").textContent = money(t.fare_cents);
+  document.getElementById("payPaid").textContent = money(paid);
+  document.getElementById("payPaidLine").hidden = paid === 0;
+  document.getElementById("payDue").textContent = money(due);
+  document.getElementById("payDueLine").hidden = due === 0;
+
+  const state = document.getElementById("payState");
+  const slot = document.getElementById("paySlot");
+
+  if (t.paid_at) {
+    section.classList.add("is-paid");
+    state.textContent = "Paid in full. Your captain is reachable in Messages.";
+    slot.innerHTML = "";
+    return;
+  }
+
+  section.classList.remove("is-paid");
+  state.textContent =
+    t.status === "requested" || t.status === "quoted"
+      ? "Nothing to pay yet — we're confirming a captain first."
+      : "Payment opens up messaging with your captain.";
+  // Deliberately empty until a provider is connected. A button that does
+  // nothing is worse than a sentence that's true.
+  slot.innerHTML =
+    t.status === "requested" || t.status === "quoted"
+      ? ""
+      : `<p class="pay-howto">We'll send you a payment link. Until then the office can take
+         payment directly — just ask in Messages.</p>`;
 }
 
 function bubble(m) {
@@ -134,13 +221,19 @@ async function send() {
   msgInput.value = "";
   msgInput.disabled = true;
 
-  const { error } = await db.rpc("trip_send", { p_token: token, p_body: body });
+  const { error } = await db.rpc("trip_send", {
+    p_token: token,
+    p_body: body,
+    p_channel: channel,
+  });
   msgInput.disabled = false;
   msgInput.focus();
 
   if (error) {
     msgInput.value = body; // don't lose what they wrote
-    chatErr.textContent = "That didn't send. Check your connection and try again.";
+    chatErr.textContent = /paid for|no captain/i.test(error.message || "")
+      ? error.message
+      : "That didn't send. Check your connection and try again.";
     chatErr.hidden = false;
     return;
   }

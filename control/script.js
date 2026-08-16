@@ -716,7 +716,7 @@ function prettyPhone(raw) {
 async function loadMessages() {
   const { data, error } = await db
     .from("messages")
-    .select("id, booking_id, sender, body, created_at")
+    .select("id, booking_id, sender, body, channel, created_at")
     .order("created_at");
   if (error) {
     console.error("load messages failed:", error);
@@ -748,8 +748,9 @@ async function sendMessage(bookingId, body, card) {
   if (!text) return;
   card?.classList.add("row-saving");
   const { error } = await db
-    .from("messages")
-    .insert({ booking_id: bookingId, sender: "dispatch", body: text });
+    // The office speaks in the office channel — the one a passenger can always
+    // reach, paid or not.
+    .insert({ booking_id: bookingId, sender: "dispatch", body: text, channel: "office" });
   card?.classList.remove("row-saving");
   if (error) {
     alert("Message not sent: " + error.message);
@@ -757,6 +758,47 @@ async function sendMessage(bookingId, body, card) {
   }
   await loadMessages();
   renderBookings(window.__allBookings || []);
+}
+
+/* Payment, and what it unlocks.
+
+   No provider is wired up yet, so today this is dispatch recording money that
+   arrived some other way — cash on the dock, a bank transfer. When a payment
+   link exists it calls the same database function this button calls, and this
+   panel doesn't change.
+
+   It earns its place on the card because payment is what opens the captain to
+   the passenger: an unpaid trip means dispatch is the only way through, and a
+   dispatcher on the phone needs to see that at a glance. */
+function paymentHtml(b) {
+  const owed = b.quoted_price_cents;
+  const paid = b.amount_paid_cents || 0;
+  const outstanding = Math.max((owed || 0) - paid, 0);
+
+  if (b.paid_at) {
+    const when = new Date(b.paid_at).toLocaleString(undefined, {
+      month: "short", day: "numeric", hour: "numeric", minute: "2-digit",
+    });
+    return `<div class="pay-row is-paid">
+      <span class="pay-state">✓ Paid ${dollars(paid)}</span>
+      <span class="pay-when">${esc(when)} · captain reachable</span>
+      ${outstanding > 0 ? `<span class="pay-owing">${dollars(outstanding)} still outstanding</span>` : ""}
+    </div>`;
+  }
+
+  if (!owed) {
+    return `<div class="pay-row">
+      <span class="pay-state">Unpaid</span>
+      <span class="pay-when">Set a fare before recording a payment</span>
+    </div>`;
+  }
+
+  return `<div class="pay-row">
+    <span class="pay-state">Unpaid — captain not reachable</span>
+    <button type="button" class="btn-mark-paid-booking" data-id="${b.id}" data-amount="${owed}">
+      Record ${dollars(owed)} paid
+    </button>
+  </div>`;
 }
 
 function threadHtml(b) {
@@ -940,6 +982,34 @@ function renderBookings(all) {
       }
       reasonInput.classList.remove("input-error");
       updateBooking(btn.dataset.id, { status: "cancelled", cancellation_reason: reason }, card);
+    });
+  });
+  // Recording money goes through the database function, never a direct write:
+  // it writes the ledger row and flips the booking together, and it's the same
+  // door a payment provider will come through later.
+  bookingsBody.querySelectorAll("button.btn-mark-paid-booking").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const card = btn.closest(".booking-card");
+      const amount = Number(btn.dataset.amount);
+      btn.disabled = true;
+      card?.classList.add("row-saving");
+      const { error } = await db.rpc("record_payment", {
+        p_booking: btn.dataset.id,
+        p_amount_cents: amount,
+        p_provider: "manual",
+        p_reference: null,
+      });
+      card?.classList.remove("row-saving");
+      if (error) {
+        btn.disabled = false;
+        const msg = card?.querySelector(".card-msg");
+        if (msg) {
+          msg.textContent = error.message;
+          msg.hidden = false;
+        }
+        return;
+      }
+      loadBookings();
     });
   });
   // Confirming is the promise to the customer, so it needs the two things the
@@ -1162,6 +1232,7 @@ function cardHtml(b) {
             <label>Fare $</label>
             <input type="number" step="0.01" min="0" class="price-input" data-id="${b.id}" value="${price}" placeholder="—">
           </div>
+          ${paymentHtml(b)}
         </div>
       </div>`;
 

@@ -67,3 +67,34 @@ body{margin:0;background:var(--foam);color:var(--ink);
 .closed-note a{color:var(--deep);font-weight:600}
 .chat-err{margin:.6rem 0 0;font-size:.9rem;font-weight:600;color:var(--danger);
   background:#fdecea;border-radius:8px;padding:.5em .7em}
+
+/* ── payment ──────────────────────────────────────────────────────────────
+   Stated plainly, because it's the thing standing between a passenger and
+   their captain. The pay action itself is an empty slot until a provider is
+   connected — a sentence that's true beats a button that isn't. */
+.pay{background:#fff;border:1px solid var(--line);border-radius:14px;
+  padding:1rem 1.1rem;margin-top:1rem}
+.pay.is-paid{background:#e9fbf3;border-color:#bfe9d6}
+.pay-title{font-size:.72rem;font-weight:800;letter-spacing:.09em;
+  text-transform:uppercase;color:var(--muted);margin:0 0 .6rem}
+.pay-lines{display:grid;gap:.3rem}
+.pay-line{display:flex;justify-content:space-between;align-items:baseline;
+  font-size:.95rem;color:var(--muted)}
+.pay-line strong{color:var(--ink);font-weight:700}
+.pay-line.pay-due{padding-top:.4rem;border-top:1px solid var(--line);
+  font-size:1.05rem}
+.pay-line.pay-due strong{font-size:1.25rem}
+.pay-state{margin-top:.7rem;font-size:.88rem;font-weight:600;color:var(--deep)}
+.pay.is-paid .pay-state{color:#1a7f52}
+.pay-howto{margin:.5rem 0 0;font-size:.85rem;color:var(--muted);line-height:1.45}
+
+/* ── the two sides of the conversation ────────────────────────────────────
+   The captain's tab stays visible when it's locked: a passenger should know
+   their captain is reachable, and what makes him reachable. */
+.chan-tabs{display:flex;gap:.4rem;margin-bottom:.6rem}
+.chan-tab{flex:1;padding:.55em .7em;border-radius:10px;border:1px solid var(--line);
+  background:var(--foam);font-size:.85rem;font-weight:700;color:var(--muted);
+  cursor:pointer}
+.chan-tab.active{background:var(--deep);border-color:var(--deep);color:#fff}
+.chan-tab.locked{opacity:.6}
+.chan-tab.locked::after{content:" 🔒"}
