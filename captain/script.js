@@ -224,7 +224,13 @@ async function sendMessage(id, body, card) {
   card?.classList.remove("saving");
   if (error) {
     const msg = card.querySelector(".trip-msg");
-    msg.textContent = "Message didn't send — check your signal and try again.";
+    // The database refuses this when the trip isn't paid for yet. Saying
+    // "check your signal" sends a captain to look at his phone reception for a
+    // problem that has nothing to do with it.
+    const refused = error.code === "42501" || /row-level security/i.test(error.message || "");
+    msg.textContent = refused
+      ? "You can message this passenger once the trip is paid for. The office can reach them meanwhile."
+      : "Message didn't send — check your signal and try again.";
     msg.hidden = false;
     return;
   }
@@ -249,11 +255,16 @@ function threadHtml(b) {
     : `<p class="thread-empty">Nothing said yet.</p>`;
 
   const closed = b.status === "completed" || b.status === "cancelled";
+  // The database refuses a captain's message until the trip is paid for.
+  // Offering a box that can only fail is worse than saying so.
+  const unpaid = !b.paid_at;
   return `
     <div class="thread-box">
       <div class="thread-scroll">${bubbles}</div>
       ${closed
         ? `<p class="thread-empty">This trip is finished — the thread is closed.</p>`
+        : unpaid
+        ? `<p class="thread-locked">Opens once the passenger has paid. The office can reach them meanwhile.</p>`
         : `<div class="quicks">
              ${["On my way", "At the dock", "Running 10 min late"]
                .map((q) => `<button type="button" class="quick" data-id="${b.id}" data-text="${esc(q)}">${esc(q)}</button>`)

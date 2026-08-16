@@ -19,6 +19,8 @@ export type Trip = {
   notes: string | null;
   quoted_price_cents: number | null;
   paid_out_at: string | null;
+  /** When the passenger paid. Null means he can't message them yet. */
+  paid_at: string | null;
   offered_at: string | null;
   captain_response: "accepted" | "declined" | null;
   decline_reason: string | null;
@@ -75,7 +77,7 @@ export async function fetchTrips(): Promise<Trip[]> {
     .from("bookings")
     .select(
       "id, status, pickup, destination, scheduled_at, return_at, passengers, trip_type, " +
-        "contact_name, notes, quoted_price_cents, paid_out_at, offered_at, captain_response, " +
+        "contact_name, notes, quoted_price_cents, paid_out_at, paid_at, offered_at, captain_response, " +
         "decline_reason, assigned_boat_id, commission_pct, pickup_lat, pickup_lng, located_at, boats(name)"
     )
     .order("scheduled_at", { ascending: true });
@@ -97,7 +99,9 @@ export async function sendMessage(bookingId: string, body: string): Promise<void
   if (!text) return;
   const { error } = await supabase
     .from("messages")
-    .insert({ booking_id: bookingId, sender: "captain", body: text });
+    // channel is not optional: the write policy refuses a captain any other
+    // one, so leaving it to the default fails every send.
+    .insert({ booking_id: bookingId, sender: "captain", body: text, channel: "captain" });
   if (error) throw error;
 }
 

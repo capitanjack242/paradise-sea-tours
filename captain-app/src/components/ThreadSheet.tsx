@@ -120,6 +120,12 @@ export default function ThreadSheet({
               This trip is finished, so the thread is closed. Anything outstanding goes through the
               office.
             </Text>
+          ) : !trip.paid_at ? (
+            // The database refuses a captain's message until the trip is paid
+            // for. A box that can only fail is worse than saying so.
+            <Text style={s.lockedNote}>
+              Opens once the passenger has paid. The office can reach them meanwhile.
+            </Text>
           ) : (
             <>
               <View style={s.quicks}>
@@ -214,6 +220,16 @@ const s = StyleSheet.create({
   pressed: { opacity: 0.8 },
   busy: { opacity: 0.5 },
 
+  lockedNote: {
+    marginTop: 10,
+    fontSize: 13.5,
+    fontWeight: "600",
+    color: colors.amber,
+    backgroundColor: colors.amberBg,
+    borderRadius: 8,
+    padding: 10,
+    lineHeight: 19,
+  },
   composer: { flexDirection: "row", gap: 8, marginTop: 10, alignItems: "center" },
   input: {
     flex: 1,

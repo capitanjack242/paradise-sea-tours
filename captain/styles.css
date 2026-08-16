@@ -171,3 +171,9 @@ body{margin:0;background:var(--foam);color:var(--ink);
   background:#eafaf1;border-radius:9px;padding:.7em}
 .waiting-banner{margin-top:.9rem;text-align:center;font-weight:600;color:var(--muted);
   background:var(--foam);border-radius:9px;padding:.7em;font-size:.9rem}
+
+/* A captain can't message a passenger until the trip is paid for. Say it where
+   the box would have been, rather than letting him type into a dead field. */
+.thread-locked{margin:.6rem 0 0;font-size:.88rem;font-weight:600;color:#8a6d00;
+  background:#fff8e1;border:1px solid #e8d6a8;border-radius:8px;padding:.6em .8em;
+  line-height:1.45}
