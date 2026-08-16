@@ -7,7 +7,7 @@ import {
   awaitingReply,
   money,
   payWeek,
-  sumCents,
+  splitTrips,
   todaysTrips,
   tripsInWeek,
   upcomingTrips,
@@ -49,6 +49,8 @@ export default function TodayScreen({
   const ahead = upcomingTrips(trips);
   const thisWeek = tripsInWeek(trips, 0);
   const { payday } = payWeek(0);
+  // Same figure the Earnings tab leads with: what he's actually paid.
+  const week = splitTrips(thisWeek, boat?.commission_pct ?? 0);
 
   const since = boat?.availability_changed_at
     ? new Date(boat.availability_changed_at).toLocaleString(undefined, {
@@ -83,7 +85,7 @@ export default function TodayScreen({
       <View style={s.strip}>
         <View>
           <Text style={s.stripLab}>This week</Text>
-          <Text style={s.stripVal}>{money(sumCents(thisWeek))}</Text>
+          <Text style={s.stripVal}>{money(week.net)}</Text>
         </View>
         <View style={s.stripRight}>
           <Text style={s.stripLab}>Runs</Text>

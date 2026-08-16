@@ -163,7 +163,7 @@ function setLiveStatus(state) {
 async function loadBoats() {
   const { data, error } = await db
     .from("boats")
-    .select("id, name, kind, capacity, home_dock, captain_name, captain_whatsapp, owner_id, is_available, availability_changed_at")
+    .select("id, name, kind, capacity, home_dock, captain_name, captain_whatsapp, owner_id, is_available, availability_changed_at, commission_pct")
     .eq("is_active", true)
     .order("name");
   if (error) {
@@ -268,6 +268,13 @@ document.getElementById("weekNext").addEventListener("click", () => {
   renderPayout();
 });
 
+/** What a fare splits into. Integer cents throughout so nothing rounds away. */
+function splitFare(grossCents, pct) {
+  const rate = Number(pct) > 0 ? Number(pct) : 0;
+  const commission = Math.round((grossCents * rate) / 100);
+  return { gross: grossCents, commission, net: grossCents - commission };
+}
+
 function buildPayout() {
   const { start, end } = payWeek(weekOffset);
   const byBoat = new Map();
@@ -280,20 +287,26 @@ function buildPayout() {
     const key = b.assigned_boat_id || "unassigned";
     let row = byBoat.get(key);
     if (!row) {
+      const boat = boatsList.find((x) => x.id === b.assigned_boat_id);
       row = {
         key,
         name: b.boats?.name || "No boat assigned",
         captain: b.boats?.captain_name || null,
+        pct: Number(boat?.commission_pct) || 0,
         trips: [],
-        owedCents: 0,
-        paidCents: 0,
+        owedCents: 0,      // net — what actually goes to the boat
+        paidCents: 0,      // net, already settled
+        grossCents: 0,     // what the passengers were charged
+        commissionCents: 0 // what Paradise keeps
       };
       byBoat.set(key, row);
     }
     row.trips.push(b);
-    const cents = b.quoted_price_cents || 0;
-    if (b.paid_out_at) row.paidCents += cents;
-    else row.owedCents += cents;
+    const split = splitFare(b.quoted_price_cents || 0, row.pct);
+    row.grossCents += split.gross;
+    row.commissionCents += split.commission;
+    if (b.paid_out_at) row.paidCents += split.net;
+    else row.owedCents += split.net;
   }
 
   for (const row of byBoat.values()) {
@@ -321,6 +334,7 @@ function renderPayout() {
   const owed = rows.reduce((n, r) => n + r.owedCents, 0);
   const paid = rows.reduce((n, r) => n + r.paidCents, 0);
   const trips = rows.reduce((n, r) => n + r.trips.length, 0);
+  const commission = rows.reduce((n, r) => n + r.commissionCents, 0);
 
   payoutTotals.innerHTML = rows.length
     ? `<div class="tot">
@@ -331,6 +345,12 @@ function renderPayout() {
          <span class="tot-lab">Already paid</span>
          <span class="tot-val money muted-val">${dollars(paid)}</span>
        </div>
+       ${commission
+         ? `<div class="tot tot-keep">
+              <span class="tot-lab">Your commission</span>
+              <span class="tot-val money">${dollars(commission)}</span>
+            </div>`
+         : ""}
        <div class="tot">
          <span class="tot-lab">Trips</span>
          <span class="tot-val money">${trips}</span>
@@ -376,7 +396,7 @@ function payoutHtml(r) {
           <td>${esc(t.pickup || "—")} → ${esc(t.destination || "—")}</td>
           <td>${t.passengers ?? "?"}</td>
           <td>${t.paid_out_at ? `<span class="pill pill-completed">Paid</span>` : ""}</td>
-          <td class="num${t.paid_out_at ? " unpaid" : ""}">${dollars(t.quoted_price_cents)}</td>
+          <td class="num${t.paid_out_at ? " unpaid" : ""}">${dollars(splitFare(t.quoted_price_cents || 0, r.pct).net)}</td>
         </tr>`;
     })
     .join("");
@@ -390,6 +410,9 @@ function payoutHtml(r) {
         </div>
         <div class="payout-amount">
           <div class="money payout-owed">${dollars(r.owedCents)}</div>
+          ${r.pct
+            ? `<div class="payout-split">${dollars(r.grossCents)} in fares · less ${r.pct}% (${dollars(r.commissionCents)})</div>`
+            : ""}
           ${r.paidCents ? `<div class="payout-already">${dollars(r.paidCents)} already paid</div>` : ""}
         </div>
       </div>
@@ -640,7 +663,7 @@ function tripsTableHtml(c) {
         <tbody>${rows}</tbody>
         <tfoot>
           <tr>
-            <td colspan="4">Paid — completed trips only</td>
+            <td colspan="4">${r.pct ? `To the boat after ${r.pct}% commission` : "Paid — completed trips only"}</td>
             <td class="num">${paid}</td>
           </tr>
         </tfoot>

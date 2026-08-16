@@ -2,7 +2,7 @@ import React from "react";
 import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
 import { Card, Empty } from "../components/ui";
 import { colors, radius } from "../lib/theme";
-import { money, payWeek, sumCents, tripsInWeek, type Trip } from "../lib/data";
+import { money, payWeek, splitFare, splitTrips, tripsInWeek, type Boat, type Trip } from "../lib/data";
 
 /* What he's owed, run by run. The same completed trips the office adds up on
    Friday, shown to the person being paid — so a query about a number is a
@@ -10,17 +10,20 @@ import { money, payWeek, sumCents, tripsInWeek, type Trip } from "../lib/data";
 
 export default function EarningsScreen({
   trips,
+  boat,
   refreshing,
   onRefresh,
 }: {
   trips: Trip[];
+  boat: Boat | null;
   refreshing: boolean;
   onRefresh: () => void;
 }) {
   const [offset, setOffset] = React.useState(0);
   const week = payWeek(offset);
   const rows = tripsInWeek(trips, offset);
-  const total = sumCents(rows);
+  const pct = boat?.commission_pct ?? 0;
+  const split = splitTrips(rows, pct);
 
   // Paid is stamped per trip, so a week is settled only when every trip in it is.
   const settled = rows.length > 0 && rows.every((t) => t.paid_out_at);
@@ -60,9 +63,30 @@ export default function EarningsScreen({
         </Pressable>
       </View>
 
+      {/* The three numbers a captain actually wants: what the trips came to,
+          what Paradise keeps, and what lands in his hand on Friday. */}
       <View style={s.total}>
         <Text style={s.totalLab}>{offset === 0 ? "This week so far" : "That week"}</Text>
-        <Text style={s.totalVal}>{money(total)}</Text>
+        <Text style={s.totalVal}>{money(split.net)}</Text>
+        <Text style={s.totalSub}>is yours</Text>
+
+        {pct > 0 ? (
+          <View style={s.breakdown}>
+            <View style={s.brRow}>
+              <Text style={s.brLab}>Fares</Text>
+              <Text style={s.brVal}>{money(split.gross)}</Text>
+            </View>
+            <View style={s.brRow}>
+              <Text style={s.brLab}>Paradise commission ({pct}%)</Text>
+              <Text style={s.brVal}>−{money(split.commission)}</Text>
+            </View>
+            <View style={[s.brRow, s.brTotal]}>
+              <Text style={s.brLabStrong}>You get</Text>
+              <Text style={s.brValStrong}>{money(split.net)}</Text>
+            </View>
+          </View>
+        ) : null}
+
         {settled ? <Text style={s.settled}>✓ Settled</Text> : null}
       </View>
 
@@ -88,16 +112,23 @@ export default function EarningsScreen({
                   {t.paid_out_at ? " · paid" : ""}
                 </Text>
               </View>
-              <Text style={[s.rowMoney, t.paid_out_at && s.rowMoneyPaid]}>
-                {money(t.quoted_price_cents)}
-              </Text>
+              <View style={s.rowRight}>
+                <Text style={[s.rowMoney, t.paid_out_at && s.rowMoneyPaid]}>
+                  {money(splitFare(t.quoted_price_cents ?? 0, pct).net)}
+                </Text>
+                {pct > 0 ? (
+                  <Text style={s.rowGross}>of {money(t.quoted_price_cents)}</Text>
+                ) : null}
+              </View>
             </View>
           ))}
         </Card>
       )}
 
       <Text style={s.note}>
-        Every figure here is the full fare the passenger paid, not a share of it.
+        {pct > 0
+          ? `Paradise keeps ${pct}% of each fare. Everything above is after that, so it's what you're paid on Friday.`
+          : "Every figure here is the full fare the passenger paid."}
       </Text>
     </ScrollView>
   );
@@ -145,7 +176,27 @@ const s = StyleSheet.create({
     color: colors.aqua,
   },
   totalVal: { fontSize: 34, fontWeight: "800", color: colors.white, marginTop: 3 },
-  settled: { color: colors.aqua, fontWeight: "700", marginTop: 4 },
+  totalSub: { color: colors.aqua, fontSize: 13, fontWeight: "700", marginTop: -2 },
+  settled: { color: colors.aqua, fontWeight: "700", marginTop: 10 },
+
+  breakdown: {
+    marginTop: 14,
+    borderTopWidth: 1,
+    borderTopColor: "rgba(255,255,255,0.18)",
+    paddingTop: 10,
+    gap: 6,
+  },
+  brRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "baseline" },
+  brLab: { color: "#a9c6d4", fontSize: 14 },
+  brVal: { color: "#a9c6d4", fontSize: 14, fontWeight: "600" },
+  brTotal: {
+    borderTopWidth: 1,
+    borderTopColor: "rgba(255,255,255,0.18)",
+    paddingTop: 8,
+    marginTop: 2,
+  },
+  brLabStrong: { color: colors.white, fontSize: 15, fontWeight: "800" },
+  brValStrong: { color: colors.white, fontSize: 17, fontWeight: "800" },
 
   row: {
     flexDirection: "row",
@@ -160,6 +211,8 @@ const s = StyleSheet.create({
   rowLeft: { flex: 1 },
   rowRoute: { fontSize: 14.5, fontWeight: "600", color: colors.ink },
   rowMeta: { fontSize: 12.5, color: colors.muted, marginTop: 2 },
+  rowRight: { alignItems: "flex-end" },
+  rowGross: { fontSize: 11.5, color: colors.muted, marginTop: 1 },
   rowMoney: { fontSize: 16, fontWeight: "800", color: colors.ink },
   rowMoneyPaid: { color: colors.muted, fontWeight: "600" },
 

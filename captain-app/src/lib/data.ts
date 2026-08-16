@@ -40,7 +40,18 @@ export type Boat = {
   capacity: number | null;
   is_available: boolean;
   availability_changed_at: string | null;
+  /** Percent of the fare Paradise keeps. 0 means the boat gets the lot. */
+  commission_pct: number;
 };
+
+/** What a fare splits into. Worked out in cents so nothing rounds away. */
+export type Split = { gross: number; commission: number; net: number };
+
+export function splitFare(grossCents: number, commissionPct: number): Split {
+  const pct = Number.isFinite(commissionPct) ? Math.max(0, commissionPct) : 0;
+  const commission = Math.round((grossCents * pct) / 100);
+  return { gross: grossCents, commission, net: grossCents - commission };
+}
 
 export async function fetchTrips(): Promise<Trip[]> {
   const { data, error } = await supabase
@@ -105,7 +116,7 @@ export async function setTripStatus(id: string, status: "in_progress" | "complet
 export async function fetchMyBoat(userId: string): Promise<Boat | null> {
   const { data, error } = await supabase
     .from("boats")
-    .select("id, name, capacity, is_available, availability_changed_at")
+    .select("id, name, capacity, is_available, availability_changed_at, commission_pct")
     .eq("owner_id", userId)
     .limit(1);
   if (error) throw error;
@@ -179,6 +190,21 @@ export function tripsInWeek(trips: Trip[], offset = 0): Trip[] {
 
 export const sumCents = (trips: Trip[]): number =>
   trips.reduce((n, t) => n + (t.quoted_price_cents ?? 0), 0);
+
+/** Commission is taken per trip, so the total is the sum of the roundings. */
+export function splitTrips(trips: Trip[], commissionPct: number): Split {
+  return trips.reduce<Split>(
+    (acc, t) => {
+      const s = splitFare(t.quoted_price_cents ?? 0, commissionPct);
+      return {
+        gross: acc.gross + s.gross,
+        commission: acc.commission + s.commission,
+        net: acc.net + s.net,
+      };
+    },
+    { gross: 0, commission: 0, net: 0 }
+  );
+}
 
 export function money(cents: number | null | undefined): string {
   if (cents == null) return "—";

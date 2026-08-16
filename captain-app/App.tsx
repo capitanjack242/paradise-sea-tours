@@ -229,7 +229,7 @@ export default function App() {
             onAnswer={answer}
           />
         ) : (
-          <EarningsScreen trips={trips} refreshing={refreshing} onRefresh={refresh} />
+          <EarningsScreen trips={trips} boat={boat} refreshing={refreshing} onRefresh={refresh} />
         )}
       </View>
 

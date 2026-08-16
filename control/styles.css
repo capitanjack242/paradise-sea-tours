@@ -178,7 +178,9 @@ h1{font-family:'Baloo 2','Inter',sans-serif;margin:0}
 .payout-cap{font-size:.85rem;color:var(--muted);margin-top:.1rem}
 .payout-amount{text-align:right}
 .payout-owed{font-size:1.35rem;font-variant-numeric:tabular-nums}
+.payout-split{font-size:.75rem;color:var(--muted);font-weight:600}
 .payout-already{font-size:.75rem;color:var(--muted);font-weight:600}
+.tot.tot-keep{background:var(--deep)}
 .payout-actions{display:flex;justify-content:space-between;align-items:center;gap:.6rem;
   flex-wrap:wrap;margin-top:.7rem}
 .btn-payout-trips{font:inherit;font-weight:600;font-size:.82rem;background:#fff;color:var(--deep);
