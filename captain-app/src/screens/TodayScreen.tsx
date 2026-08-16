@@ -49,8 +49,9 @@ export default function TodayScreen({
   const ahead = upcomingTrips(trips);
   const thisWeek = tripsInWeek(trips, 0);
   const { payday } = payWeek(0);
-  // Same figure the Earnings tab leads with: what he's actually paid.
-  const week = splitTrips(thisWeek, boat?.commission_pct ?? 0);
+  // Same figure the Earnings tab leads with: what he's actually paid. Each trip
+  // is split at the rate it was closed out at, not today's.
+  const week = splitTrips(thisWeek, boat);
 
   const since = boat?.availability_changed_at
     ? new Date(boat.availability_changed_at).toLocaleString(undefined, {

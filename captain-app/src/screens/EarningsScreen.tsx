@@ -2,7 +2,16 @@ import React from "react";
 import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
 import { Card, Empty } from "../components/ui";
 import { colors, radius } from "../lib/theme";
-import { money, payWeek, splitFare, splitTrips, tripsInWeek, type Boat, type Trip } from "../lib/data";
+import {
+  money,
+  payWeek,
+  splitFare,
+  splitTrips,
+  tripPct,
+  tripsInWeek,
+  type Boat,
+  type Trip,
+} from "../lib/data";
 
 /* What he's owed, run by run. The same completed trips the office adds up on
    Friday, shown to the person being paid — so a query about a number is a
@@ -22,8 +31,14 @@ export default function EarningsScreen({
   const [offset, setOffset] = React.useState(0);
   const week = payWeek(offset);
   const rows = tripsInWeek(trips, offset);
-  const pct = boat?.commission_pct ?? 0;
-  const split = splitTrips(rows, pct);
+  const split = splitTrips(rows, boat);
+
+  // Each trip keeps the rate it closed out at, so a week can legitimately span
+  // two rates. Name the rate only when there's one of it to name.
+  const rates = [...new Set(rows.map((t) => tripPct(t, boat)))];
+  const pct = rates.length === 1 ? rates[0] : 0;
+  const mixedRates = rates.filter((r) => r > 0).length > 1;
+  const anyCommission = split.commission > 0;
 
   // Paid is stamped per trip, so a week is settled only when every trip in it is.
   const settled = rows.length > 0 && rows.every((t) => t.paid_out_at);
@@ -70,14 +85,16 @@ export default function EarningsScreen({
         <Text style={s.totalVal}>{money(split.net)}</Text>
         <Text style={s.totalSub}>is yours</Text>
 
-        {pct > 0 ? (
+        {anyCommission ? (
           <View style={s.breakdown}>
             <View style={s.brRow}>
               <Text style={s.brLab}>Fares</Text>
               <Text style={s.brVal}>{money(split.gross)}</Text>
             </View>
             <View style={s.brRow}>
-              <Text style={s.brLab}>Paradise commission ({pct}%)</Text>
+              <Text style={s.brLab}>
+                Paradise commission{pct > 0 ? ` (${pct}%)` : mixedRates ? " (rate changed)" : ""}
+              </Text>
               <Text style={s.brVal}>−{money(split.commission)}</Text>
             </View>
             <View style={[s.brRow, s.brTotal]}>
@@ -114,9 +131,9 @@ export default function EarningsScreen({
               </View>
               <View style={s.rowRight}>
                 <Text style={[s.rowMoney, t.paid_out_at && s.rowMoneyPaid]}>
-                  {money(splitFare(t.quoted_price_cents ?? 0, pct).net)}
+                  {money(splitFare(t.quoted_price_cents ?? 0, tripPct(t, boat)).net)}
                 </Text>
-                {pct > 0 ? (
+                {tripPct(t, boat) > 0 ? (
                   <Text style={s.rowGross}>of {money(t.quoted_price_cents)}</Text>
                 ) : null}
               </View>
@@ -128,6 +145,8 @@ export default function EarningsScreen({
       <Text style={s.note}>
         {pct > 0
           ? `Paradise keeps ${pct}% of each fare. Everything above is after that, so it's what you're paid on Friday.`
+          : mixedRates
+          ? "Each run is shown after the rate it was finished at, so it's what you're paid on Friday."
           : "Every figure here is the full fare the passenger paid."}
       </Text>
     </ScrollView>

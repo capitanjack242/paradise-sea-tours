@@ -23,6 +23,8 @@ export type Trip = {
   captain_response: "accepted" | "declined" | null;
   decline_reason: string | null;
   assigned_boat_id: string | null;
+  /** The rate this trip was closed out at. Null while it's still running. */
+  commission_pct: number | null;
   /** Where the passenger says they're standing. Null unless they shared it. */
   pickup_lat: number | null;
   pickup_lng: number | null;
@@ -57,13 +59,24 @@ export function splitFare(grossCents: number, commissionPct: number): Split {
   return { gross: grossCents, commission, net: grossCents - commission };
 }
 
+/**
+ * The rate that applies to one trip.
+ *
+ * A completed trip carries the rate it was closed out at, so a change to the
+ * boat's rate can't move a number a captain has already been paid. A trip
+ * still running has no stamp and reads the boat — nothing is owed yet.
+ */
+export function tripPct(trip: Trip, boat: Boat | null): number {
+  return trip.commission_pct != null ? Number(trip.commission_pct) : boat?.commission_pct ?? 0;
+}
+
 export async function fetchTrips(): Promise<Trip[]> {
   const { data, error } = await supabase
     .from("bookings")
     .select(
       "id, status, pickup, destination, scheduled_at, return_at, passengers, trip_type, " +
         "contact_name, notes, quoted_price_cents, paid_out_at, offered_at, captain_response, " +
-        "decline_reason, assigned_boat_id, pickup_lat, pickup_lng, located_at, boats(name)"
+        "decline_reason, assigned_boat_id, commission_pct, pickup_lat, pickup_lng, located_at, boats(name)"
     )
     .order("scheduled_at", { ascending: true });
   if (error) throw error;
@@ -239,10 +252,10 @@ export const sumCents = (trips: Trip[]): number =>
   trips.reduce((n, t) => n + (t.quoted_price_cents ?? 0), 0);
 
 /** Commission is taken per trip, so the total is the sum of the roundings. */
-export function splitTrips(trips: Trip[], commissionPct: number): Split {
+export function splitTrips(trips: Trip[], boat: Boat | null): Split {
   return trips.reduce<Split>(
     (acc, t) => {
-      const s = splitFare(t.quoted_price_cents ?? 0, commissionPct);
+      const s = splitFare(t.quoted_price_cents ?? 0, tripPct(t, boat));
       return {
         gross: acc.gross + s.gross,
         commission: acc.commission + s.commission,

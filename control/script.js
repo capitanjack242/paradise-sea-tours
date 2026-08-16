@@ -275,6 +275,20 @@ function splitFare(grossCents, pct) {
   return { gross: grossCents, commission, net: grossCents - commission };
 }
 
+/**
+ * The rate that applies to one trip.
+ *
+ * A completed trip carries the rate it was closed out at, so changing a boat's
+ * rate today can't rewrite what a captain was paid last month. A trip still
+ * running has no stamp yet and reads the boat, which is right: nothing is owed
+ * until it's finished.
+ */
+function tripPct(booking, boat) {
+  return booking.commission_pct != null
+    ? Number(booking.commission_pct)
+    : Number(boat?.commission_pct) || 0;
+}
+
 function buildPayout() {
   const { start, end } = payWeek(weekOffset);
   const byBoat = new Map();
@@ -292,7 +306,11 @@ function buildPayout() {
         key,
         name: b.boats?.name || "No boat assigned",
         captain: b.boats?.captain_name || null,
-        pct: Number(boat?.commission_pct) || 0,
+        boat,
+        // Rates seen in this week's trips. Usually one; more than one after a
+        // rate change mid-week, and the header has to stop claiming a single
+        // figure when that happens.
+        rates: new Set(),
         trips: [],
         owedCents: 0,      // net — what actually goes to the boat
         paidCents: 0,      // net, already settled
@@ -302,7 +320,9 @@ function buildPayout() {
       byBoat.set(key, row);
     }
     row.trips.push(b);
-    const split = splitFare(b.quoted_price_cents || 0, row.pct);
+    const pct = tripPct(b, row.boat);
+    row.rates.add(pct);
+    const split = splitFare(b.quoted_price_cents || 0, pct);
     row.grossCents += split.gross;
     row.commissionCents += split.commission;
     if (b.paid_out_at) row.paidCents += split.net;
@@ -313,6 +333,11 @@ function buildPayout() {
     row.trips.sort((x, y) => (x.scheduled_at || "").localeCompare(y.scheduled_at || ""));
     row.unpaid = row.trips.filter((t) => !t.paid_out_at);
     row.settled = row.unpaid.length === 0;
+    // One rate across the week gets named; a mixture doesn't get flattened into
+    // an average that matches none of the trips.
+    const rates = [...row.rates];
+    row.pct = rates.length === 1 ? rates[0] : 0;
+    row.mixedRates = rates.filter((r) => r > 0).length > 1;
   }
   return [...byBoat.values()].sort((a, b) =>
     a.name.localeCompare(b.name, undefined, { sensitivity: "base" })
@@ -396,7 +421,7 @@ function payoutHtml(r) {
           <td>${esc(t.pickup || "—")} → ${esc(t.destination || "—")}</td>
           <td>${t.passengers ?? "?"}</td>
           <td>${t.paid_out_at ? `<span class="pill pill-completed">Paid</span>` : ""}</td>
-          <td class="num${t.paid_out_at ? " unpaid" : ""}">${dollars(splitFare(t.quoted_price_cents || 0, r.pct).net)}</td>
+          <td class="num${t.paid_out_at ? " unpaid" : ""}">${dollars(splitFare(t.quoted_price_cents || 0, tripPct(t, r.boat)).net)}</td>
         </tr>`;
     })
     .join("");
@@ -412,6 +437,8 @@ function payoutHtml(r) {
           <div class="money payout-owed">${dollars(r.owedCents)}</div>
           ${r.pct
             ? `<div class="payout-split">${dollars(r.grossCents)} in fares · less ${r.pct}% (${dollars(r.commissionCents)})</div>`
+            : r.mixedRates
+            ? `<div class="payout-split">${dollars(r.grossCents)} in fares · less commission (${dollars(r.commissionCents)}), rate changed this week</div>`
             : ""}
           ${r.paidCents ? `<div class="payout-already">${dollars(r.paidCents)} already paid</div>` : ""}
         </div>
@@ -653,6 +680,10 @@ function tripsTableHtml(c) {
       </tr>`;
   }).join("");
 
+  // This is a client's own history — what they paid us. Commission is between
+  // us and the boat, and the footer here used to reach for a payout row's rate
+  // that doesn't exist in this function, which threw the moment anyone opened
+  // a client's trips.
   const paid = c.spentCents ? `$${(c.spentCents / 100).toFixed(2).replace(/\.00$/, "")}` : "$0";
   return `
     <div class="client-trips">
@@ -663,7 +694,7 @@ function tripsTableHtml(c) {
         <tbody>${rows}</tbody>
         <tfoot>
           <tr>
-            <td colspan="4">${r.pct ? `To the boat after ${r.pct}% commission` : "Paid — completed trips only"}</td>
+            <td colspan="4">Paid — completed trips only</td>
             <td class="num">${paid}</td>
           </tr>
         </tfoot>
