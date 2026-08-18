@@ -14,6 +14,11 @@ customer app (`app/`) and the dispatch/control view (`control/`).
 - **payments** — the ledger of money recorded against a booking.
 - **app_settings** — one row of company-wide numbers. Today that is `vat_pct`.
 
+Booking: the app and (later) the website ask for a boat through `request_boat`,
+which creates the booking and **returns its access token** — the key to that one
+trip. The direct public insert policy still exists for the website, but it can't
+read the token back, which is why the app couldn't find its own trip before.
+
 Tips: `tip_cents` is what the passenger added for the captain, recorded through
 `record_tip`. It is never commissioned, never taxed, and never part of
 `total_cents` or the balance — all of it goes to the boat. It has its own payout

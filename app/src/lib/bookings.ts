@@ -135,24 +135,35 @@ export type NewBooking = {
  * assignment — row-level security rejects those from the public key, and the
  * fare is confirmed by dispatch before the passenger ever pays.
  */
-export async function createBooking(b: NewBooking): Promise<void> {
-  const { error } = await supabase.from("bookings").insert({
-    contact_name: b.contactName,
-    contact_phone: b.contactPhone,
-    pickup: b.pickup,
-    destination: b.destination,
-    scheduled_at: b.scheduledAt.toISOString(),
-    // Its own column, not a line of prose in the notes — this is what decides
+/**
+ * Ask for a boat, and get back the key to the trip.
+ *
+ * Goes through a database function rather than inserting straight into the
+ * table, for one reason: the insert can create a booking but can't read one
+ * back, so the app had no way to find the trip it had just made. The function
+ * returns the access token of the row it created — which is what makes the
+ * payment screen, the captain thread and tips reachable from the app at all.
+ */
+export async function createBooking(b: NewBooking): Promise<string> {
+  const { data, error } = await supabase.rpc("request_boat", {
+    p_contact_name: b.contactName,
+    p_contact_phone: b.contactPhone,
+    p_pickup: b.pickup,
+    p_destination: b.destination,
+    p_scheduled_at: b.scheduledAt.toISOString(),
+    // Its own field, not a line of prose in the notes — this is what decides
     // whether a captain goes back for someone.
-    return_at: b.returnAt ? b.returnAt.toISOString() : null,
-    passengers: b.passengers,
-    trip_type: b.tripType,
-    notes: b.notes?.trim() || null,
+    p_return_at: b.returnAt ? b.returnAt.toISOString() : null,
+    p_passengers: b.passengers,
+    p_trip_type: b.tripType,
+    p_notes: b.notes?.trim() || null,
     // Optional, and stored with the time it was taken — a captain reading a
     // pin needs to know whether it's from a minute ago or an hour ago.
-    pickup_lat: b.location?.lat ?? null,
-    pickup_lng: b.location?.lng ?? null,
-    located_at: b.location ? b.location.at.toISOString() : null,
+    p_pickup_lat: b.location?.lat ?? null,
+    p_pickup_lng: b.location?.lng ?? null,
+    p_located_at: b.location ? b.location.at.toISOString() : null,
   });
   if (error) throw error;
+  if (!data) throw new Error("The booking went through but we didn't get the trip back.");
+  return data as string;
 }

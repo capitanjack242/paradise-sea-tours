@@ -42,7 +42,13 @@ export default function App() {
 
       <View style={s.body}>
         {tab === "book" ? (
-          <BookScreen />
+          /* A booking hands back the key to the trip, so pick it up straight
+             away — otherwise the Payment tab sits empty until the next launch. */
+          <BookScreen
+            onBooked={() => {
+              load(false);
+            }}
+          />
         ) : (
           <PaymentScreen
             trip={trip}

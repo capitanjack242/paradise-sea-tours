@@ -10,9 +10,10 @@ import {
   TextInput,
   View,
 } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { PickerField, Segmented, Stepper, Label } from "../components/ui";
-import SignInSheet from "../components/SignInSheet";
-import { fetchProfileName, prettyPhone, useSession } from "../lib/auth";
+import ContactSheet from "../components/ContactSheet";
+import { prettyPhone } from "../lib/auth";
 import {
   createBooking,
   fetchRoutes,
@@ -52,7 +53,12 @@ function toDate(day: string, time: string): Date {
   return d;
 }
 
-export default function BookScreen() {
+/** Where the key to the trip lives once we have one. Read by App.tsx. */
+const TRIP_TOKEN_KEY = "paradise.trip.token";
+const CONTACT_NAME_KEY = "paradise.contact.name";
+const CONTACT_PHONE_KEY = "paradise.contact.phone";
+
+export default function BookScreen({ onBooked }: { onBooked?: () => void }) {
   const [routes, setRoutes] = React.useState<Service[]>([]);
   const [vatPct, setVatPct] = React.useState(VAT_FALLBACK_PCT);
   const [loading, setLoading] = React.useState(true);
@@ -66,9 +72,11 @@ export default function BookScreen() {
   const [backTime, setBackTime] = React.useState<string>("4:00 PM");
   const [passengers, setPassengers] = React.useState(2);
   const [notes, setNotes] = React.useState("");
-  const { session } = useSession();
-  const [profileName, setProfileName] = React.useState<string | null>(null);
-  const [showSignIn, setShowSignIn] = React.useState(false);
+  // Who they are, remembered from last time. No account: the number is the
+  // record, exactly as it is on the website.
+  const [myName, setMyName] = React.useState<string | null>(null);
+  const [myPhone, setMyPhone] = React.useState<string | null>(null);
+  const [showContact, setShowContact] = React.useState(false);
 
   // Sharing where you're standing. Off unless the passenger turns it on, and
   // "blocked" is its own state because that one can only be undone in Settings.
@@ -77,12 +85,14 @@ export default function BookScreen() {
   const [locBlocked, setLocBlocked] = React.useState(false);
   const [optedOut, setOptedOut] = React.useState(false);
 
-  const signedIn = !!session;
-  const myPhone = session?.user?.phone ? `+${session.user.phone}` : "";
-
   React.useEffect(() => {
-    if (signedIn) fetchProfileName().then(setProfileName).catch(() => {});
-  }, [signedIn]);
+    AsyncStorage.multiGet([CONTACT_NAME_KEY, CONTACT_PHONE_KEY])
+      .then(([[, n], [, p]]) => {
+        if (n) setMyName(n);
+        if (p) setMyPhone(p);
+      })
+      .catch(() => {});
+  }, []);
 
   React.useEffect(() => {
     fetchRoutes()
@@ -161,7 +171,7 @@ export default function BookScreen() {
         setFix(where);
       }
 
-      await createBooking({
+      const token = await createBooking({
         pickup,
         destination,
         scheduledAt: when.scheduledAt,
@@ -173,9 +183,19 @@ export default function BookScreen() {
         notes: notes.trim() || undefined,
         location: where,
       });
+      // The key to the trip, kept on the phone. Without this the payment tab,
+      // the captain thread and tips would all stay empty forever.
+      await AsyncStorage.multiSet([
+        [TRIP_TOKEN_KEY, token],
+        [CONTACT_NAME_KEY, contactName],
+        [CONTACT_PHONE_KEY, contactPhone],
+      ]);
+      setMyName(contactName);
+      setMyPhone(contactPhone);
+      onBooked?.();
       Alert.alert(
         "Request sent",
-        "We're confirming a captain now. You'll hear from us shortly — and you don't pay anything until a captain says yes."
+        "We're confirming a captain now. You'll hear from us shortly — and you don't pay anything until a captain says yes. Your trip is under Payment."
       );
     } catch (e: any) {
       Alert.alert("Couldn't send that", e?.message ?? "Please try again in a moment.");
@@ -188,13 +208,12 @@ export default function BookScreen() {
    * Sign-in is deferred to here rather than the front door: validate the trip
    * first, then ask who they are only if we don't already know.
    */
+  /* Always ask who it's for, with their details already filled in if we have
+     them. Booking is one tap for a regular and never a mystery for anyone —
+     nobody is asked to make an account to get on a boat. */
   function onRequest() {
     if (!validateTrip()) return;
-    if (!signedIn) {
-      setShowSignIn(true);
-      return;
-    }
-    submitTrip(profileName ?? "Guest", myPhone);
+    setShowContact(true);
   }
 
   return (
@@ -317,22 +336,23 @@ export default function BookScreen() {
           <Text style={s.ctaText}>{submitting ? "Sending…" : "Request a boat"}</Text>
         </Pressable>
 
-        {signedIn && (
+        {myPhone && (
           <Text style={s.signedIn}>
-            Booking as {profileName ?? "you"} · {prettyPhone(myPhone)}
+            Booking as {myName ?? "you"} · {prettyPhone(myPhone)}
           </Text>
         )}
       </ScrollView>
 
-      <SignInSheet
-        visible={showSignIn}
+      <ContactSheet
+        visible={showContact}
+        initialName={myName ?? undefined}
+        initialPhone={myPhone ?? undefined}
         holdingText={`${pickup} → ${destination}, ${day.toLowerCase()} ${outTime}${
           total != null ? ` · ${formatMoney(total)} incl. VAT` : ""
         }`}
-        onCancel={() => setShowSignIn(false)}
-        onSignedIn={(newName, newPhone) => {
-          setShowSignIn(false);
-          setProfileName(newName);
+        onCancel={() => setShowContact(false)}
+        onDone={(newName, newPhone) => {
+          setShowContact(false);
           submitTrip(newName, newPhone);
         }}
       />
