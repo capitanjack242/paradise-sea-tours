@@ -39,6 +39,7 @@ export default function EarningsScreen({
   const pct = rates.length === 1 ? rates[0] : 0;
   const mixedRates = rates.filter((r) => r > 0).length > 1;
   const anyCommission = split.commission > 0;
+  const anyTips = split.tips > 0;
 
   // Paid is stamped per trip, so a week is settled only when every trip in it is.
   const settled = rows.length > 0 && rows.every((t) => t.paid_out_at);
@@ -82,24 +83,32 @@ export default function EarningsScreen({
           what Paradise keeps, and what lands in his hand on Friday. */}
       <View style={s.total}>
         <Text style={s.totalLab}>{offset === 0 ? "This week so far" : "That week"}</Text>
-        <Text style={s.totalVal}>{money(split.net)}</Text>
+        <Text style={s.totalVal}>{money(split.take)}</Text>
         <Text style={s.totalSub}>is yours</Text>
 
-        {anyCommission ? (
+        {anyCommission || anyTips ? (
           <View style={s.breakdown}>
             <View style={s.brRow}>
               <Text style={s.brLab}>Fares (before VAT)</Text>
               <Text style={s.brVal}>{money(split.gross)}</Text>
             </View>
-            <View style={s.brRow}>
-              <Text style={s.brLab}>
-                Paradise commission{pct > 0 ? ` (${pct}%)` : mixedRates ? " (rate changed)" : ""}
-              </Text>
-              <Text style={s.brVal}>−{money(split.commission)}</Text>
-            </View>
+            {anyCommission ? (
+              <View style={s.brRow}>
+                <Text style={s.brLab}>
+                  Paradise commission{pct > 0 ? ` (${pct}%)` : mixedRates ? " (rate changed)" : ""}
+                </Text>
+                <Text style={s.brVal}>−{money(split.commission)}</Text>
+              </View>
+            ) : null}
+            {anyTips ? (
+              <View style={s.brRow}>
+                <Text style={s.brLab}>Tips</Text>
+                <Text style={[s.brVal, s.brValTip]}>+{money(split.tips)}</Text>
+              </View>
+            ) : null}
             <View style={[s.brRow, s.brTotal]}>
               <Text style={s.brLabStrong}>You get</Text>
-              <Text style={s.brValStrong}>{money(split.net)}</Text>
+              <Text style={s.brValStrong}>{money(split.take)}</Text>
             </View>
           </View>
         ) : null}
@@ -131,9 +140,13 @@ export default function EarningsScreen({
               </View>
               <View style={s.rowRight}>
                 <Text style={[s.rowMoney, t.paid_out_at && s.rowMoneyPaid]}>
-                  {money(splitFare(t.quoted_price_cents ?? 0, tripPct(t, boat)).net)}
+                  {money(
+                    splitFare(t.quoted_price_cents ?? 0, tripPct(t, boat)).net + (t.tip_cents ?? 0)
+                  )}
                 </Text>
-                {tripPct(t, boat) > 0 ? (
+                {(t.tip_cents ?? 0) > 0 ? (
+                  <Text style={s.rowTip}>incl. {money(t.tip_cents)} tip</Text>
+                ) : tripPct(t, boat) > 0 ? (
                   <Text style={s.rowGross}>of {money(t.quoted_price_cents)}</Text>
                 ) : null}
               </View>
@@ -150,7 +163,8 @@ export default function EarningsScreen({
           : "Every figure here is the fare for the run."}
         {"\n"}
         VAT is charged on top of the fare and goes to the government, so it never
-        counts for or against what you're owed.
+        counts for or against what you're owed. Tips are yours in full — no
+        commission comes off them.
       </Text>
     </ScrollView>
   );
@@ -211,6 +225,7 @@ const s = StyleSheet.create({
   brRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "baseline" },
   brLab: { color: "#a9c6d4", fontSize: 14 },
   brVal: { color: "#a9c6d4", fontSize: 14, fontWeight: "600" },
+  brValTip: { color: colors.green },
   brTotal: {
     borderTopWidth: 1,
     borderTopColor: "rgba(255,255,255,0.18)",
@@ -235,6 +250,7 @@ const s = StyleSheet.create({
   rowMeta: { fontSize: 12.5, color: colors.muted, marginTop: 2 },
   rowRight: { alignItems: "flex-end" },
   rowGross: { fontSize: 11.5, color: colors.muted, marginTop: 1 },
+  rowTip: { fontSize: 11.5, color: colors.green, fontWeight: "700", marginTop: 1 },
   rowMoney: { fontSize: 16, fontWeight: "800", color: colors.ink },
   rowMoneyPaid: { color: colors.muted, fontWeight: "600" },
 

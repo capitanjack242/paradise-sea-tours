@@ -244,6 +244,23 @@ h1{font-family:'Baloo 2','Inter',sans-serif;margin:0}
 .pay-when{font-size:.78rem;color:var(--muted)}
 .pay-owing{font-size:.78rem;font-weight:700;color:#8a6d00}
 .pay-breakdown{font-size:.78rem;color:var(--muted);font-variant-numeric:tabular-nums}
+
+/* Tips sit beside the payment, not inside it: not part of the bill, not taxed,
+   and no commission comes off them. */
+.tip-row{display:flex;flex-wrap:wrap;align-items:center;gap:.5rem;margin-top:.4rem;
+  padding:.45em .7em;border-radius:8px;background:#f2fbf6;border:1px solid #cfeadc}
+.tip-row.has-tip{background:#e9fbf3;border-color:#bfe9d6}
+.tip-state{font-weight:700;font-size:.85rem;color:#1a7f52}
+.tip-state.tip-none{font-weight:600;color:var(--muted)}
+.tip-input{width:6.5rem;margin-left:auto;font:inherit;font-size:.85rem;
+  padding:.35em .5em;border:1px solid var(--line);border-radius:6px}
+.tip-input.input-error{border-color:#c0392b;background:#fdecea}
+.btn-add-tip{font:inherit;font-size:.82rem;font-weight:700;padding:.4em .75em;
+  border-radius:8px;border:1px solid #1a7f52;background:#1a7f52;color:#fff;cursor:pointer}
+.btn-add-tip:disabled{opacity:.55;cursor:default}
+.tot.tot-tip{background:#1a7f52}
+.payout-tip{font-size:.8rem;color:#1a7f52;font-weight:600}
+.tip-flag{font-size:.7rem;font-weight:700;color:#1a7f52}
 .btn-mark-paid-booking{margin-left:auto;font-size:.82rem;font-weight:700;
   padding:.45em .8em;border-radius:8px;border:1px solid var(--deep);
   background:var(--deep);color:#fff;cursor:pointer}

@@ -58,6 +58,7 @@ export default function TripCard({
       <Text style={s.meta}>
         {trip.passengers ?? "?"} passengers · {trip.trip_type ?? ""} ·{" "}
         {money(trip.quoted_price_cents)} fare
+        {(trip.tip_cents ?? 0) > 0 ? ` · ${money(trip.tip_cents)} tip` : ""}
       </Text>
 
       {/* Which end of the dock they're actually standing on. Gone once they're

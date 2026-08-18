@@ -55,6 +55,21 @@ export default function PaymentScreen({
   const due = trip.balance_cents ?? Math.max(total - paid, 0);
   // A trip taken before VAT applied shows no tax line rather than a $0 one.
   const vat = trip.vat_cents ?? 0;
+
+  /* Tips, offered the way Uber offers them: after the ride, once the fare is
+     settled, and never as part of the bill. The buttons start a message to the
+     office because no payment provider is connected yet — the same thing the
+     Pay button does. Percentages are of the fare, not the fare plus tax. */
+  const tip = trip.tip_cents ?? 0;
+  const canTip = !!trip.paid_at && !!trip.captain && trip.can_reply;
+  const captain = trip.captain ? `Capt. ${trip.captain}` : "your captain";
+  const tipOptions = [10, 15, 20]
+    .map((pct) => ({
+      pct,
+      cents: Math.max(Math.round(((trip.fare_cents ?? 0) * pct) / 100 / 100) * 100, 100),
+    }))
+    // Two percentages of a small fare can round to the same dollar.
+    .filter((o, i, all) => all.findIndex((x) => x.cents === o.cents) === i);
   const settled = !!trip.paid_at;
   const tooEarly = trip.status === "requested" || trip.status === "quoted";
 
@@ -146,9 +161,49 @@ export default function PaymentScreen({
         ) : null}
       </View>
 
+      {tip > 0 || canTip ? (
+        <View style={s.card}>
+          <Text style={s.cardTitle}>Tip your captain</Text>
+
+          {tip > 0 ? (
+            <Text style={s.tipGiven}>
+              {formatMoney(tip)} tip for {captain}
+            </Text>
+          ) : null}
+
+          <Text style={s.tipNote}>
+            {!canTip
+              ? "Every cent of it goes to the captain."
+              : tip > 0
+              ? "Want to add more? Every cent goes to the captain."
+              : `Nothing owed — the fare is settled. This is extra, and all of it goes to ${captain}.`}
+          </Text>
+
+          {canTip ? (
+            <View style={s.tipRow}>
+              {tipOptions.map((o) => (
+                <Pressable
+                  key={o.pct}
+                  style={({ pressed }) => [s.tipBtn, pressed && s.tipBtnDown]}
+                  onPress={() =>
+                    Alert.alert(
+                      "Card payments aren't switched on yet",
+                      `Message the office and we'll add a ${formatMoney(o.cents)} tip for ${captain}. All of it goes to them.`
+                    )
+                  }
+                >
+                  <Text style={s.tipBtnAmount}>{formatMoney(o.cents)}</Text>
+                  <Text style={s.tipBtnPct}>{o.pct}%</Text>
+                </Pressable>
+              ))}
+            </View>
+          ) : null}
+        </View>
+      ) : null}
+
       <Text style={s.note}>
         Fixed fares, agreed before you pay. Bahamas VAT is added on top and shown
-        as its own line. Nothing is charged until a captain says yes.
+        as its own line. Tips are extra and go to your captain in full.
       </Text>
     </ScrollView>
   );
@@ -204,6 +259,22 @@ const s = StyleSheet.create({
   },
   dueLab: { fontSize: 16, fontWeight: "700", color: colors.ink },
   dueVal: { fontSize: 22, fontWeight: "800", color: colors.ink },
+
+  tipGiven: { fontSize: 17, fontWeight: "800", color: colors.green, marginBottom: 3 },
+  tipNote: { fontSize: 13.5, color: colors.muted, lineHeight: 19 },
+  tipRow: { flexDirection: "row", gap: 8, marginTop: 12 },
+  tipBtn: {
+    flex: 1,
+    alignItems: "center",
+    paddingVertical: 11,
+    borderRadius: 10,
+    borderWidth: 1.5,
+    borderColor: colors.green,
+    backgroundColor: colors.white,
+  },
+  tipBtnDown: { backgroundColor: colors.greenBg },
+  tipBtnAmount: { fontSize: 17, fontWeight: "800", color: colors.green },
+  tipBtnPct: { fontSize: 11, fontWeight: "600", color: colors.green, opacity: 0.75 },
 
   state: { marginTop: 12, fontSize: 14, fontWeight: "700", color: colors.deep, lineHeight: 19 },
   statePaid: { color: colors.green },

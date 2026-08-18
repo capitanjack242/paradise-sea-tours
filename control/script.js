@@ -296,7 +296,14 @@ function buildPayout() {
   for (const b of window.__allBookings || []) {
     if (b.status !== "completed") continue; // only trips actually run are owed
     const at = b.scheduled_at ? new Date(b.scheduled_at) : null;
-    if (!at || at < start || at >= end) continue;
+    if (!at) continue;
+
+    const inWeek = at >= start && at < end;
+    const tipOwing = (b.tip_cents || 0) > 0 && !b.tip_paid_out_at;
+    // A tip given after its week was paid out would otherwise be stranded in a
+    // settled week nobody opens again. It carries forward into the open week.
+    const strandedTip = !inWeek && at < start && tipOwing && weekOffset === 0;
+    if (!inWeek && !strandedTip) continue;
 
     const key = b.assigned_boat_id || "unassigned";
     let row = byBoat.get(key);
@@ -316,26 +323,37 @@ function buildPayout() {
         paidCents: 0,      // net, already settled
         grossCents: 0,     // fares before tax — the base commission is taken on
         vatCents: 0,       // the government's share, never anyone's to split
+        tipCents: 0,       // tips still to hand over — no commission comes off these
         commissionCents: 0 // what Paradise keeps
       };
       byBoat.set(key, row);
     }
     row.trips.push(b);
-    const pct = tripPct(b, row.boat);
-    row.rates.add(pct);
-    // The fare, not the total: commission on VAT would be a cut of a tax bill.
-    const split = splitFare(b.quoted_price_cents || 0, pct);
-    row.grossCents += split.gross;
-    row.vatCents += b.vat_cents || 0;
-    row.commissionCents += split.commission;
-    if (b.paid_out_at) row.paidCents += split.net;
-    else row.owedCents += split.net;
+    if (inWeek) {
+      const pct = tripPct(b, row.boat);
+      row.rates.add(pct);
+      // The fare, not the total: commission on VAT would be a cut of a tax bill.
+      const split = splitFare(b.quoted_price_cents || 0, pct);
+      row.grossCents += split.gross;
+      row.vatCents += b.vat_cents || 0;
+      row.commissionCents += split.commission;
+      if (b.paid_out_at) row.paidCents += split.net;
+      else row.owedCents += split.net;
+    }
+    // Every cent of a tip goes to the boat, so it joins what's owed without
+    // passing through the commission split at all.
+    if (tipOwing) {
+      row.tipCents += b.tip_cents;
+      row.owedCents += b.tip_cents;
+    }
   }
 
   for (const row of byBoat.values()) {
     row.trips.sort((x, y) => (x.scheduled_at || "").localeCompare(y.scheduled_at || ""));
     row.unpaid = row.trips.filter((t) => !t.paid_out_at);
-    row.settled = row.unpaid.length === 0;
+    // A trip whose fare was settled but whose tip wasn't is still owed money.
+    row.tipsUnpaid = row.trips.filter((t) => (t.tip_cents || 0) > 0 && !t.tip_paid_out_at);
+    row.settled = row.unpaid.length === 0 && row.tipsUnpaid.length === 0;
     // One rate across the week gets named; a mixture doesn't get flattened into
     // an average that matches none of the trips.
     const rates = [...row.rates];
@@ -364,6 +382,7 @@ function renderPayout() {
   const trips = rows.reduce((n, r) => n + r.trips.length, 0);
   const commission = rows.reduce((n, r) => n + r.commissionCents, 0);
   const vat = rows.reduce((n, r) => n + r.vatCents, 0);
+  const tips = rows.reduce((n, r) => n + r.tipCents, 0);
 
   payoutTotals.innerHTML = rows.length
     ? `<div class="tot">
@@ -385,6 +404,13 @@ function renderPayout() {
               <span class="tot-lab">VAT collected</span>
               <span class="tot-val money">${dollars(vat)}</span>
               <span class="tot-hint">owed to government</span>
+            </div>`
+         : ""}
+       ${tips
+         ? `<div class="tot tot-tip">
+              <span class="tot-lab">Tips</span>
+              <span class="tot-val money">${dollars(tips)}</span>
+              <span class="tot-hint">all to the boats</span>
             </div>`
          : ""}
        <div class="tot">
@@ -432,7 +458,10 @@ function payoutHtml(r) {
           <td>${esc(t.pickup || "—")} → ${esc(t.destination || "—")}</td>
           <td>${t.passengers ?? "?"}</td>
           <td>${t.paid_out_at ? `<span class="pill pill-completed">Paid</span>` : ""}</td>
-          <td class="num${t.paid_out_at ? " unpaid" : ""}">${dollars(splitFare(t.quoted_price_cents || 0, tripPct(t, r.boat)).net)}</td>
+          <td class="num${t.paid_out_at ? " unpaid" : ""}">${dollars(
+            (t.paid_out_at ? 0 : splitFare(t.quoted_price_cents || 0, tripPct(t, r.boat)).net) +
+            ((t.tip_cents || 0) > 0 && !t.tip_paid_out_at ? t.tip_cents : 0)
+          )}${(t.tip_cents || 0) > 0 ? ` <span class="tip-flag">+tip</span>` : ""}</td>
         </tr>`;
     })
     .join("");
@@ -451,6 +480,7 @@ function payoutHtml(r) {
             : r.mixedRates
             ? `<div class="payout-split">${dollars(r.grossCents)} in fares before VAT · less commission (${dollars(r.commissionCents)}), rate changed this week</div>`
             : ""}
+          ${r.tipCents ? `<div class="payout-tip">plus ${dollars(r.tipCents)} in tips — no commission</div>` : ""}
           ${r.paidCents ? `<div class="payout-already">${dollars(r.paidCents)} already paid</div>` : ""}
         </div>
       </div>
@@ -477,23 +507,42 @@ function payoutHtml(r) {
 
 async function markPaid(key, card) {
   const row = buildPayout().find((r) => r.key === key);
-  if (!row || !row.unpaid.length) return;
+  if (!row || (!row.unpaid.length && !row.tipsUnpaid.length)) return;
 
   const stamp = new Date().toISOString();
   card?.classList.add("row-saving");
-  const { error } = await db
-    .from("bookings")
-    .update({ paid_out_at: stamp })
-    .in("id", row.unpaid.map((t) => t.id));
+
+  // Two stamps, because they come apart: a trip whose fare was paid out last
+  // Friday can still be carrying a tip that hasn't been handed over.
+  const errors = [];
+  if (row.unpaid.length) {
+    const { error } = await db
+      .from("bookings")
+      .update({ paid_out_at: stamp })
+      .in("id", row.unpaid.map((t) => t.id));
+    if (error) errors.push(error.message);
+  }
+  if (row.tipsUnpaid.length) {
+    const { error } = await db
+      .from("bookings")
+      .update({ tip_paid_out_at: stamp })
+      .in("id", row.tipsUnpaid.map((t) => t.id));
+    if (error) errors.push(error.message);
+  }
   card?.classList.remove("row-saving");
 
-  if (error) {
-    alert("Couldn't record that payout: " + error.message);
+  if (errors.length) {
+    alert("Couldn't record that payout: " + errors.join("; "));
+    loadBookings();
     return;
   }
   for (const t of row.unpaid) {
     const b = (window.__allBookings || []).find((x) => x.id === t.id);
     if (b) b.paid_out_at = stamp;
+  }
+  for (const t of row.tipsUnpaid) {
+    const b = (window.__allBookings || []).find((x) => x.id === t.id);
+    if (b) b.tip_paid_out_at = stamp;
   }
   renderPayout();
 }
@@ -820,6 +869,33 @@ function paymentHtml(b) {
   </div>`;
 }
 
+/* Tips, on the same card as the payment.
+
+   Recorded by dispatch today because the money arrives in their hand — cash on
+   the dock, usually. When a payment link exists the passenger will add it
+   themselves and this calls the same function.
+
+   It sits apart from the payment row on purpose: a tip is not part of the bill,
+   it isn't taxed, and no commission comes off it. Every cent goes to the boat. */
+function tipHtml(b) {
+  // Nothing to tip until there's a boat on the trip.
+  if (!b.assigned_boat_id) return "";
+  const tip = b.tip_cents || 0;
+
+  const state = tip
+    ? `<span class="tip-state">✓ ${dollars(tip)} tip${
+        b.tip_paid_out_at ? " · handed over" : " · goes to the boat in full"
+      }</span>`
+    : `<span class="tip-state tip-none">No tip</span>`;
+
+  return `<div class="tip-row${tip ? " has-tip" : ""}">
+    ${state}
+    <input type="number" class="tip-input" data-id="${b.id}" min="0.01" step="0.01"
+           placeholder="Add $" inputmode="decimal" aria-label="Tip amount in dollars">
+    <button type="button" class="btn-add-tip" data-id="${b.id}">Add tip</button>
+  </div>`;
+}
+
 function threadHtml(b) {
   const thread = threadsByBooking.get(b.id) || [];
   const bubbles = thread.length
@@ -1006,6 +1082,42 @@ function renderBookings(all) {
   // Recording money goes through the database function, never a direct write:
   // it writes the ledger row and flips the booking together, and it's the same
   // door a payment provider will come through later.
+  // Tips go through their own database function. Deliberately not through
+  // record_payment: that one pays down a balance, and a tip isn't owed.
+  bookingsBody.querySelectorAll("input.tip-input").forEach((inp) => {
+    inp.addEventListener("input", () => inp.classList.remove("input-error"));
+  });
+  bookingsBody.querySelectorAll("button.btn-add-tip").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const card = btn.closest(".booking-card");
+      const input = card.querySelector(`input.tip-input[data-id="${btn.dataset.id}"]`);
+      const amount = parseFloat(input.value);
+      if (!Number.isFinite(amount) || amount <= 0) {
+        input.classList.add("input-error");
+        input.focus();
+        return;
+      }
+      btn.disabled = true;
+      card?.classList.add("row-saving");
+      const { error } = await db.rpc("record_tip", {
+        p_booking: btn.dataset.id,
+        p_amount_cents: Math.round(amount * 100),
+        p_provider: "manual",
+        p_reference: null,
+      });
+      card?.classList.remove("row-saving");
+      if (error) {
+        btn.disabled = false;
+        const msg = card?.querySelector(".card-msg");
+        if (msg) {
+          msg.textContent = error.message;
+          msg.hidden = false;
+        }
+        return;
+      }
+      loadBookings();
+    });
+  });
   bookingsBody.querySelectorAll("button.btn-mark-paid-booking").forEach((btn) => {
     btn.addEventListener("click", async () => {
       const card = btn.closest(".booking-card");
@@ -1259,6 +1371,7 @@ function cardHtml(b) {
             <input type="number" step="0.01" min="0" class="price-input" data-id="${b.id}" value="${price}" placeholder="—">
           </div>
           ${paymentHtml(b)}
+          ${tipHtml(b)}
         </div>
       </div>`;
 

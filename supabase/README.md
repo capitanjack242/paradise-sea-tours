@@ -14,6 +14,11 @@ customer app (`app/`) and the dispatch/control view (`control/`).
 - **payments** — the ledger of money recorded against a booking.
 - **app_settings** — one row of company-wide numbers. Today that is `vat_pct`.
 
+Tips: `tip_cents` is what the passenger added for the captain, recorded through
+`record_tip`. It is never commissioned, never taxed, and never part of
+`total_cents` or the balance — all of it goes to the boat. It has its own payout
+stamp (`tip_paid_out_at`) because a tip can land after the fare was settled.
+
 Money: `quoted_price_cents` is the fare **before tax**. VAT is added on top at
 the rate stamped on the booking (`vat_pct`), giving `vat_cents` and
 `total_cents` — the total is what a passenger owes. Commission is taken on the

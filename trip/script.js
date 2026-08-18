@@ -123,6 +123,7 @@ function render(t) {
   }
 
   renderPayment(t);
+  renderTip(t);
 
   // Only the channel being looked at. The office one is always available; the
   // captain's opens on payment, and until then the tab says why rather than
@@ -228,6 +229,73 @@ function renderPayment(t) {
     msgInput.value = msgInput.value || "I'd like to pay for my trip.";
     msgInput.focus();
   };
+}
+
+/* Tips.
+
+   Offered once the fare is settled and there's a captain to give it to — the
+   same moment Uber offers one, after the ride rather than before it. Nothing
+   here is owed: the balance is already nil, and this is extra.
+
+   The button starts a message rather than taking money, because no payment
+   provider is connected yet. That's the same thing the Pay button does. When
+   the link exists it takes its place and the office stops being involved. */
+function renderTip(t) {
+  const section = document.getElementById("tipSection");
+  const given = document.getElementById("tipGiven");
+  const note = document.getElementById("tipNote");
+  const slot = document.getElementById("tipSlot");
+  const money = (c) => `$${((c || 0) / 100).toFixed(2).replace(/\.00$/, "")}`;
+
+  const tip = t.tip_cents || 0;
+  const captain = t.captain ? `Capt. ${t.captain}` : "your captain";
+  // Tipping opens when the trip is paid for and there's a named captain. A
+  // finished trip still shows a tip that was given, but can't take a new one:
+  // the message thread it goes through is closed by then.
+  const canTip = !!t.paid_at && !!t.captain && !!t.can_reply;
+
+  if (!tip && !canTip) {
+    section.hidden = true;
+    return;
+  }
+  section.hidden = false;
+
+  given.hidden = !tip;
+  if (tip) {
+    given.innerHTML = `<strong>${money(tip)}</strong> tip for ${esc(captain)}`;
+  }
+
+  if (!canTip) {
+    note.textContent = "Every cent of it goes to the captain.";
+    slot.innerHTML = "";
+    return;
+  }
+
+  note.textContent = tip
+    ? "Want to add more? Every cent goes to the captain."
+    : `Nothing owed — the fare is settled. This is extra, and all of it goes to ${captain}.`;
+
+  // Percentages of the fare, not the fare plus tax: nobody tips on tax.
+  const base = t.fare_cents || 0;
+  const options = [10, 15, 20]
+    .map((pct) => ({ pct, cents: Math.max(Math.round((base * pct) / 100 / 100) * 100, 100) }))
+    // Two percentages of a small fare can round to the same dollar.
+    .filter((o, i, all) => all.findIndex((x) => x.cents === o.cents) === i);
+
+  slot.innerHTML = options
+    .map(
+      (o) =>
+        `<button type="button" class="tip-btn" data-cents="${o.cents}">${money(o.cents)}<span>${o.pct}%</span></button>`
+    )
+    .join("");
+
+  slot.querySelectorAll("button.tip-btn").forEach((btn) => {
+    btn.onclick = () => {
+      setChannel("office");
+      msgInput.value = `I'd like to add a ${money(Number(btn.dataset.cents))} tip for ${captain}.`;
+      msgInput.focus();
+    };
+  });
 }
 
 function bubble(m) {

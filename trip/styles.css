@@ -108,3 +108,20 @@ body{margin:0;background:var(--foam);color:var(--ink);
   font-weight:800;cursor:pointer}
 .pay-btn:hover{filter:brightness(1.06)}
 .pay-btn:active{transform:translateY(1px)}
+
+/* ── tips ─────────────────────────────────────────────────────────────────
+   Kept apart from the payment panel on purpose: the fare is settled by the
+   time this appears, and nothing here is owed. */
+.tip{background:#fff;border:1px solid var(--line);border-radius:var(--radius);
+  padding:1rem 1.1rem;margin-top:1rem}
+.tip-title{margin:0 0 .5rem;font-size:.72rem;font-weight:800;letter-spacing:.09em;
+  text-transform:uppercase;color:var(--muted)}
+.tip-given{font-size:1.05rem;color:#1a7f52;margin-bottom:.35rem}
+.tip-given strong{font-weight:800}
+.tip-note{margin:0;font-size:.85rem;color:var(--muted);line-height:1.45}
+.tip-slot{display:flex;gap:.5rem;margin-top:.7rem;flex-wrap:wrap}
+.tip-btn{flex:1;min-width:5rem;font:inherit;font-size:1rem;font-weight:800;
+  padding:.6em .4em;border-radius:10px;border:1.5px solid #1a7f52;
+  background:#fff;color:#1a7f52;cursor:pointer;line-height:1.15}
+.tip-btn span{display:block;font-size:.7rem;font-weight:600;opacity:.75}
+.tip-btn:hover{background:#e9fbf3}

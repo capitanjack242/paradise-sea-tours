@@ -25,6 +25,8 @@ export type TripView = {
   vat_cents: number | null;
   /** Fare plus tax. This is what has to be paid, not fare_cents. */
   total_cents: number | null;
+  /** What the passenger added for the captain. Never part of the balance. */
+  tip_cents: number | null;
   boat: string | null;
   captain: string | null;
   paid_at: string | null;

@@ -27,6 +27,9 @@ export type Trip = {
   assigned_boat_id: string | null;
   /** The rate this trip was closed out at. Null while it's still running. */
   commission_pct: number | null;
+  /** What the passenger added on top. All of it is his — no commission, no tax. */
+  tip_cents: number;
+  tip_paid_out_at: string | null;
   /** Where the passenger says they're standing. Null unless they shared it. */
   pickup_lat: number | null;
   pickup_lng: number | null;
@@ -55,6 +58,9 @@ export type Boat = {
 /** What a fare splits into. Worked out in cents so nothing rounds away. */
 export type Split = { gross: number; commission: number; net: number };
 
+/** A week's money: the fares split up, plus tips, which are split with nobody. */
+export type WeekTotal = Split & { tips: number; take: number };
+
 export function splitFare(grossCents: number, commissionPct: number): Split {
   const pct = Number.isFinite(commissionPct) ? Math.max(0, commissionPct) : 0;
   const commission = Math.round((grossCents * pct) / 100);
@@ -78,7 +84,8 @@ export async function fetchTrips(): Promise<Trip[]> {
     .select(
       "id, status, pickup, destination, scheduled_at, return_at, passengers, trip_type, " +
         "contact_name, notes, quoted_price_cents, paid_out_at, paid_at, offered_at, captain_response, " +
-        "decline_reason, assigned_boat_id, commission_pct, pickup_lat, pickup_lng, located_at, boats(name)"
+        "decline_reason, assigned_boat_id, commission_pct, tip_cents, tip_paid_out_at, " +
+        "pickup_lat, pickup_lng, located_at, boats(name)"
     )
     .order("scheduled_at", { ascending: true });
   if (error) throw error;
@@ -255,18 +262,27 @@ export function tripsInWeek(trips: Trip[], offset = 0): Trip[] {
 export const sumCents = (trips: Trip[]): number =>
   trips.reduce((n, t) => n + (t.quoted_price_cents ?? 0), 0);
 
-/** Commission is taken per trip, so the total is the sum of the roundings. */
-export function splitTrips(trips: Trip[], boat: Boat | null): Split {
-  return trips.reduce<Split>(
+/**
+ * A week's money.
+ *
+ * Commission is taken per trip, so the total is the sum of the roundings rather
+ * than a percentage of a total. Tips are added afterwards and untouched by any
+ * of it — a tip is the passenger's money going straight to the captain.
+ */
+export function splitTrips(trips: Trip[], boat: Boat | null): WeekTotal {
+  return trips.reduce<WeekTotal>(
     (acc, t) => {
       const s = splitFare(t.quoted_price_cents ?? 0, tripPct(t, boat));
+      const tip = t.tip_cents ?? 0;
       return {
         gross: acc.gross + s.gross,
         commission: acc.commission + s.commission,
         net: acc.net + s.net,
+        tips: acc.tips + tip,
+        take: acc.take + s.net + tip,
       };
     },
-    { gross: 0, commission: 0, net: 0 }
+    { gross: 0, commission: 0, net: 0, tips: 0, take: 0 }
   );
 }
 
