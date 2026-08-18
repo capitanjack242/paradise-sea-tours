@@ -24,7 +24,44 @@ const admin = createClient(
   { auth: { persistSession: false } }
 );
 
-type Push = { to: string; title: string; body: string; data?: Record<string, unknown> };
+type Push = {
+  to: string;
+  title: string;
+  body: string;
+  data?: Record<string, unknown>;
+  sound?: string;
+  channelId?: string;
+  priority?: "default" | "high";
+  interruptionLevel?: "passive" | "active" | "time-sensitive" | "critical";
+  ttl?: number;
+};
+
+/* The two kinds of interruption, kept apart deliberately.
+
+   A run gets the Junkanoo: maximum-importance channel, the custom 25-second
+   alert, high priority so Android delivers it even in Doze, and Time Sensitive
+   so iOS lets it through a Focus mode. It also expires after ten minutes —
+   a run that was offered half an hour ago has been dealt with by somebody, and
+   a phone coming back into signal shouldn't start playing an alarm about it.
+
+   A message gets an ordinary notification. Giving both the same treatment is
+   how you train a captain to silence the app, and then he misses the run too.
+
+   Channel ids match captain-app/src/lib/push.ts. Android freezes a channel's
+   sound and importance on first creation, so both sides carry a version. */
+const RUN_ALERT = {
+  sound: "run_alert.wav",
+  channelId: "runs-v2",
+  priority: "high" as const,
+  interruptionLevel: "time-sensitive" as const,
+  ttl: 600,
+};
+
+const MESSAGE_ALERT = {
+  sound: "default",
+  channelId: "messages-v1",
+  priority: "default" as const,
+};
 
 async function tokensFor(userId: string): Promise<string[]> {
   const { data, error } = await admin.from("push_tokens").select("token").eq("user_id", userId);
@@ -103,6 +140,7 @@ Deno.serve(async (req: Request) => {
       title: `${from} messaged you`,
       body: String(rec.body ?? "").slice(0, 140),
       data: { kind: "message", bookingId: rec.booking_id },
+      ...MESSAGE_ALERT,
     }));
   } else if (table === "bookings") {
     // Only the moment a run becomes theirs — not every edit to the row.
@@ -120,6 +158,7 @@ Deno.serve(async (req: Request) => {
       title: nowConfirmed ? "Run confirmed" : "New run for you",
       body: `${rec.pickup ?? "?"} → ${rec.destination ?? "?"}${when ? `, ${when}` : ""}`,
       data: { kind: "run", bookingId: rec.id },
+      ...RUN_ALERT,
     }));
   } else {
     return json({ skipped: `unhandled table ${table}` });

@@ -20,11 +20,18 @@ import { supabase } from "./supabase";
       which is the right behaviour anyway: no captain should lose a run
       because notifications wouldn't turn on. */
 
+/* Android freezes a channel's settings on first creation, so the id is
+   versioned: changing the sound later means a new channel, not an edit. These
+   are the ids the server puts on a push, so both sides must agree. */
+export const RUN_CHANNEL = "runs-v2";
+export const MESSAGE_CHANNEL = "messages-v1";
+
 export type PushResult =
   | { ok: true; token: string }
   | { ok: false; reason: "no-device" | "denied" | "no-project-id" | "failed"; detail?: string };
 
-// A run arriving matters more than not interrupting.
+// A run arriving matters more than not interrupting — including when the app
+// is already open and a captain is looking at something else in it.
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
     shouldShowBanner: true,
@@ -73,9 +80,26 @@ export async function registerForPush(userId: string): Promise<PushResult> {
 
   try {
     if (Platform.OS === "android") {
-      // Android needs a channel before anything will show.
-      await Notifications.setNotificationChannelAsync("runs", {
-        name: "Runs and messages",
+      /* Two channels, because they are not the same kind of interruption.
+         A run is worth a 25-second Junkanoo at maximum importance; a message
+         is not, and giving both the same treatment would train a captain to
+         silence the app.
+
+         The ids carry a version. Android freezes a channel's sound and
+         importance the first time it is created and ignores every later
+         change — so improving the alert means a new id, not an edit. */
+      await Notifications.setNotificationChannelAsync(RUN_CHANNEL, {
+        name: "New runs",
+        description: "A boat has been offered to you. Loud on purpose.",
+        importance: Notifications.AndroidImportance.MAX,
+        sound: "run_alert.wav",
+        vibrationPattern: [0, 500, 250, 500, 250, 500],
+        enableVibrate: true,
+        lightColor: "#0bbcd6",
+      });
+      await Notifications.setNotificationChannelAsync(MESSAGE_CHANNEL, {
+        name: "Messages",
+        description: "A passenger or the office wrote to you.",
         importance: Notifications.AndroidImportance.HIGH,
         vibrationPattern: [0, 250, 250, 250],
       });

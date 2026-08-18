@@ -13,6 +13,9 @@
         "UIBackgroundModes": [
           "remote-notification"
         ]
+      },
+      "entitlements": {
+        "com.apple.developer.usernotifications.time-sensitive": true
       }
     },
     "android": {
@@ -34,14 +37,17 @@
       [
         "expo-notifications",
         {
-          "color": "#0bbcd6"
+          "color": "#0bbcd6",
+          "sounds": [
+            "./assets/run_alert.wav"
+          ]
         }
       ],
       [
         "expo-location",
         {
-          "locationAlwaysAndWhenInUsePermission": "Paradise Sea Express shows your passenger where the boat is while you are on a trip. You turn it on per trip and it stops when the trip ends.",
-          "locationWhenInUsePermission": "Paradise Sea Express shows your passenger where the boat is while you are on a trip. You turn it on per trip and it stops when the trip ends.",
+          "locationAlwaysAndWhenInUsePermission": "Paradise Sea Express shows the office and your passengers where your boat is while you are switched on as available. Switch off and it stops, and your last position is deleted.",
+          "locationWhenInUsePermission": "Paradise Sea Express shows the office and your passengers where your boat is while you are switched on as available. Switch off and it stops, and your last position is deleted.",
           "isIosBackgroundLocationEnabled": false,
           "isAndroidBackgroundLocationEnabled": false
         }
