@@ -186,7 +186,7 @@ export default function BookScreen() {
     <View style={s.root}>
       <View style={s.topbar}>
         <Text style={s.brand}>
-          Paradise<Text style={s.brandAccent}>Sea Tours</Text>
+          Paradise<Text style={s.brandAccent}>Sea Express</Text>
         </Text>
         <Text style={s.topRight}>Nassau</Text>
       </View>

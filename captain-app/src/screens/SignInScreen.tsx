@@ -44,7 +44,7 @@ export default function SignInScreen() {
     <KeyboardAvoidingView style={s.wrap} behavior={Platform.OS === "ios" ? "padding" : undefined}>
       <View style={s.card}>
         <Text style={s.brand}>
-          Paradise<Text style={s.brandAccent}>Sea Tours</Text>
+          Paradise<Text style={s.brandAccent}>Sea Express</Text>
         </Text>
         <Text style={s.sub}>Captain</Text>
 

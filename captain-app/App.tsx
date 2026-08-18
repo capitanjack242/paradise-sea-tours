@@ -188,7 +188,7 @@ export default function App() {
 
       <View style={s.topbar}>
         <Text style={s.brand}>
-          Paradise<Text style={s.brandAccent}>Sea Tours</Text>
+          Paradise<Text style={s.brandAccent}>Sea Express</Text>
         </Text>
         <Pressable
           onPress={async () => {
