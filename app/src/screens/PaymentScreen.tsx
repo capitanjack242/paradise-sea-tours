@@ -7,6 +7,7 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   View,
 } from "react-native";
 import { colors, radius } from "../lib/theme";
@@ -29,6 +30,11 @@ export default function PaymentScreen({
   refreshing: boolean;
   onRefresh: () => void;
 }) {
+  // A percentage of the fare is a suggestion, not a limit — someone who wants
+  // to give $50 on a $60 trip shouldn't have to ask the office for permission.
+  const [otherOpen, setOtherOpen] = React.useState(false);
+  const [otherAmount, setOtherAmount] = React.useState("");
+  const [otherBad, setOtherBad] = React.useState(false);
   if (loading) {
     return (
       <View style={s.centre}>
@@ -63,6 +69,26 @@ export default function PaymentScreen({
   const tip = trip.tip_cents ?? 0;
   const canTip = !!trip.paid_at && !!trip.captain && trip.can_reply;
   const captain = trip.captain ? `Capt. ${trip.captain}` : "your captain";
+  const askForTip = (cents: number) =>
+    Alert.alert(
+      "Card payments aren't switched on yet",
+      `Message the office and we'll add a ${formatMoney(cents)} tip for ${
+        trip?.captain ? `Capt. ${trip.captain}` : "your captain"
+      }. All of it goes to them.`
+    );
+
+  const submitOther = () => {
+    const dollars = parseFloat(otherAmount);
+    if (!Number.isFinite(dollars) || dollars <= 0) {
+      setOtherBad(true);
+      return;
+    }
+    setOtherBad(false);
+    setOtherOpen(false);
+    setOtherAmount("");
+    askForTip(Math.round(dollars * 100));
+  };
+
   const tipOptions = [10, 15, 20]
     .map((pct) => ({
       pct,
@@ -180,23 +206,58 @@ export default function PaymentScreen({
           </Text>
 
           {canTip ? (
-            <View style={s.tipRow}>
-              {tipOptions.map((o) => (
+            <>
+              <View style={s.tipRow}>
+                {tipOptions.map((o) => (
+                  <Pressable
+                    key={o.pct}
+                    style={({ pressed }) => [s.tipBtn, pressed && s.tipBtnDown]}
+                    onPress={() => askForTip(o.cents)}
+                  >
+                    <Text style={s.tipBtnAmount}>{formatMoney(o.cents)}</Text>
+                    <Text style={s.tipBtnPct}>{o.pct}%</Text>
+                  </Pressable>
+                ))}
                 <Pressable
-                  key={o.pct}
                   style={({ pressed }) => [s.tipBtn, pressed && s.tipBtnDown]}
-                  onPress={() =>
-                    Alert.alert(
-                      "Card payments aren't switched on yet",
-                      `Message the office and we'll add a ${formatMoney(o.cents)} tip for ${captain}. All of it goes to them.`
-                    )
-                  }
+                  onPress={() => setOtherOpen((v) => !v)}
                 >
-                  <Text style={s.tipBtnAmount}>{formatMoney(o.cents)}</Text>
-                  <Text style={s.tipBtnPct}>{o.pct}%</Text>
+                  <Text style={s.tipBtnOther}>Other</Text>
+                  <Text style={s.tipBtnPct}>any amount</Text>
                 </Pressable>
-              ))}
-            </View>
+              </View>
+
+              {otherOpen ? (
+                <View>
+                  <View style={s.otherRow}>
+                    <Text style={s.otherCurrency}>$</Text>
+                    <TextInput
+                      style={[s.otherInput, otherBad && s.otherInputBad]}
+                      value={otherAmount}
+                      onChangeText={(v) => {
+                        setOtherAmount(v);
+                        setOtherBad(false);
+                      }}
+                      keyboardType="decimal-pad"
+                      placeholder="0.00"
+                      placeholderTextColor={colors.muted}
+                      autoFocus
+                      returnKeyType="done"
+                      onSubmitEditing={submitOther}
+                    />
+                    <Pressable
+                      style={({ pressed }) => [s.otherGo, pressed && s.otherGoDown]}
+                      onPress={submitOther}
+                    >
+                      <Text style={s.otherGoText}>Add</Text>
+                    </Pressable>
+                  </View>
+                  {otherBad ? (
+                    <Text style={s.otherErr}>Enter an amount above zero.</Text>
+                  ) : null}
+                </View>
+              ) : null}
+            </>
           ) : null}
         </View>
       ) : null}
@@ -274,6 +335,30 @@ const s = StyleSheet.create({
   },
   tipBtnDown: { backgroundColor: colors.greenBg },
   tipBtnAmount: { fontSize: 17, fontWeight: "800", color: colors.green },
+  tipBtnOther: { fontSize: 15, fontWeight: "800", color: colors.green },
+  otherRow: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 10 },
+  otherCurrency: { fontSize: 18, fontWeight: "800", color: colors.green },
+  otherInput: {
+    flex: 1,
+    fontSize: 16,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderWidth: 1.5,
+    borderColor: colors.line,
+    borderRadius: 10,
+    color: colors.ink,
+    backgroundColor: colors.white,
+  },
+  otherInputBad: { borderColor: "#c0392b" },
+  otherGo: {
+    paddingVertical: 11,
+    paddingHorizontal: 18,
+    borderRadius: 10,
+    backgroundColor: colors.green,
+  },
+  otherGoDown: { opacity: 0.85 },
+  otherGoText: { color: colors.white, fontWeight: "800", fontSize: 15 },
+  otherErr: { marginTop: 6, fontSize: 12.5, fontWeight: "600", color: "#c0392b" },
   tipBtnPct: { fontSize: 11, fontWeight: "600", color: colors.green, opacity: 0.75 },
 
   state: { marginTop: 12, fontSize: 14, fontWeight: "700", color: colors.deep, lineHeight: 19 },

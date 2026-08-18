@@ -265,9 +265,11 @@ function renderTip(t) {
     given.innerHTML = `<strong>${money(tip)}</strong> tip for ${esc(captain)}`;
   }
 
+  const other = document.getElementById("tipOther");
   if (!canTip) {
     note.textContent = "Every cent of it goes to the captain.";
     slot.innerHTML = "";
+    other.hidden = true;
     return;
   }
 
@@ -282,20 +284,50 @@ function renderTip(t) {
     // Two percentages of a small fare can round to the same dollar.
     .filter((o, i, all) => all.findIndex((x) => x.cents === o.cents) === i);
 
-  slot.innerHTML = options
-    .map(
-      (o) =>
-        `<button type="button" class="tip-btn" data-cents="${o.cents}">${money(o.cents)}<span>${o.pct}%</span></button>`
-    )
-    .join("");
+  slot.innerHTML =
+    options
+      .map(
+        (o) =>
+          `<button type="button" class="tip-btn" data-cents="${o.cents}">${money(o.cents)}<span>${o.pct}%</span></button>`
+      )
+      .join("") +
+    // A percentage of the fare is a suggestion, not a limit. Someone who wants
+    // to give $50 on a $60 trip shouldn't have to ask the office for permission.
+    `<button type="button" class="tip-btn tip-btn-other" id="tipOtherBtn">Other<span>any amount</span></button>`;
 
-  slot.querySelectorAll("button.tip-btn").forEach((btn) => {
-    btn.onclick = () => {
-      setChannel("office");
-      msgInput.value = `I'd like to add a ${money(Number(btn.dataset.cents))} tip for ${captain}.`;
-      msgInput.focus();
-    };
+  const ask = (cents) => {
+    setChannel("office");
+    msgInput.value = `I'd like to add a ${money(cents)} tip for ${captain}.`;
+    msgInput.focus();
+  };
+
+  slot.querySelectorAll("button.tip-btn[data-cents]").forEach((btn) => {
+    btn.onclick = () => ask(Number(btn.dataset.cents));
   });
+
+  const amount = document.getElementById("tipAmount");
+  const err = document.getElementById("tipErr");
+  document.getElementById("tipOtherBtn").onclick = () => {
+    other.hidden = !other.hidden;
+    if (!other.hidden) amount.focus();
+  };
+  amount.oninput = () => { err.hidden = true; };
+  const submitOther = () => {
+    const dollars = parseFloat(amount.value);
+    if (!Number.isFinite(dollars) || dollars <= 0) {
+      err.hidden = false;
+      amount.focus();
+      return;
+    }
+    err.hidden = true;
+    other.hidden = true;
+    amount.value = "";
+    ask(Math.round(dollars * 100));
+  };
+  document.getElementById("tipOtherGo").onclick = submitOther;
+  amount.onkeydown = (e) => {
+    if (e.key === "Enter") { e.preventDefault(); submitOther(); }
+  };
 }
 
 function bubble(m) {

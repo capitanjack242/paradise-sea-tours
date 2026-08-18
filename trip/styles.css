@@ -125,3 +125,14 @@ body{margin:0;background:var(--foam);color:var(--ink);
   background:#fff;color:#1a7f52;cursor:pointer;line-height:1.15}
 .tip-btn span{display:block;font-size:.7rem;font-weight:600;opacity:.75}
 .tip-btn:hover{background:#e9fbf3}
+.tip-btn-other{font-size:.9rem}
+.tip-other{margin-top:.6rem}
+.tip-other label{display:block;font-size:.78rem;font-weight:700;color:var(--muted);margin-bottom:.3rem}
+.tip-other-row{display:flex;align-items:center;gap:.4rem}
+.tip-currency{font-size:1.05rem;font-weight:800;color:#1a7f52}
+.tip-other-row input{flex:1;min-width:0;font:inherit;font-size:1rem;padding:.55em .65em;
+  border:1.5px solid var(--line);border-radius:10px}
+.tip-other-row input:focus{outline:none;border-color:#1a7f52}
+.tip-other-row button{font:inherit;font-size:.95rem;font-weight:800;padding:.6em 1.1em;
+  border-radius:10px;border:1.5px solid #1a7f52;background:#1a7f52;color:#fff;cursor:pointer}
+.tip-err{margin:.4rem 0 0;font-size:.8rem;font-weight:600;color:#c0392b}

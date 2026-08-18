@@ -57,6 +57,16 @@
       <div class="tip-given" id="tipGiven" hidden></div>
       <p class="tip-note" id="tipNote"></p>
       <div class="tip-slot" id="tipSlot"></div>
+      <div class="tip-other" id="tipOther" hidden>
+        <label for="tipAmount">Tip amount</label>
+        <div class="tip-other-row">
+          <span class="tip-currency">$</span>
+          <input id="tipAmount" type="number" min="0.01" step="0.01" inputmode="decimal"
+                 placeholder="0.00" aria-label="Tip amount in dollars">
+          <button type="button" id="tipOtherGo">Add</button>
+        </div>
+        <p class="tip-err" id="tipErr" hidden>Enter an amount above zero.</p>
+      </div>
     </section>
 
     <section class="chat">
