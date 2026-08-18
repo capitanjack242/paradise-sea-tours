@@ -261,6 +261,19 @@ h1{font-family:'Baloo 2','Inter',sans-serif;margin:0}
 .tot.tot-tip{background:#1a7f52}
 .payout-tip{font-size:.8rem;color:#1a7f52;font-weight:600}
 .tip-flag{font-size:.7rem;font-weight:700;color:#1a7f52}
+
+/* Where a boat is. Only ever rendered for a boat that's switched on. */
+.boat-where{display:flex;align-items:center;flex-wrap:wrap;gap:.5rem;margin-top:.55rem;
+  padding:.4em .7em;border-radius:8px;background:#eef8fc;border:1px solid #cbe6f2;
+  font-size:.82rem}
+.boat-where a{color:var(--deep);font-weight:700;text-decoration:none}
+.boat-where a:hover{text-decoration:underline}
+.boat-where-tag{font-size:.68rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;
+  padding:.15em .5em;border-radius:5px;background:var(--deep);color:#fff}
+.boat-where-age{color:var(--muted);font-variant-numeric:tabular-nums}
+/* Ten minutes without a word usually means the app went to the background. */
+.boat-where-cold{background:#fdf6e6;border-color:#e8d6a8}
+.boat-where-none{background:var(--foam);border-color:var(--line);color:var(--muted)}
 .btn-mark-paid-booking{margin-left:auto;font-size:.82rem;font-weight:700;
   padding:.45em .8em;border-radius:8px;border:1px solid var(--deep);
   background:var(--deep);color:#fff;cursor:pointer}

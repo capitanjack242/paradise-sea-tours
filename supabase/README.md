@@ -14,12 +14,14 @@ customer app (`app/`) and the dispatch/control view (`control/`).
 - **payments** — the ledger of money recorded against a booking.
 - **app_settings** — one row of company-wide numbers. Today that is `vat_pct`.
 
-Positions: two, and they mirror each other. `pickup_lat/lng` is where the
-passenger says they're standing, shared once when they book. `boat_lat/lng` is
-where the boat is, reported by the assigned captain through
-`report_boat_position` while he chooses to share and the trip is running. Both
-are dropped when the trip closes, and `trip_thread` withholds a boat position
-more than five minutes old rather than showing a pin that has stopped being true.
+Positions: two, in different places. `bookings.pickup_lat/lng` is where the
+passenger says they're standing, shared once when they book and dropped when
+the trip closes. `boats.last_lat/lng` is where the boat is, reported through
+`report_boat_position` while the boat is **available** — availability is the
+captain's own switch, and turning it off wipes the position with it, so nobody
+is followed off the clock. Dispatch sees every boat that is on; `trip_thread`
+gives a passenger only their own boat, only on a live trip, and only a fix under
+five minutes old.
 
 Booking: the app and (later) the website ask for a boat through `request_boat`,
 which creates the booking and **returns its access token** — the key to that one

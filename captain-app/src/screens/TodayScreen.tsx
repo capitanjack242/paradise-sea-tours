@@ -32,8 +32,7 @@ export default function TodayScreen({
   onFinish,
   onOpenMessages,
   onAnswer,
-  sharingTripId,
-  onToggleSharing,
+  sharing,
 }: {
   trips: Trip[];
   messages: Map<string, Message[]>;
@@ -46,9 +45,8 @@ export default function TodayScreen({
   onFinish: (t: Trip) => void;
   onOpenMessages: (t: Trip) => void;
   onAnswer: (t: Trip, answer: "accepted" | "declined") => void;
-  /** The one trip currently reporting where the boat is, if any. */
-  sharingTripId: string | null;
-  onToggleSharing: (t: Trip, on: boolean) => void;
+  /** Whether the boat is reporting its position right now. */
+  sharing: boolean;
 }) {
   const today = todaysTrips(trips);
   const ahead = upcomingTrips(trips);
@@ -82,6 +80,13 @@ export default function TodayScreen({
                   ? `${boat.name}${since ? ` · on since ${since}` : ""} · off at 10pm`
                   : `${boat.name} · the office won't offer you runs`}
               </Text>
+              {boat.is_available ? (
+                <Text style={[s.availSub, sharing ? s.trackingOn : s.trackingOff]}>
+                  {sharing
+                    ? "📍 The office can see where you are while this app is open"
+                    : "📍 Position off — allow location so the office can see you"}
+                </Text>
+              ) : null}
             </View>
             <Switch on={boat.is_available} onToggle={onToggleAvailability} />
           </View>
@@ -120,8 +125,6 @@ export default function TodayScreen({
             onFinish={() => onFinish(t)}
             onOpenMessages={() => onOpenMessages(t)}
             onAnswer={(a) => onAnswer(t, a)}
-            sharing={sharingTripId === t.id}
-            onToggleSharing={(on) => onToggleSharing(t, on)}
           />
         ))
       )}
@@ -140,8 +143,6 @@ export default function TodayScreen({
               onFinish={() => onFinish(t)}
               onOpenMessages={() => onOpenMessages(t)}
               onAnswer={(a) => onAnswer(t, a)}
-              sharing={sharingTripId === t.id}
-              onToggleSharing={(on) => onToggleSharing(t, on)}
             />
           ))}
         </>
@@ -159,6 +160,8 @@ const s = StyleSheet.create({
   availRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12 },
   availText: { flexShrink: 1 },
   availTitle: { fontSize: 16, fontWeight: "700", color: colors.ink },
+  trackingOn: { color: colors.green, fontWeight: "700" },
+  trackingOff: { color: colors.amber, fontWeight: "700" },
   availSub: { fontSize: 13, color: colors.muted, marginTop: 2 },
 
   strip: {

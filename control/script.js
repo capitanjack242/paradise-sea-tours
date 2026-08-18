@@ -163,7 +163,10 @@ function setLiveStatus(state) {
 async function loadBoats() {
   const { data, error } = await db
     .from("boats")
-    .select("id, name, kind, capacity, home_dock, captain_name, captain_whatsapp, owner_id, is_available, availability_changed_at, commission_pct")
+    .select(
+      "id, name, kind, capacity, home_dock, captain_name, captain_whatsapp, owner_id, " +
+        "is_available, availability_changed_at, commission_pct, last_lat, last_lng, last_located_at"
+    )
     .eq("is_active", true)
     .order("name");
   if (error) {
@@ -564,14 +567,24 @@ function renderBoats() {
     runsToday.set(bk.assigned_boat_id, (runsToday.get(bk.assigned_boat_id) || 0) + 1);
   }
 
+  // A boat is working if it has a trip under way or confirmed for today; on
+  // and not working is idle, and idle is what dispatch is hunting for.
+  const working = new Set(
+    (window.__allBookings || [])
+      .filter((bk) => bk.assigned_boat_id && ["confirmed", "in_progress"].includes(bk.status))
+      .map((bk) => bk.assigned_boat_id)
+  );
+
   const sorted = [...boatsList].sort((a, b) => {
     if (!!a.is_available !== !!b.is_available) return a.is_available ? -1 : 1;
     return (a.name || "").localeCompare(b.name || "", undefined, { sensitivity: "base" });
   });
-  boatsBody.innerHTML = sorted.map((b) => boatHtml(b, runsToday.get(b.id) || 0)).join("");
+  boatsBody.innerHTML = sorted
+    .map((b) => boatHtml(b, runsToday.get(b.id) || 0, working.has(b.id)))
+    .join("");
 }
 
-function boatHtml(b, runs) {
+function boatHtml(b, runs, working) {
   const noLogin = !b.owner_id;
   const on = !!b.is_available;
 
@@ -609,8 +622,39 @@ function boatHtml(b, runs) {
           : `<span>${changed ? `${on ? "Available" : "Unavailable"} since ${changed}` : "Never set"}</span>`}
         <span class="boat-runs">${runs} run${runs === 1 ? "" : "s"} today</span>
       </div>
+      ${boatWhereHtml(b, on, working)}
       ${stale ? `<div class="boat-stale">⚠ Set available on ${changed} and never changed — worth checking he still is</div>` : ""}
     </article>`;
+}
+
+/* Where a boat is.
+
+   Only ever shown for a boat that is switched on: the position is wiped when a
+   captain goes unavailable, so an off boat has nothing to show and that is the
+   point — nobody is followed off the clock.
+
+   The age is always on screen. A fix from an hour ago is still worth seeing on
+   this board — it tells dispatch roughly where he was — but it must not be
+   read as where he is now, and "1h ago" says that plainly. */
+function boatWhereHtml(b, on, working) {
+  if (!on) return "";
+
+  if (b.last_lat == null || b.last_lng == null) {
+    return `<div class="boat-where boat-where-none">
+      📍 No position — the app hasn't reported in
+    </div>`;
+  }
+
+  const mins = Math.max(Math.round((Date.now() - new Date(b.last_located_at)) / 60000), 0);
+  const age = mins < 1 ? "just now" : mins < 60 ? `${mins} min ago` : `${Math.round(mins / 60)}h ago`;
+  const cold = mins > 10;
+  const map = `https://www.google.com/maps/search/?api=1&query=${b.last_lat},${b.last_lng}`;
+
+  return `<div class="boat-where${cold ? " boat-where-cold" : ""}">
+    <span class="boat-where-tag">${working ? "On a run" : "Idle"}</span>
+    <a href="${map}" target="_blank" rel="noopener noreferrer">📍 Where she is</a>
+    <span class="boat-where-age">updated ${age}</span>
+  </div>`;
 }
 
 /* ── clients ──────────────────────────────────────────────────────────────

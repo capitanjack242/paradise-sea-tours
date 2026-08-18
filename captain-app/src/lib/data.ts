@@ -34,8 +34,6 @@ export type Trip = {
   pickup_lat: number | null;
   pickup_lng: number | null;
   located_at: string | null;
-  /** When this boat last reported its own position. Null means not sharing. */
-  boat_located_at: string | null;
   boats: { name: string | null } | null;
 };
 
@@ -55,6 +53,10 @@ export type Boat = {
   availability_changed_at: string | null;
   /** Percent of the fare Paradise keeps. 0 means the boat gets the lot. */
   commission_pct: number;
+  /** Where this boat last reported in. Null while it is switched off. */
+  last_lat: number | null;
+  last_lng: number | null;
+  last_located_at: string | null;
 };
 
 /** What a fare splits into. Worked out in cents so nothing rounds away. */
@@ -87,7 +89,7 @@ export async function fetchTrips(): Promise<Trip[]> {
       "id, status, pickup, destination, scheduled_at, return_at, passengers, trip_type, " +
         "contact_name, notes, quoted_price_cents, paid_out_at, paid_at, offered_at, captain_response, " +
         "decline_reason, assigned_boat_id, commission_pct, tip_cents, tip_paid_out_at, " +
-        "pickup_lat, pickup_lng, located_at, boat_located_at, boats(name)"
+        "pickup_lat, pickup_lng, located_at, boats(name)"
     )
     .order("scheduled_at", { ascending: true });
   if (error) throw error;
@@ -189,37 +191,28 @@ export async function setTripStatus(id: string, status: "in_progress" | "complet
 export async function fetchMyBoat(userId: string): Promise<Boat | null> {
   const { data, error } = await supabase
     .from("boats")
-    .select("id, name, capacity, is_available, availability_changed_at, commission_pct")
+    .select(
+      "id, name, capacity, is_available, availability_changed_at, commission_pct, " +
+        "last_lat, last_lng, last_located_at"
+    )
     .eq("owner_id", userId)
     .limit(1);
   if (error) throw error;
-  return (data?.[0] as Boat) ?? null;
+  return (data?.[0] as unknown as Boat) ?? null;
 }
 
 /**
- * Tell the passenger where the boat is.
+ * Say where this boat is.
  *
  * Through a database function rather than an update, so a captain's grant stays
- * narrow: this takes a position and nothing else, and the database refuses it
- * on a trip that isn't his or isn't running.
+ * narrow: it takes a position and nothing else, and the database refuses it
+ * unless he owns the boat and it is switched on. Switching off wipes the
+ * position by itself, so there is nothing to call to stop.
  */
-export async function reportBoatPosition(
-  bookingId: string,
-  lat: number,
-  lng: number
-): Promise<void> {
+export async function reportBoatPosition(lat: number, lng: number): Promise<void> {
   const { error } = await supabase.rpc("report_boat_position", {
-    p_booking: bookingId,
     p_lat: lat,
     p_lng: lng,
-  });
-  if (error) throw error;
-}
-
-/** Stop, and wipe the pin — rather than leaving the last one to go stale. */
-export async function stopSharingBoatPosition(bookingId: string): Promise<void> {
-  const { error } = await supabase.rpc("stop_sharing_boat_position", {
-    p_booking: bookingId,
   });
   if (error) throw error;
 }

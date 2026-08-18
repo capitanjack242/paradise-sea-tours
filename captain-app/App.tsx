@@ -29,7 +29,6 @@ import {
   sendMessage,
   setAvailability,
   setTripStatus,
-  stopSharingBoatPosition,
   todaysTrips,
   type Boat,
   type Message,
@@ -51,9 +50,10 @@ export default function App() {
   const [openTrip, setOpenTrip] = React.useState<Trip | null>(null);
   const [error, setError] = React.useState<string | null>(null);
   const [pushNote, setPushNote] = React.useState<string | null>(null);
-  // One trip at a time: a captain is on one boat, and two pins moving at once
-  // would be one of them lying.
-  const [sharingTripId, setSharingTripId] = React.useState<string | null>(null);
+  // Whether the phone is actually managing to report. Shown on the switch, so
+  // a captain always knows whether the office can see him — and knows when a
+  // refused permission means it can't.
+  const [sharing, setSharing] = React.useState(false);
 
   const userId = session?.user?.id ?? null;
 
@@ -129,31 +129,43 @@ export default function App() {
     setRefreshing(false);
   }
 
-  /* Reporting where the boat is.
+  /* Saying where the boat is, for as long as it is switched on.
 
-     While this is on, the phone takes a fix every 45 seconds and sends it. The
-     database only shows the passenger a fix under five minutes old, so the
-     interval has room to miss a couple without the pin disappearing.
+     Availability is the captain's own switch — the one he already uses to say
+     he is working — so it is what this hangs on. Switched on, the phone takes
+     a fix every 45 seconds and sends it; switched off, this stops and the
+     database wipes the last position, so nobody is followed off the clock.
 
-     Foreground only: this stops when the app goes to the background or the
-     phone locks, which is a real limitation and the reason the toggle says
-     "while this app is open" rather than promising more than it does. */
+     The database only shows a fix under five minutes old, so the interval has
+     room to miss a couple without a pin vanishing.
+
+     Foreground only: it stops when the app goes to the background or the phone
+     locks. That is a real limitation, which is why the line under the switch
+     says "while this app is open" rather than promising more. */
   const REPORT_EVERY_MS = 45000;
 
   React.useEffect(() => {
-    if (!sharingTripId) return;
+    if (!boat?.is_available) {
+      setSharing(false);
+      return;
+    }
     let stopped = false;
 
     const tick = async () => {
       const fix = await locate();
-      if (stopped || !fix) return;
+      if (stopped) return;
+      if (!fix) {
+        // Refused, or no signal. Say so on the switch rather than looking on.
+        setSharing(false);
+        return;
+      }
       try {
-        await reportBoatPosition(sharingTripId, fix.lat, fix.lng);
-      } catch (e: any) {
-        // The trip finished or was taken off him — stop rather than keep
-        // hammering a call that will never work again.
-        setSharingTripId(null);
-        setError(e?.message ?? "Stopped sharing — that trip isn't running any more.");
+        await reportBoatPosition(fix.lat, fix.lng);
+        if (!stopped) setSharing(true);
+      } catch {
+        // Usually the boat going unavailable underneath us — the next refresh
+        // settles it, and there is nothing here a captain can act on.
+        if (!stopped) setSharing(false);
       }
     };
 
@@ -163,41 +175,12 @@ export default function App() {
       stopped = true;
       clearInterval(timer);
     };
-  }, [sharingTripId]);
-
-  async function toggleSharing(trip: Trip, on: boolean) {
-    if (!on) {
-      setSharingTripId(null);
-      try {
-        await stopSharingBoatPosition(trip.id);
-      } catch {
-        // Nothing to tell him: the pin goes stale within five minutes anyway.
-      }
-      await load();
-      return;
-    }
-
-    const fix = await locate();
-    if (!fix) {
-      setError("Couldn't get a position — check location is allowed for this app.");
-      return;
-    }
-    try {
-      await reportBoatPosition(trip.id, fix.lat, fix.lng);
-      setSharingTripId(trip.id);
-      await load();
-    } catch (e: any) {
-      setError(e?.message ?? "Couldn't start sharing — check your signal and try again.");
-    }
-  }
+  }, [boat?.is_available, boat?.id]);
 
   async function move(trip: Trip, status: "in_progress" | "completed") {
     setBusyTripId(trip.id);
     try {
       await setTripStatus(trip.id, status);
-      // A finished trip has nothing left to broadcast, and the database drops
-      // the position anyway — stop before it starts failing.
-      if (status === "completed" && sharingTripId === trip.id) setSharingTripId(null);
       await load();
     } catch (e: any) {
       setError(e?.message ?? "That didn't save — check your signal and try again.");
@@ -298,8 +281,7 @@ export default function App() {
             onFinish={(t) => move(t, "completed")}
             onOpenMessages={setOpenTrip}
             onAnswer={answer}
-            sharingTripId={sharingTripId}
-            onToggleSharing={toggleSharing}
+            sharing={sharing}
           />
         ) : (
           <EarningsScreen trips={trips} boat={boat} refreshing={refreshing} onRefresh={refresh} />
