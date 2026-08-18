@@ -1110,7 +1110,7 @@ function customerConfirmMessage(b) {
         weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit",
       })
     : null;
-  const lines = [`Hi ${b.contact_name || "there"}! This is Paradise Sea Tours confirming your booking:`];
+  const lines = [`Hi ${b.contact_name || "there"}! This is Paradise Sea Express confirming your booking:`];
   lines.push(`${b.pickup || "?"} → ${b.destination || "?"}`);
   if (when) lines.push(when);
   if (b.return_at) {

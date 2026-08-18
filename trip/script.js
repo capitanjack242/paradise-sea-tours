@@ -216,7 +216,7 @@ function renderPayment(t) {
 function bubble(m) {
   const at = new Date(m.at).toLocaleString(undefined, { hour: "numeric", minute: "2-digit" });
   const mine = m.sender === "customer";
-  const who = mine ? "You" : m.sender === "captain" ? "Your captain" : "Paradise Sea Tours";
+  const who = mine ? "You" : m.sender === "captain" ? "Your captain" : "Paradise Sea Express";
   return `<div class="bub ${mine ? "mine" : "theirs"}">
             <div class="who">${who} · ${at}</div>
             <div class="body">${esc(m.body)}</div>

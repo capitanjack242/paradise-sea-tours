@@ -1,4 +1,4 @@
--- Paradise Sea Tours — initial schema
+-- Paradise Sea Express — initial schema
 -- Core: profiles, boats, services (offerings), bookings, payments.
 
 -- ── enums ────────────────────────────────────────────────────────────────

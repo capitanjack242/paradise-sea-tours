@@ -1,21 +1,21 @@
 {
   "expo": {
-    "name": "Paradise Sea Tours",
-    "slug": "paradise-sea-tours",
-    "scheme": "paradiseseatours",
+    "name": "Paradise Sea Express",
+    "slug": "paradise-sea-express",
+    "scheme": "paradiseseaexpress",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.paradiseseatours.app",
+      "bundleIdentifier": "com.paradiseseaexpress.app",
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "So the captain picking you up can see where you're waiting on the dock. Only while the app is open, and only until your trip is finished."
       }
     },
     "android": {
-      "package": "com.paradiseseatours.app",
+      "package": "com.paradiseseaexpress.app",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/android-icon-foreground.png",

@@ -1,6 +1,6 @@
 # Backend (Supabase)
 
-Postgres data model + row-level security for Paradise Sea Tours. Shared by the
+Postgres data model + row-level security for Paradise Sea Express. Shared by the
 customer app (`app/`) and the dispatch/control view (`control/`).
 
 ## Schema (`migrations/0001_init.sql`)

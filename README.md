@@ -1,4 +1,4 @@
-# Paradise Sea Tours
+# Paradise Sea Express
 
 On-demand **water tours** for Nassau, The Bahamas. Fast, fixed per-person rides
 from the Cruise Port and downtown to Paradise Island, Atlantis, Cabbage Beach,

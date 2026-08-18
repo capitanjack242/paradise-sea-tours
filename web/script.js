@@ -2,7 +2,7 @@
 const CONFIG = {
   phone: "+50764819290",          // tel: dialable, no spaces
   phoneDisplay: "+507 6481-9290",
-  email: "hello@paradiseseatours.com",
+  email: "hello@paradiseseaexpress.com",
   // Publishable (anon) key — safe to expose client-side, access is scoped by RLS.
   supabaseUrl: "https://fjdoaonnoezbbitbawzs.supabase.co",
   supabaseKey: "sb_publishable_RjTM-t2isu1Teq9P5z37PQ_h_Oy3EpP",
@@ -33,7 +33,7 @@ document.querySelectorAll("[data-captain]").forEach(
   (el) =>
     (el.href =
       `mailto:${CONFIG.email}?subject=` +
-      encodeURIComponent("Joining the Paradise Sea Tours network"))
+      encodeURIComponent("Joining the Paradise Sea Express network"))
 );
 
 // ── Booking ──────────────────────────────────────────────────────────────
