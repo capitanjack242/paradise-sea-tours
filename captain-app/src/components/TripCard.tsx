@@ -25,6 +25,8 @@ export default function TripCard({
   onFinish,
   onOpenMessages,
   onAnswer,
+  sharing,
+  onToggleSharing,
   busy,
 }: {
   trip: Trip;
@@ -34,6 +36,9 @@ export default function TripCard({
   onFinish: () => void;
   onOpenMessages: () => void;
   onAnswer: (answer: "accepted" | "declined") => void;
+  /** Whether this trip is currently reporting where the boat is. */
+  sharing: boolean;
+  onToggleSharing: (on: boolean) => void;
   busy?: boolean;
 }) {
   // Two taps to finish a run. A phone in a wet pocket presses things by itself,
@@ -76,6 +81,28 @@ export default function TripCard({
             <Text style={s.whereSub}>
               Shared {howOld(where.minutesOld)}
               {where.stale ? " — they may have moved" : ""} · Tap for the map
+            </Text>
+          </View>
+        </Pressable>
+      ) : null}
+
+      {/* Letting the passenger watch the boat come in. Off unless the captain
+          turns it on, per trip, and it stops the moment the trip closes — a
+          captain's whereabouts is his to give, not ours to take. */}
+      {["confirmed", "in_progress"].includes(trip.status) ? (
+        <Pressable
+          onPress={() => onToggleSharing(!sharing)}
+          style={({ pressed }) => [s.shareBox, sharing && s.shareOn, pressed && s.pressed]}
+        >
+          <Text style={s.shareIcon}>{sharing ? "🛰" : "📡"}</Text>
+          <View style={s.whereText}>
+            <Text style={[s.shareTitle, sharing && s.shareTitleOn]}>
+              {sharing ? "They can see the boat" : "Show them where the boat is"}
+            </Text>
+            <Text style={s.whereSub}>
+              {sharing
+                ? "Updating while this app is open · Tap to stop"
+                : "Your position, on their trip page, until the run ends"}
             </Text>
           </View>
         </Pressable>
@@ -171,6 +198,22 @@ const s = StyleSheet.create({
   route: { fontSize: 18, fontWeight: "700", color: colors.ink, marginTop: 3, lineHeight: 24 },
   arrow: { color: colors.muted, fontWeight: "500" },
   meta: { fontSize: 14, color: colors.muted, marginTop: 3 },
+
+  shareBox: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    marginTop: 10,
+    padding: 11,
+    borderRadius: radius.md,
+    backgroundColor: colors.foam,
+    borderWidth: 1,
+    borderColor: colors.line,
+  },
+  shareOn: { backgroundColor: colors.greenBg, borderColor: colors.green },
+  shareIcon: { fontSize: 20 },
+  shareTitle: { fontSize: 15, fontWeight: "800", color: colors.muted },
+  shareTitleOn: { color: colors.green },
 
   whereBox: {
     flexDirection: "row",

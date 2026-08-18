@@ -17,6 +17,7 @@ import * as Notifications from "expo-notifications";
 import { signOut, useSession } from "./src/lib/session";
 import { registerForPush, unregisterPush } from "./src/lib/push";
 import { supabase } from "./src/lib/supabase";
+import { locate } from "./src/lib/location";
 import {
   awaitingReply,
   fetchMessages,
@@ -24,9 +25,11 @@ import {
   answerOffer,
   fetchTrips,
   groupByBooking,
+  reportBoatPosition,
   sendMessage,
   setAvailability,
   setTripStatus,
+  stopSharingBoatPosition,
   todaysTrips,
   type Boat,
   type Message,
@@ -48,6 +51,9 @@ export default function App() {
   const [openTrip, setOpenTrip] = React.useState<Trip | null>(null);
   const [error, setError] = React.useState<string | null>(null);
   const [pushNote, setPushNote] = React.useState<string | null>(null);
+  // One trip at a time: a captain is on one boat, and two pins moving at once
+  // would be one of them lying.
+  const [sharingTripId, setSharingTripId] = React.useState<string | null>(null);
 
   const userId = session?.user?.id ?? null;
 
@@ -123,10 +129,75 @@ export default function App() {
     setRefreshing(false);
   }
 
+  /* Reporting where the boat is.
+
+     While this is on, the phone takes a fix every 45 seconds and sends it. The
+     database only shows the passenger a fix under five minutes old, so the
+     interval has room to miss a couple without the pin disappearing.
+
+     Foreground only: this stops when the app goes to the background or the
+     phone locks, which is a real limitation and the reason the toggle says
+     "while this app is open" rather than promising more than it does. */
+  const REPORT_EVERY_MS = 45000;
+
+  React.useEffect(() => {
+    if (!sharingTripId) return;
+    let stopped = false;
+
+    const tick = async () => {
+      const fix = await locate();
+      if (stopped || !fix) return;
+      try {
+        await reportBoatPosition(sharingTripId, fix.lat, fix.lng);
+      } catch (e: any) {
+        // The trip finished or was taken off him — stop rather than keep
+        // hammering a call that will never work again.
+        setSharingTripId(null);
+        setError(e?.message ?? "Stopped sharing — that trip isn't running any more.");
+      }
+    };
+
+    tick();
+    const timer = setInterval(tick, REPORT_EVERY_MS);
+    return () => {
+      stopped = true;
+      clearInterval(timer);
+    };
+  }, [sharingTripId]);
+
+  async function toggleSharing(trip: Trip, on: boolean) {
+    if (!on) {
+      setSharingTripId(null);
+      try {
+        await stopSharingBoatPosition(trip.id);
+      } catch {
+        // Nothing to tell him: the pin goes stale within five minutes anyway.
+      }
+      await load();
+      return;
+    }
+
+    const fix = await locate();
+    if (!fix) {
+      setError("Couldn't get a position — check location is allowed for this app.");
+      return;
+    }
+    try {
+      await reportBoatPosition(trip.id, fix.lat, fix.lng);
+      setSharingTripId(trip.id);
+      await load();
+    } catch (e: any) {
+      setError(e?.message ?? "Couldn't start sharing — check your signal and try again.");
+    }
+  }
+
   async function move(trip: Trip, status: "in_progress" | "completed") {
     setBusyTripId(trip.id);
     try {
       await setTripStatus(trip.id, status);
+      // A finished trip has nothing left to broadcast, and the database drops
+      // the position anyway — stop before it starts failing.
+      if (status === "completed" && sharingTripId === trip.id) setSharingTripId(null);
       await load();
     } catch (e: any) {
       setError(e?.message ?? "That didn't save — check your signal and try again.");
@@ -227,6 +298,8 @@ export default function App() {
             onFinish={(t) => move(t, "completed")}
             onOpenMessages={setOpenTrip}
             onAnswer={answer}
+            sharingTripId={sharingTripId}
+            onToggleSharing={toggleSharing}
           />
         ) : (
           <EarningsScreen trips={trips} boat={boat} refreshing={refreshing} onRefresh={refresh} />

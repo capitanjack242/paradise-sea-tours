@@ -122,6 +122,7 @@ function render(t) {
     fare.hidden = true;
   }
 
+  renderBoatPosition(t);
   renderPayment(t);
   renderTip(t);
 
@@ -229,6 +230,30 @@ function renderPayment(t) {
     msgInput.value = msgInput.value || "I'd like to pay for my trip.";
     msgInput.focus();
   };
+}
+
+/* Where the boat is.
+
+   Shown only while the captain is sharing and the fix is recent — the database
+   withholds anything older than five minutes, so if this is here at all it is
+   worth believing. The age is on screen regardless, because "two minutes ago"
+   and "just now" mean different things to somebody watching a dock. */
+function renderBoatPosition(t) {
+  const box = document.getElementById("onway");
+  if (t.boat_lat == null || t.boat_lng == null) {
+    box.hidden = true;
+    return;
+  }
+  box.hidden = false;
+
+  const boat = t.boat || "Your boat";
+  const secs = Math.max(Math.round((Date.now() - new Date(t.boat_located_at)) / 1000), 0);
+  const age =
+    secs < 45 ? "just now" : `${Math.max(Math.round(secs / 60), 1)} min ago`;
+
+  document.getElementById("onwayTitle").textContent = `${boat} is on the way`;
+  document.getElementById("onwaySub").textContent = `Position updated ${age} · Tap for the map`;
+  box.href = `https://www.google.com/maps/search/?api=1&query=${t.boat_lat},${t.boat_lng}`;
 }
 
 /* Tips.

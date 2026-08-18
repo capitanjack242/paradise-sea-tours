@@ -29,6 +29,12 @@ export type TripView = {
   tip_cents: number | null;
   boat: string | null;
   captain: string | null;
+  /* Where the boat is, while the captain is sharing it. Null otherwise — and
+     null on a fix older than a few minutes, since the database withholds
+     anything stale rather than showing a pin that has stopped being true. */
+  boat_lat: number | null;
+  boat_lng: number | null;
+  boat_located_at: string | null;
   paid_at: string | null;
   amount_paid_cents: number | null;
   balance_cents: number | null;

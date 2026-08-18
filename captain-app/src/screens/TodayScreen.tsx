@@ -32,6 +32,8 @@ export default function TodayScreen({
   onFinish,
   onOpenMessages,
   onAnswer,
+  sharingTripId,
+  onToggleSharing,
 }: {
   trips: Trip[];
   messages: Map<string, Message[]>;
@@ -44,6 +46,9 @@ export default function TodayScreen({
   onFinish: (t: Trip) => void;
   onOpenMessages: (t: Trip) => void;
   onAnswer: (t: Trip, answer: "accepted" | "declined") => void;
+  /** The one trip currently reporting where the boat is, if any. */
+  sharingTripId: string | null;
+  onToggleSharing: (t: Trip, on: boolean) => void;
 }) {
   const today = todaysTrips(trips);
   const ahead = upcomingTrips(trips);
@@ -115,6 +120,8 @@ export default function TodayScreen({
             onFinish={() => onFinish(t)}
             onOpenMessages={() => onOpenMessages(t)}
             onAnswer={(a) => onAnswer(t, a)}
+            sharing={sharingTripId === t.id}
+            onToggleSharing={(on) => onToggleSharing(t, on)}
           />
         ))
       )}
@@ -133,6 +140,8 @@ export default function TodayScreen({
               onFinish={() => onFinish(t)}
               onOpenMessages={() => onOpenMessages(t)}
               onAnswer={(a) => onAnswer(t, a)}
+              sharing={sharingTripId === t.id}
+              onToggleSharing={(on) => onToggleSharing(t, on)}
             />
           ))}
         </>

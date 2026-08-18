@@ -36,6 +36,15 @@
         {
           "color": "#0bbcd6"
         }
+      ],
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Paradise Sea Express shows your passenger where the boat is while you are on a trip. You turn it on per trip and it stops when the trip ends.",
+          "locationWhenInUsePermission": "Paradise Sea Express shows your passenger where the boat is while you are on a trip. You turn it on per trip and it stops when the trip ends.",
+          "isIosBackgroundLocationEnabled": false,
+          "isAndroidBackgroundLocationEnabled": false
+        }
       ]
     ]
   }

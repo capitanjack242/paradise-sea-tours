@@ -2,6 +2,7 @@ import React from "react";
 import {
   ActivityIndicator,
   Alert,
+  Linking,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -18,6 +19,13 @@ import type { TripView } from "../lib/trip";
 
    The pay button is wired to a message for now; the payment link replaces its
    action when the provider is connected, and nothing else here changes. */
+
+/** How long ago that fix was taken, in words a passenger reads at a glance. */
+function positionAge(at: string | null): string {
+  if (!at) return "just now";
+  const secs = Math.max(Math.round((Date.now() - new Date(at).getTime()) / 1000), 0);
+  return secs < 45 ? "just now" : `${Math.max(Math.round(secs / 60), 1)} min ago`;
+}
 
 export default function PaymentScreen({
   trip,
@@ -126,6 +134,28 @@ export default function PaymentScreen({
             {trip.boat}
             {trip.captain ? ` · Capt. ${trip.captain}` : ""}
           </Text>
+        ) : null}
+
+        {/* Only while the captain is sharing and the fix is recent. The age is
+            on screen because "just now" and "three minutes ago" mean different
+            things to someone watching a dock. */}
+        {trip.boat_lat != null && trip.boat_lng != null ? (
+          <Pressable
+            style={({ pressed }) => [s.onway, pressed && s.onwayDown]}
+            onPress={() =>
+              Linking.openURL(
+                `https://www.google.com/maps/search/?api=1&query=${trip.boat_lat},${trip.boat_lng}`
+              )
+            }
+          >
+            <Text style={s.onwayIcon}>🛥</Text>
+            <View style={s.onwayText}>
+              <Text style={s.onwayTitle}>{trip.boat ?? "Your boat"} is on the way</Text>
+              <Text style={s.onwaySub}>
+                Position updated {positionAge(trip.boat_located_at)} · Tap for the map
+              </Text>
+            </View>
+          </Pressable>
         ) : null}
       </View>
 
@@ -320,6 +350,23 @@ const s = StyleSheet.create({
   },
   dueLab: { fontSize: 16, fontWeight: "700", color: colors.ink },
   dueVal: { fontSize: 22, fontWeight: "800", color: colors.ink },
+
+  onway: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    marginTop: 12,
+    padding: 11,
+    borderRadius: radius.md,
+    backgroundColor: "#e9f6fb",
+    borderWidth: 1,
+    borderColor: "#b9e2f0",
+  },
+  onwayDown: { backgroundColor: "#dcf0f8" },
+  onwayIcon: { fontSize: 22 },
+  onwayText: { flex: 1 },
+  onwayTitle: { fontSize: 15, fontWeight: "800", color: colors.deep },
+  onwaySub: { fontSize: 12.5, color: colors.muted, marginTop: 1 },
 
   tipGiven: { fontSize: 17, fontWeight: "800", color: colors.green, marginBottom: 3 },
   tipNote: { fontSize: 13.5, color: colors.muted, lineHeight: 19 },

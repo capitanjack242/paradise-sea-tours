@@ -136,3 +136,16 @@ body{margin:0;background:var(--foam);color:var(--ink);
 .tip-other-row button{font:inherit;font-size:.95rem;font-weight:800;padding:.6em 1.1em;
   border-radius:10px;border:1.5px solid #1a7f52;background:#1a7f52;color:#fff;cursor:pointer}
 .tip-err{margin:.4rem 0 0;font-size:.8rem;font-weight:600;color:#c0392b}
+
+/* ── the boat, on its way ─────────────────────────────────────────────────
+   Only ever on screen while the captain is sharing and the fix is fresh. */
+.onway{
+  display:flex;align-items:center;gap:.7rem;margin-top:.7rem;padding:.7rem .8rem;
+  border-radius:12px;background:#e9f6fb;border:1px solid #b9e2f0;
+  text-decoration:none;color:inherit;
+}
+.onway:hover{background:#dcf0f8}
+.onway-icon{font-size:1.5rem;line-height:1}
+.onway-text{display:flex;flex-direction:column;gap:.1rem;min-width:0}
+.onway-text strong{font-size:1rem;color:var(--deep)}
+.onway-text span{font-size:.8rem;color:var(--muted)}

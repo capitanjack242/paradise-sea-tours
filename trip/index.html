@@ -31,6 +31,16 @@
       <div class="meta" id="meta"></div>
       <div class="return" id="returnLeg" hidden></div>
       <div class="boat" id="boat" hidden></div>
+      <!-- Where the boat is, while the captain is sharing it. Absent otherwise
+           — and absent on a fix more than a few minutes old, because a stale
+           pin tells someone standing on a dock something untrue. -->
+      <a class="onway" id="onway" hidden target="_blank" rel="noopener noreferrer">
+        <span class="onway-icon">🛥</span>
+        <span class="onway-text">
+          <strong id="onwayTitle"></strong>
+          <span id="onwaySub"></span>
+        </span>
+      </a>
       <div class="fare" id="fare" hidden></div>
     </section>
 
