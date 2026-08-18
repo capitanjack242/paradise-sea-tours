@@ -37,6 +37,7 @@ body{margin:0;background:var(--foam);color:var(--ink);
 .route .arw{color:var(--muted);font-weight:500}
 .meta{color:var(--muted);font-size:.95rem;margin-top:.25rem}
 .return,.boat,.fare{margin-top:.7rem;padding-top:.7rem;border-top:1px solid var(--line);font-weight:600}
+.fare em{font-style:normal;font-weight:500;color:var(--muted);font-size:.85em}
 .return{color:var(--deep)}
 .lab{display:block;font-size:.7rem;font-weight:800;letter-spacing:.09em;text-transform:uppercase;
   color:var(--muted);margin-bottom:.1rem}
@@ -81,6 +82,8 @@ body{margin:0;background:var(--foam);color:var(--ink);
 .pay-line{display:flex;justify-content:space-between;align-items:baseline;
   font-size:.95rem;color:var(--muted)}
 .pay-line strong{color:var(--ink);font-weight:700}
+/* Fare and tax add up to the total, so the total gets the rule above it. */
+.pay-line.pay-total{padding-top:.35rem;border-top:1px solid var(--line);color:var(--ink)}
 .pay-line.pay-due{padding-top:.4rem;border-top:1px solid var(--line);
   font-size:1.05rem}
 .pay-line.pay-due strong{font-size:1.25rem}

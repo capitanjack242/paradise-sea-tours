@@ -16,10 +16,14 @@ import { fetchProfileName, prettyPhone, useSession } from "../lib/auth";
 import {
   createBooking,
   fetchRoutes,
+  fetchVatPct,
   formatMoney,
   LOCATIONS,
   matchRoute,
   quoteCents,
+  VAT_FALLBACK_PCT,
+  vatLabel,
+  withVat,
   type Service,
   type TripType,
 } from "../lib/bookings";
@@ -50,6 +54,7 @@ function toDate(day: string, time: string): Date {
 
 export default function BookScreen() {
   const [routes, setRoutes] = React.useState<Service[]>([]);
+  const [vatPct, setVatPct] = React.useState(VAT_FALLBACK_PCT);
   const [loading, setLoading] = React.useState(true);
   const [submitting, setSubmitting] = React.useState(false);
 
@@ -86,6 +91,15 @@ export default function BookScreen() {
       .finally(() => setLoading(false));
   }, []);
 
+  // The tax rate comes from the database, not the build, so a change to it
+  // doesn't wait on two app store reviews. A failed read keeps the fallback
+  // rather than quoting a price with no tax on it.
+  React.useEffect(() => {
+    fetchVatPct()
+      .then(setVatPct)
+      .catch((e) => console.warn("could not load the VAT rate:", e?.message ?? e));
+  }, []);
+
   // Reading the existing permission asks nobody anything — it just stops us
   // offering a button that can't work.
   React.useEffect(() => {
@@ -109,6 +123,7 @@ export default function BookScreen() {
 
   const route = matchRoute(routes, pickup, destination);
   const fare = quoteCents(route, passengers, tripType);
+  const { vat, total } = withVat(fare, vatPct);
   const perPerson = route?.price_cents ?? null;
 
   /** Everything about the trip except who's taking it — checked before sign-in. */
@@ -269,7 +284,7 @@ export default function BookScreen() {
           ) : (
             <>
               <View style={s.fareRow}>
-                <Text style={s.fareTotal}>{formatMoney(fare)}</Text>
+                <Text style={s.fareTotal}>{formatMoney(total)}</Text>
                 {perPerson != null && (
                   <Text style={s.fareMath}>
                     {passengers} × {formatMoney(perPerson)}
@@ -277,9 +292,17 @@ export default function BookScreen() {
                   </Text>
                 )}
               </View>
+              {total != null && (
+                <View style={s.fareSplit}>
+                  <Text style={s.fareSplitItem}>Fare {formatMoney(fare)}</Text>
+                  <Text style={s.fareSplitItem}>
+                    VAT ({vatLabel(vatPct)}%) {formatMoney(vat)}
+                  </Text>
+                </View>
+              )}
               <Text style={s.fareNote}>
-                {fare != null
-                  ? "Fixed price. Nothing charged until a captain says yes."
+                {total != null
+                  ? "Fixed price, VAT included. Nothing charged until a captain says yes."
                   : "We'll quote this route and confirm before you pay anything."}
               </Text>
             </>
@@ -304,7 +327,7 @@ export default function BookScreen() {
       <SignInSheet
         visible={showSignIn}
         holdingText={`${pickup} → ${destination}, ${day.toLowerCase()} ${outTime}${
-          fare != null ? ` · ${formatMoney(fare)}` : ""
+          total != null ? ` · ${formatMoney(total)} incl. VAT` : ""
         }`}
         onCancel={() => setShowSignIn(false)}
         onSignedIn={(newName, newPhone) => {
@@ -375,6 +398,17 @@ const s = StyleSheet.create({
   fareTotal: { fontSize: 26, fontWeight: "800", color: colors.white },
   fareMath: { fontSize: 12, color: colors.aqua },
   fareNote: { fontSize: 11, color: colors.aqua, marginTop: 5 },
+  // The tax, broken out under the total. Quiet, but never hidden.
+  fareSplit: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 14,
+    marginTop: 7,
+    paddingTop: 7,
+    borderTopWidth: 1,
+    borderTopColor: "rgba(255,255,255,0.22)",
+  },
+  fareSplitItem: { fontSize: 11.5, color: colors.white, opacity: 0.95 },
   cta: {
     borderRadius: 10,
     paddingVertical: 15,

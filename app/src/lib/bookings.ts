@@ -38,6 +38,36 @@ export const LOCATIONS = [
   "Poop Deck (East Bay Street)",
 ] as const;
 
+/**
+ * Bahamas VAT, read from the database rather than typed into the app.
+ *
+ * A number compiled into a build cannot be corrected without shipping to two
+ * app stores and waiting for review, so the rate lives in one row that the
+ * website, both apps and dispatch all read. The fallback is the current rate,
+ * never zero: an app that quietly drops the tax quotes a price nobody can
+ * honour at the dock.
+ */
+export const VAT_FALLBACK_PCT = 10;
+
+export async function fetchVatPct(): Promise<number> {
+  const { data, error } = await supabase.from("app_settings").select("vat_pct").limit(1);
+  if (error) throw error;
+  const pct = data?.[0]?.vat_pct;
+  return pct == null ? VAT_FALLBACK_PCT : Number(pct);
+}
+
+/** What a fare becomes once the tax is on it. Rounded once, in cents. */
+export function withVat(fareCents: number | null, vatPct: number) {
+  if (fareCents == null) return { fare: null, vat: null, total: null };
+  const vat = Math.round((fareCents * vatPct) / 100);
+  return { fare: fareCents, vat, total: fareCents + vat };
+}
+
+/** The rate as it should read on screen: "10", not "10.00". */
+export function vatLabel(pct: number): string {
+  return Number.isInteger(pct) ? String(pct) : String(pct).replace(/0+$/, "");
+}
+
 export async function fetchRoutes(): Promise<Service[]> {
   const { data, error } = await supabase
     .from("services")

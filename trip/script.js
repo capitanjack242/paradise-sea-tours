@@ -113,7 +113,10 @@ function render(t) {
 
   const fare = document.getElementById("fare");
   if (t.fare_cents != null) {
-    fare.innerHTML = `<span class="lab">Fare</span> $${(t.fare_cents / 100).toFixed(2).replace(/\.00$/, "")}`;
+    const owed = t.total_cents != null ? t.total_cents : t.fare_cents;
+    fare.innerHTML =
+      `<span class="lab">Total</span> $${(owed / 100).toFixed(2).replace(/\.00$/, "")}` +
+      (t.vat_cents ? " <em>incl. VAT</em>" : "");
     fare.hidden = false;
   } else {
     fare.hidden = true;
@@ -172,9 +175,23 @@ function renderPayment(t) {
 
   const money = (c) => `$${((c || 0) / 100).toFixed(2).replace(/\.00$/, "")}`;
   const paid = t.amount_paid_cents || 0;
-  const due = t.balance_cents != null ? t.balance_cents : Math.max(t.fare_cents - paid, 0);
+  // What's owed is the total, not the fare: paying the fare and leaving the tax
+  // is not paying, and the captain gate reads the same figure.
+  const total = t.total_cents != null ? t.total_cents : t.fare_cents;
+  const due = t.balance_cents != null ? t.balance_cents : Math.max(total - paid, 0);
 
   document.getElementById("payFare").textContent = money(t.fare_cents);
+  // A trip taken before VAT applied has no tax line rather than a $0 one.
+  const hasVat = !!t.vat_cents;
+  document.getElementById("payVatLine").hidden = !hasVat;
+  document.getElementById("payTotalLine").hidden = !hasVat;
+  if (hasVat) {
+    const pct = Number(t.vat_pct);
+    document.getElementById("payVatPct").textContent =
+      Number.isInteger(pct) ? String(pct) : String(pct).replace(/0+$/, "");
+    document.getElementById("payVat").textContent = money(t.vat_cents);
+    document.getElementById("payTotal").textContent = money(total);
+  }
   document.getElementById("payPaid").textContent = money(paid);
   document.getElementById("payPaidLine").hidden = paid === 0;
   document.getElementById("payDue").textContent = money(due);

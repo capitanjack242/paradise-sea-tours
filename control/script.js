@@ -314,7 +314,8 @@ function buildPayout() {
         trips: [],
         owedCents: 0,      // net — what actually goes to the boat
         paidCents: 0,      // net, already settled
-        grossCents: 0,     // what the passengers were charged
+        grossCents: 0,     // fares before tax — the base commission is taken on
+        vatCents: 0,       // the government's share, never anyone's to split
         commissionCents: 0 // what Paradise keeps
       };
       byBoat.set(key, row);
@@ -322,8 +323,10 @@ function buildPayout() {
     row.trips.push(b);
     const pct = tripPct(b, row.boat);
     row.rates.add(pct);
+    // The fare, not the total: commission on VAT would be a cut of a tax bill.
     const split = splitFare(b.quoted_price_cents || 0, pct);
     row.grossCents += split.gross;
+    row.vatCents += b.vat_cents || 0;
     row.commissionCents += split.commission;
     if (b.paid_out_at) row.paidCents += split.net;
     else row.owedCents += split.net;
@@ -360,6 +363,7 @@ function renderPayout() {
   const paid = rows.reduce((n, r) => n + r.paidCents, 0);
   const trips = rows.reduce((n, r) => n + r.trips.length, 0);
   const commission = rows.reduce((n, r) => n + r.commissionCents, 0);
+  const vat = rows.reduce((n, r) => n + r.vatCents, 0);
 
   payoutTotals.innerHTML = rows.length
     ? `<div class="tot">
@@ -374,6 +378,13 @@ function renderPayout() {
          ? `<div class="tot tot-keep">
               <span class="tot-lab">Your commission</span>
               <span class="tot-val money">${dollars(commission)}</span>
+            </div>`
+         : ""}
+       ${vat
+         ? `<div class="tot tot-vat">
+              <span class="tot-lab">VAT collected</span>
+              <span class="tot-val money">${dollars(vat)}</span>
+              <span class="tot-hint">owed to government</span>
             </div>`
          : ""}
        <div class="tot">
@@ -436,9 +447,9 @@ function payoutHtml(r) {
         <div class="payout-amount">
           <div class="money payout-owed">${dollars(r.owedCents)}</div>
           ${r.pct
-            ? `<div class="payout-split">${dollars(r.grossCents)} in fares · less ${r.pct}% (${dollars(r.commissionCents)})</div>`
+            ? `<div class="payout-split">${dollars(r.grossCents)} in fares before VAT · less ${r.pct}% (${dollars(r.commissionCents)})</div>`
             : r.mixedRates
-            ? `<div class="payout-split">${dollars(r.grossCents)} in fares · less commission (${dollars(r.commissionCents)}), rate changed this week</div>`
+            ? `<div class="payout-split">${dollars(r.grossCents)} in fares before VAT · less commission (${dollars(r.commissionCents)}), rate changed this week</div>`
             : ""}
           ${r.paidCents ? `<div class="payout-already">${dollars(r.paidCents)} already paid</div>` : ""}
         </div>
@@ -456,7 +467,7 @@ function payoutHtml(r) {
       ${open
         ? `<div class="client-trips">
              <table class="trips-table">
-               <thead><tr><th>When</th><th>Trip</th><th>Pax</th><th></th><th class="num">Fare</th></tr></thead>
+               <thead><tr><th>When</th><th>Trip</th><th>Pax</th><th></th><th class="num">To boat</th></tr></thead>
                <tbody>${tripRows}</tbody>
              </table>
            </div>`
@@ -577,7 +588,8 @@ function buildClients(bookings) {
     if (at && (!c.lastAt || at > c.lastAt)) c.lastAt = at;
     if (b.status === "completed") {
       c.trips += 1;
-      c.spentCents += b.quoted_price_cents || 0;
+      // What they actually paid, which includes the tax on it.
+      c.spentCents += b.total_cents ?? b.quoted_price_cents ?? 0;
     }
     if (b.status === "cancelled") c.cancelled += 1;
   }
@@ -667,8 +679,9 @@ function tripsTableHtml(c) {
         })
       : "—";
     const paid = b.status === "completed";
-    const fare = b.quoted_price_cents != null
-      ? `$${(b.quoted_price_cents / 100).toFixed(2).replace(/\.00$/, "")}`
+    const charged = b.total_cents ?? b.quoted_price_cents;
+    const fare = charged != null
+      ? `$${(charged / 100).toFixed(2).replace(/\.00$/, "")}`
       : "—";
     return `
       <tr>
@@ -689,7 +702,7 @@ function tripsTableHtml(c) {
     <div class="client-trips">
       <table class="trips-table">
         <thead>
-          <tr><th>When</th><th>Trip</th><th>Pax</th><th>Status</th><th class="num">Fare</th></tr>
+          <tr><th>When</th><th>Trip</th><th>Pax</th><th>Status</th><th class="num">Total</th></tr>
         </thead>
         <tbody>${rows}</tbody>
         <tfoot>
@@ -771,9 +784,14 @@ async function sendMessage(bookingId, body, card) {
    the passenger: an unpaid trip means dispatch is the only way through, and a
    dispatcher on the phone needs to see that at a glance. */
 function paymentHtml(b) {
-  const owed = b.quoted_price_cents;
+  // The total, not the fare. A passenger who paid the fare and left the tax has
+  // not paid, and the captain must stay out of reach until they have.
+  const owed = b.total_cents != null ? b.total_cents : b.quoted_price_cents;
   const paid = b.amount_paid_cents || 0;
   const outstanding = Math.max((owed || 0) - paid, 0);
+  const breakdown = b.vat_cents
+    ? `<span class="pay-breakdown">${dollars(b.quoted_price_cents)} fare + ${dollars(b.vat_cents)} VAT</span>`
+    : "";
 
   if (b.paid_at) {
     const when = new Date(b.paid_at).toLocaleString(undefined, {
@@ -795,6 +813,7 @@ function paymentHtml(b) {
 
   return `<div class="pay-row">
     <span class="pay-state">Unpaid — captain not reachable</span>
+    ${breakdown}
     <button type="button" class="btn-mark-paid-booking" data-id="${b.id}" data-amount="${owed}">
       Record ${dollars(owed)} paid
     </button>
@@ -1121,7 +1140,14 @@ function customerConfirmMessage(b) {
   if (b.boats?.name) {
     lines.push(`Boat: ${b.boats.name}${b.boats.captain_name ? ` (Capt. ${b.boats.captain_name})` : ""}`);
   }
-  if (b.quoted_price_cents != null) lines.push(`Price: $${(b.quoted_price_cents / 100).toFixed(2)}`);
+  if (b.quoted_price_cents != null) {
+    lines.push(
+      b.vat_cents
+        ? `Price: $${(b.total_cents / 100).toFixed(2)} ` +
+          `($${(b.quoted_price_cents / 100).toFixed(2)} + $${(b.vat_cents / 100).toFixed(2)} VAT)`
+        : `Price: $${(b.quoted_price_cents / 100).toFixed(2)}`
+    );
+  }
   lines.push("See you soon!");
   return lines.join("\n");
 }

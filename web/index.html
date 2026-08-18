@@ -56,7 +56,7 @@
     </div>
     <div class="hero-stats">
       <div><strong>~10&nbsp;min</strong><span>Cruise Port → Paradise Island</span></div>
-      <div><strong>from&nbsp;$15</strong><span>per person, fixed</span></div>
+      <div><strong>from&nbsp;$15</strong><span>per person + VAT</span></div>
       <div><strong>7am–10pm</strong><span>every day</span></div>
     </div>
   </div>
@@ -129,6 +129,7 @@
   <div class="container">
     <h2 class="section-title">Simple per-person fares</h2>
     <p class="section-sub">Fixed prices shown before you book — no haggling, no surprises.
+      Fares below are per person; <span data-vat-rate>10</span>% Bahamas VAT is added at checkout.
       Pay onboard now; in-app card &amp; Apple&nbsp;Pay coming soon. Prices in USD/BSD.</p>
     <div class="pricing">
       <div class="price-card featured">
@@ -154,7 +155,7 @@
         <a href="#book" class="btn btn-primary btn-block">Book</a>
       </div>
     </div>
-    <p class="fineprint">* Launch sample fares ($12–$25 per person by route). Private full-boat charters and group rates quoted on request.</p>
+    <p class="fineprint">* Launch sample fares ($12–$25 per person by route), before <span data-vat-rate>10</span>% VAT. Private full-boat charters and group rates quoted on request.</p>
   </div>
 </section>
 
@@ -187,7 +188,7 @@
         <a href="#book" class="btn btn-primary btn-block">Book</a>
       </div>
     </div>
-    <p class="fineprint">* Sample hourly rates — fuel included on local runs; longer trips quoted on request.</p>
+    <p class="fineprint">* Sample hourly rates, before <span data-vat-rate>10</span>% VAT — fuel included on local runs; longer trips quoted on request.</p>
   </div>
 </section>
 
@@ -217,7 +218,7 @@
         <span class="tag">By quote</span>
       </article>
     </div>
-    <p class="fineprint">* Sample per-boat fishing rates — full-day trips available. Catch-and-cook arranged on request.</p>
+    <p class="fineprint">* Sample per-boat fishing rates, before <span data-vat-rate>10</span>% VAT — full-day trips available. Catch-and-cook arranged on request.</p>
   </div>
 </section>
 
@@ -240,7 +241,7 @@
       <p>Send us the trip and we'll confirm a nearby captain and your fixed per-person
         fare fast — usually within minutes during operating hours.</p>
       <ul class="booking-points">
-        <li>✅ Fixed per-person fares, shown upfront</li>
+        <li>✅ Fixed per-person fares, VAT shown upfront</li>
         <li>✅ Licensed, local Bahamian captains</li>
         <li>✅ Cruise Port &amp; flexible pickups</li>
         <li>✅ Groups &amp; events welcome</li>
@@ -320,6 +321,12 @@
           <div class="fare-row">
             <span class="fare-total" id="fareTotal">—</span>
             <span class="fare-math" id="fareMath"></span>
+          </div>
+          <!-- The big number is what you actually pay. The tax is broken out
+               underneath so nothing about it is a surprise at the dock. -->
+          <div class="fare-split" id="fareSplit" hidden>
+            <span>Fare <b id="fareSub">—</b></span>
+            <span>VAT (<span data-vat-rate>10</span>%) <b id="fareVat">—</b></span>
           </div>
           <p class="fare-note" id="fareNote">Pick your route and we'll show the price.</p>
         </div>

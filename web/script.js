@@ -65,6 +65,26 @@ document.getElementById("tripSeg").addEventListener("click", (e) => {
 
 // ── Live fare, from the same published routes the app reads ──────────────
 let routes = [];
+
+/* Bahamas VAT, read from the database rather than typed into the page, so the
+   website, both apps and dispatch cannot end up quoting three different taxes.
+   Falls back to 10 only if the read fails — never to zero, because a page that
+   quietly drops the tax quotes a price nobody can honour. */
+let vatPct = 10;
+(async () => {
+  const { data, error } = await db.from("app_settings").select("vat_pct").limit(1);
+  if (error) return console.error("could not load the VAT rate:", error);
+  if (data?.[0]?.vat_pct != null) vatPct = Number(data[0].vat_pct);
+  showVatRate();
+  renderFare();
+})();
+
+/** Every place the rate is written on the page, filled from the one source. */
+function showVatRate() {
+  const shown = Number.isInteger(vatPct) ? String(vatPct) : String(vatPct).replace(/0+$/, "");
+  document.querySelectorAll("[data-vat-rate]").forEach((el) => (el.textContent = shown));
+}
+
 (async () => {
   const { data, error } = await db
     .from("services")
@@ -92,27 +112,41 @@ function matchRoute(pickup, destination) {
 const money = (cents) =>
   cents == null ? "—" : `$${(cents / 100).toFixed(2).replace(/\.00$/, "")}`;
 
+/* The fare, the tax on it, and what that adds up to. Worked out in cents and
+   rounded once, the same way the database works it out, so the number quoted
+   here is the number that turns up on the trip. */
 function currentFare() {
   const d = Object.fromEntries(new FormData(form).entries());
-  if (!d.pickup || !d.destination) return { cents: null, route: undefined };
+  const none = { fare: null, vat: null, total: null, route: undefined };
+  if (!d.pickup || !d.destination) return none;
   const route = matchRoute(d.pickup, d.destination);
-  if (!route?.price_cents) return { cents: null, route };
+  if (!route?.price_cents) return { ...none, route };
   const legs = d.triptype === "Round trip" ? 2 : 1;
-  return { cents: route.price_cents * (Number(d.guests) || 1) * legs, route };
+  const fare = route.price_cents * (Number(d.guests) || 1) * legs;
+  const vat = Math.round((fare * vatPct) / 100);
+  return { fare, vat, total: fare + vat, route };
 }
 
 function renderFare() {
   const d = Object.fromEntries(new FormData(form).entries());
-  const { cents, route } = currentFare();
+  const { fare, vat, total: totalCents, route } = currentFare();
   const total = document.getElementById("fareTotal");
   const math = document.getElementById("fareMath");
   const note = document.getElementById("fareNote");
+  const split = document.getElementById("fareSplit");
 
-  total.textContent = money(cents);
-  if (cents != null && route) {
+  // The big number is what leaves their pocket, tax and all.
+  total.textContent = money(totalCents);
+  split.hidden = totalCents == null;
+  if (totalCents != null) {
+    document.getElementById("fareSub").textContent = money(fare);
+    document.getElementById("fareVat").textContent = money(vat);
+  }
+
+  if (totalCents != null && route) {
     const legs = d.triptype === "Round trip" ? " × 2 legs" : "";
     math.textContent = `${d.guests} × ${money(route.price_cents)}${legs}`;
-    note.textContent = "Fixed price. Nothing charged until a captain says yes.";
+    note.textContent = "Fixed price, VAT included. Nothing charged until a captain says yes.";
   } else {
     math.textContent = "";
     note.textContent = !d.pickup || !d.destination
@@ -154,14 +188,14 @@ document.getElementById("requestBtn").addEventListener("click", () => {
   status.textContent = "";
 
   const d = Object.fromEntries(new FormData(form).entries());
-  const { cents } = currentFare();
+  const { total: totalCents } = currentFare();
   const when = new Date(`${d.date}T${d.time}`).toLocaleString(undefined, {
     weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit",
   });
   document.getElementById("holdingText").innerHTML =
     `Holding: <b>${d.pickup} → ${d.destination}</b><br>${when} · ${d.guests} ` +
     `${Number(d.guests) === 1 ? "person" : "people"} · ${d.triptype}` +
-    (cents != null ? ` · ${money(cents)}` : "");
+    (totalCents != null ? ` · ${money(totalCents)} incl. VAT` : "");
 
   tripStep.hidden = true;
   identityStep.hidden = false;

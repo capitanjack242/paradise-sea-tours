@@ -88,7 +88,7 @@ export default function EarningsScreen({
         {anyCommission ? (
           <View style={s.breakdown}>
             <View style={s.brRow}>
-              <Text style={s.brLab}>Fares</Text>
+              <Text style={s.brLab}>Fares (before VAT)</Text>
               <Text style={s.brVal}>{money(split.gross)}</Text>
             </View>
             <View style={s.brRow}>
@@ -147,7 +147,10 @@ export default function EarningsScreen({
           ? `Paradise keeps ${pct}% of each fare. Everything above is after that, so it's what you're paid on Friday.`
           : mixedRates
           ? "Each run is shown after the rate it was finished at, so it's what you're paid on Friday."
-          : "Every figure here is the full fare the passenger paid."}
+          : "Every figure here is the fare for the run."}
+        {"\n"}
+        VAT is charged on top of the fare and goes to the government, so it never
+        counts for or against what you're owed.
       </Text>
     </ScrollView>
   );

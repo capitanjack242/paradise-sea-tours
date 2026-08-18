@@ -34,13 +34,15 @@
       <div class="fare" id="fare" hidden></div>
     </section>
 
-    <!-- Payment. The pay action itself is deliberately an empty slot until a
-         provider is wired up — better a stated "we'll send you a link" than a
-         button that does nothing. -->
+    <!-- Payment. The fare and the tax on it are separate lines, because a
+         passenger is entitled to see what the government's share is rather than
+         one number they have to take on trust. -->
     <section class="pay" id="paySection" hidden>
       <h2 class="pay-title">Payment</h2>
       <div class="pay-lines">
         <div class="pay-line"><span>Fare</span><strong id="payFare">—</strong></div>
+        <div class="pay-line" id="payVatLine"><span>VAT (<span id="payVatPct">10</span>%)</span><strong id="payVat">—</strong></div>
+        <div class="pay-line pay-total" id="payTotalLine"><span>Total</span><strong id="payTotal">—</strong></div>
         <div class="pay-line" id="payPaidLine" hidden><span>Paid</span><strong id="payPaid">—</strong></div>
         <div class="pay-line pay-due" id="payDueLine"><span>Due</span><strong id="payDue">—</strong></div>
       </div>

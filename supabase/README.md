@@ -11,7 +11,16 @@ customer app (`app/`) and the dispatch/control view (`control/`).
 - **bookings** — the core record; lifecycle:
   `requested → quoted → confirmed → assigned → in_progress → completed / cancelled`.
   Guest bookings allowed (nullable `customer_id`) so the public site can submit.
-- **payments** — Stripe payment intents per booking (Phase 2b).
+- **payments** — the ledger of money recorded against a booking.
+- **app_settings** — one row of company-wide numbers. Today that is `vat_pct`.
+
+Money: `quoted_price_cents` is the fare **before tax**. VAT is added on top at
+the rate stamped on the booking (`vat_pct`), giving `vat_cents` and
+`total_cents` — the total is what a passenger owes. Commission is taken on the
+fare and never on the total, because VAT is the government's money passing
+through the account. Change the rate with
+`update app_settings set vat_pct = <n>;` — trips already taken keep the rate
+they were taken at.
 
 Security: RLS on every table. Public can read active services and create a
 booking request; customers see their own bookings; captains see assigned ones;

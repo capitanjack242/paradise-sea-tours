@@ -20,6 +20,11 @@ export type TripView = {
   trip_type: string | null;
   status: string;
   fare_cents: number | null;
+  /** The rate this trip was taken at — not today's rate. */
+  vat_pct: number | null;
+  vat_cents: number | null;
+  /** Fare plus tax. This is what has to be paid, not fare_cents. */
+  total_cents: number | null;
   boat: string | null;
   captain: string | null;
   paid_at: string | null;

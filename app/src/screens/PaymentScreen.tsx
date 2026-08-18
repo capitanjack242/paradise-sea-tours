@@ -10,7 +10,7 @@ import {
   View,
 } from "react-native";
 import { colors, radius } from "../lib/theme";
-import { formatMoney } from "../lib/bookings";
+import { formatMoney, vatLabel } from "../lib/bookings";
 import type { TripView } from "../lib/trip";
 
 /* What's owed, and what paying unlocks.
@@ -49,7 +49,12 @@ export default function PaymentScreen({
   }
 
   const paid = trip.amount_paid_cents ?? 0;
-  const due = trip.balance_cents ?? Math.max((trip.fare_cents ?? 0) - paid, 0);
+  // Owed is the total, tax and all. Paying the fare and leaving the tax is not
+  // paying, and the captain stays out of reach until the balance is nil.
+  const total = trip.total_cents ?? trip.fare_cents ?? 0;
+  const due = trip.balance_cents ?? Math.max(total - paid, 0);
+  // A trip taken before VAT applied shows no tax line rather than a $0 one.
+  const vat = trip.vat_cents ?? 0;
   const settled = !!trip.paid_at;
   const tooEarly = trip.status === "requested" || trip.status === "quoted";
 
@@ -91,6 +96,19 @@ export default function PaymentScreen({
           <Text style={s.lineVal}>{formatMoney(trip.fare_cents ?? null)}</Text>
         </View>
 
+        {vat > 0 ? (
+          <>
+            <View style={s.line}>
+              <Text style={s.lineLab}>VAT ({vatLabel(Number(trip.vat_pct ?? 10))}%)</Text>
+              <Text style={s.lineVal}>{formatMoney(vat)}</Text>
+            </View>
+            <View style={[s.line, s.lineTotal]}>
+              <Text style={s.totalLab}>Total</Text>
+              <Text style={s.totalVal}>{formatMoney(total)}</Text>
+            </View>
+          </>
+        ) : null}
+
         {paid > 0 ? (
           <View style={s.line}>
             <Text style={s.lineLab}>Paid</Text>
@@ -129,7 +147,8 @@ export default function PaymentScreen({
       </View>
 
       <Text style={s.note}>
-        Fixed fares, agreed before you pay. Nothing is charged until a captain says yes.
+        Fixed fares, agreed before you pay. Bahamas VAT is added on top and shown
+        as its own line. Nothing is charged until a captain says yes.
       </Text>
     </ScrollView>
   );
@@ -173,6 +192,10 @@ const s = StyleSheet.create({
   line: { flexDirection: "row", justifyContent: "space-between", alignItems: "baseline", paddingVertical: 3 },
   lineLab: { fontSize: 15, color: colors.muted },
   lineVal: { fontSize: 15, fontWeight: "700", color: colors.ink },
+  // Fare and tax add up to the total, so the rule sits above it.
+  lineTotal: { borderTopWidth: 1, borderTopColor: colors.line, marginTop: 5, paddingTop: 6 },
+  totalLab: { fontSize: 15, fontWeight: "700", color: colors.ink },
+  totalVal: { fontSize: 16, fontWeight: "800", color: colors.ink },
   lineDue: {
     borderTopWidth: 1,
     borderTopColor: colors.line,

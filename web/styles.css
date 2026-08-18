@@ -225,3 +225,11 @@ img{max-width:100%}
   .footer-grid{grid-template-columns:1fr}
   .hero-stats{gap:1.4rem}
 }
+
+/* The tax, broken out under the fare. Quiet, but never hidden. */
+.fare-split{
+  display:flex;gap:1.1rem;flex-wrap:wrap;margin-top:.5rem;
+  padding-top:.5rem;border-top:1px solid rgba(255,255,255,.22);
+  font-size:.82rem;opacity:.95;font-variant-numeric:tabular-nums;
+}
+.fare-split b{font-weight:700}

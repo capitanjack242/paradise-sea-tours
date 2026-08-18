@@ -448,7 +448,7 @@ function tripHtml(b) {
     <article class="trip${done ? " is-done" : ""}${aboard ? " is-aboard" : ""}">
       <div class="trip-when">${when}${aboard ? ` <span class="aboard-tag">• Aboard</span>` : ""}</div>
       <div class="trip-route">${esc(b.pickup || "—")} <span class="arrow">→</span> ${esc(b.destination || "—")}</div>
-      <div class="trip-meta">${b.passengers ?? "?"} passengers · ${esc(b.trip_type || "")} · ${fare}</div>
+      <div class="trip-meta">${b.passengers ?? "?"} passengers · ${esc(b.trip_type || "")} · ${fare} fare</div>
       ${(() => {
         // Gone once they're aboard — by then the pin answers nothing.
         const where = aboard ? null : waitingAt(b);
