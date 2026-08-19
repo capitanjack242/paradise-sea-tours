@@ -9,8 +9,9 @@
   "compatibility_date": "2026-08-19",
   "assets": {
     "directory": "./_site",
-    // A missing path returns the 404 page rather than the homepage, so a broken
-    // link reads as broken instead of silently showing the front page.
-    "not_found_handling": "404-page"
+    // There is no 404 page yet, so leave the default: a missing path returns a
+    // plain 404 rather than being redirected somewhere misleading. Switch this
+    // to "404-page" once web/404.html exists.
+    "not_found_handling": "none"
   }
 }
