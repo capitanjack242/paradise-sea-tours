@@ -22,6 +22,7 @@ import {
   awaitingReply,
   fetchMessages,
   fetchMyBoat,
+  fetchMyRating,
   answerOffer,
   fetchTrips,
   groupByBooking,
@@ -31,6 +32,7 @@ import {
   setTripStatus,
   todaysTrips,
   type Boat,
+  type BoatRating,
   type Message,
   type Trip,
 } from "./src/lib/data";
@@ -45,6 +47,7 @@ export default function App() {
   const [trips, setTrips] = React.useState<Trip[]>([]);
   const [messages, setMessages] = React.useState<Map<string, Message[]>>(new Map());
   const [boat, setBoat] = React.useState<Boat | null>(null);
+  const [rating, setRating] = React.useState<BoatRating | null>(null);
   const [refreshing, setRefreshing] = React.useState(false);
   const [busyTripId, setBusyTripId] = React.useState<string | null>(null);
   const [openTrip, setOpenTrip] = React.useState<Trip | null>(null);
@@ -65,6 +68,15 @@ export default function App() {
       setMessages(groupByBooking(m));
       setBoat(b);
       setError(null);
+      // Second, and separately: a rating that won't load is not a reason to
+      // show a captain an error over his day's work.
+      if (b) {
+        try {
+          setRating(await fetchMyRating(b.id));
+        } catch (e: any) {
+          console.warn("could not load the rating:", e?.message ?? e);
+        }
+      }
     } catch (e: any) {
       setError(e?.message ?? "Couldn't reach the office. Check your signal.");
     }
@@ -273,6 +285,7 @@ export default function App() {
             trips={trips}
             messages={messages}
             boat={boat}
+            rating={rating}
             refreshing={refreshing}
             busyTripId={busyTripId}
             onRefresh={refresh}

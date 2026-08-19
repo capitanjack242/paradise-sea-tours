@@ -25,6 +25,7 @@ const boatsWrap = document.getElementById("boatsWrap");
 const boatsBody = document.getElementById("boatsBody");
 const boatsEmpty = document.getElementById("boatsEmpty");
 const payoutWrap = document.getElementById("payoutWrap");
+const mapWrap = document.getElementById("mapWrap");
 const payoutBody = document.getElementById("payoutBody");
 const payoutEmpty = document.getElementById("payoutEmpty");
 const payoutTotals = document.getElementById("payoutTotals");
@@ -192,9 +193,11 @@ function applyView() {
   clientsWrap.style.display = on("clients");
   boatsWrap.style.display = on("boats");
   payoutWrap.style.display = on("payout");
+  mapWrap.style.display = on("map");
   if (currentView === "clients") renderClients(window.__allBookings || []);
   else if (currentView === "boats") renderBoats();
   else if (currentView === "payout") renderPayout();
+  else if (currentView === "map") renderMap();
   else renderBookings(window.__allBookings || []);
 }
 
@@ -228,6 +231,7 @@ async function loadBookings() {
   if (currentView === "clients") renderClients(data);
   else if (currentView === "boats") renderBoats();
   else if (currentView === "payout") renderPayout();
+  else if (currentView === "map") renderMap();
   else renderBookings(data);
 }
 
@@ -657,6 +661,142 @@ function boatWhereHtml(b, on, working) {
   </div>`;
 }
 
+/* ── the fleet on a map ───────────────────────────────────────────────────
+
+   The same positions the Boats tab prints as a link, drawn together so dispatch
+   can answer "who is nearest the port" without opening five tabs.
+
+   What is NOT on the map matters as much as what is. A boat only reports while
+   its captain is switched on — going unavailable wipes the position, by design,
+   because nobody is followed off the clock. So every boat that cannot be drawn
+   is named underneath the map with the reason. A map that silently omits half
+   the fleet would be read as "that's everyone", and that is the one thing it
+   must never say.
+
+   Fixes older than ten minutes are drawn hollow and carry their age. A boat
+   that reported twenty minutes ago is still worth seeing — it says roughly
+   where she was — but it is not where she is. */
+
+const NASSAU = [25.0793, -77.3383]; // Prince George Wharf, near enough
+const STALE_MINS = 10;
+
+let fleetMap = null;
+let fleetLayer = null;
+
+function fixAge(at) {
+  const mins = Math.max(Math.round((Date.now() - new Date(at)) / 60000), 0);
+  return {
+    mins,
+    text: mins < 1 ? "just now" : mins < 60 ? `${mins} min ago` : `${Math.round(mins / 60)}h ago`,
+  };
+}
+
+function renderMap() {
+  const note = document.getElementById("mapNote");
+  const missing = document.getElementById("mapMissing");
+
+  // Leaflet comes off a CDN. If it didn't arrive, say so plainly rather than
+  // leaving an empty grey box that looks like "no boats".
+  if (typeof L === "undefined") {
+    note.innerHTML = `<span class="map-warn">The map didn't load — check the connection and refresh.
+      The Boats tab still has every position as a link.</span>`;
+    missing.innerHTML = "";
+    return;
+  }
+
+  if (!fleetMap) {
+    fleetMap = L.map("fleetMap", { scrollWheelZoom: false }).setView(NASSAU, 12);
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      maxZoom: 18,
+      attribution: "&copy; OpenStreetMap",
+    }).addTo(fleetMap);
+    fleetLayer = L.layerGroup().addTo(fleetMap);
+  }
+  // The container was display:none until a moment ago, so Leaflet measured it
+  // as zero. Without this the tiles come out in a strip down the left.
+  fleetMap.invalidateSize();
+  fleetLayer.clearLayers();
+
+  const working = new Set(
+    (window.__allBookings || [])
+      .filter((bk) => bk.assigned_boat_id && ["confirmed", "in_progress"].includes(bk.status))
+      .map((bk) => bk.assigned_boat_id)
+  );
+
+  const drawn = [];
+  const silent = [];
+  const off = [];
+
+  for (const b of boatsList) {
+    if (!b.is_available) {
+      off.push(b);
+      continue;
+    }
+    if (b.last_lat == null || b.last_lng == null) {
+      silent.push(b);
+      continue;
+    }
+    drawn.push(b);
+
+    const age = fixAge(b.last_located_at);
+    const cold = age.mins > STALE_MINS;
+    const busy = working.has(b.id);
+    const cls = `pin${busy ? " pin-run" : " pin-idle"}${cold ? " pin-cold" : ""}`;
+
+    L.marker([b.last_lat, b.last_lng], {
+      icon: L.divIcon({
+        className: "pin-wrap",
+        html: `<span class="${cls}"><b>${esc(b.name || "—")}</b>${cold ? ` · ${age.text}` : ""}</span>`,
+        iconSize: null,
+      }),
+      title: b.name || "",
+    })
+      .bindPopup(
+        `<div class="pin-pop">
+           <strong>${esc(b.name || "—")}</strong>
+           <div>Capt. ${esc(b.captain_name || "—")}</div>
+           <div>${busy ? "On a run" : "Idle"} · updated ${age.text}</div>
+           <a href="https://www.google.com/maps/search/?api=1&query=${b.last_lat},${b.last_lng}"
+              target="_blank" rel="noopener noreferrer">Open in Google Maps</a>
+         </div>`
+      )
+      .addTo(fleetLayer);
+  }
+
+  // Frame what there is: the whole fleet if it's spread out, a sensible zoom if
+  // there's only one, and Nassau itself if nobody is reporting.
+  if (drawn.length > 1) {
+    fleetMap.fitBounds(
+      L.latLngBounds(drawn.map((b) => [b.last_lat, b.last_lng])).pad(0.25),
+      { maxZoom: 15 }
+    );
+  } else if (drawn.length === 1) {
+    fleetMap.setView([drawn[0].last_lat, drawn[0].last_lng], 14);
+  } else {
+    fleetMap.setView(NASSAU, 12);
+  }
+
+  countInfo.textContent = `${drawn.length} of ${boatsList.length} reporting`;
+
+  const cold = drawn.filter((b) => fixAge(b.last_located_at).mins > STALE_MINS).length;
+  note.innerHTML = drawn.length
+    ? `<span class="map-key"><i class="key key-run"></i>On a run</span>
+       <span class="map-key"><i class="key key-idle"></i>Idle</span>
+       ${cold ? `<span class="map-key"><i class="key key-cold"></i>Last seen over ${STALE_MINS} min ago</span>` : ""}`
+    : `<span class="map-warn">No boat is reporting a position right now.</span>`;
+
+  // Named, not counted: "2 boats missing" sends dispatch hunting for which.
+  const list = (label, boats, why) =>
+    boats.length
+      ? `<div class="miss-row"><span class="miss-lab">${label}</span>
+           <span class="miss-names">${boats.map((b) => esc(b.name || "—")).join(", ")}</span>
+           <span class="miss-why">${why}</span></div>`
+      : "";
+  missing.innerHTML =
+    list("Not on the map", silent, "switched on, but the app hasn't reported a position") +
+    list("Off", off, "unavailable — position is wiped when a captain switches off");
+}
+
 /* ── clients ──────────────────────────────────────────────────────────────
    There is no customer table — a booking carries a name and a number and
    nothing links one booking to the next. The phone number is the closest thing
@@ -910,6 +1050,29 @@ function paymentHtml(b) {
     <button type="button" class="btn-mark-paid-booking" data-id="${b.id}" data-amount="${owed}">
       Record ${dollars(owed)} paid
     </button>
+  </div>`;
+}
+
+/* What the passenger thought.
+
+   Two scores, because they fail differently: a captain who was late is a
+   conversation with him, a boat that was too small is a conversation about the
+   boat. Only ever shown once they've said — an unrated trip says nothing, and
+   dressing that up as a zero would be a lie about a captain. */
+function ratingHtml(b) {
+  if (!b.rated_at) return "";
+  const stars = (n) => `<span class="rate-stars" aria-label="${n} out of 5">${
+    "★".repeat(n)}<span class="rate-off">${"★".repeat(5 - n)}</span></span>`;
+  const note = b.rating_note
+    ? `<div class="rate-said">"${esc(b.rating_note)}"</div>`
+    : "";
+  const low = Math.min(b.rating_captain || 5, b.rating_ride || 5) <= 3;
+  return `<div class="rating-row${low ? " rating-low" : ""}">
+    <div class="rate-pair">
+      <span class="rate-lab">Captain</span>${stars(b.rating_captain || 0)}
+      <span class="rate-lab">Trip</span>${stars(b.rating_ride || 0)}
+    </div>
+    ${note}
   </div>`;
 }
 
@@ -1415,6 +1578,7 @@ function cardHtml(b) {
             <input type="number" step="0.01" min="0" class="price-input" data-id="${b.id}" value="${price}" placeholder="—">
           </div>
           ${paymentHtml(b)}
+          ${ratingHtml(b)}
           ${tipHtml(b)}
         </div>
       </div>`;

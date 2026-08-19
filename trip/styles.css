@@ -109,10 +109,37 @@ body{margin:0;background:var(--foam);color:var(--ink);
 .pay-btn:hover{filter:brightness(1.06)}
 .pay-btn:active{transform:translateY(1px)}
 
+/* ── how it went ──────────────────────────────────────────────────────────
+   Sits above the tip and appears before it: the rating is the question, the
+   tip is what follows from the answer. */
+.rate{background:#fff;border:1px solid var(--line);border-radius:14px;
+  padding:1rem 1.1rem;margin-top:1rem}
+.rate-title{margin:0 0 .35rem;font-size:.72rem;font-weight:800;letter-spacing:.09em;
+  text-transform:uppercase;color:var(--muted)}
+.rate-note{margin:0 0 .7rem;font-size:.85rem;color:var(--muted);line-height:1.45}
+.rate-row{display:flex;align-items:center;justify-content:space-between;gap:.6rem;
+  padding:.35rem 0}
+.rate-label{font-size:.92rem;font-weight:700;color:var(--ink);min-width:0;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.stars{display:flex;gap:.15rem;flex:none}
+.star{font:inherit;font-size:1.5rem;line-height:1;padding:.1rem .12rem;border:none;
+  background:none;cursor:pointer;color:#d8e0e6;transition:color .12s}
+.star.on{color:#f2b01e}
+.star:hover{color:#f2b01e}
+.star:focus-visible{outline:2px solid var(--teal);outline-offset:2px;border-radius:4px}
+.rate-comment{display:block;width:100%;margin-top:.6rem;font:inherit;font-size:.92rem;
+  padding:.55em .65em;border:1.5px solid var(--line);border-radius:10px;resize:vertical}
+.rate-comment:focus{outline:none;border-color:var(--teal)}
+.rate-send{margin-top:.6rem;width:100%;font:inherit;font-size:1rem;font-weight:800;
+  padding:.7em 1rem;border-radius:10px;border:none;background:var(--deep);color:#fff;
+  cursor:pointer}
+.rate-send[disabled]{background:#c8d5dd;cursor:default}
+.rate-err{margin:.4rem 0 0;font-size:.8rem;font-weight:600;color:#c0392b}
+
 /* ── tips ─────────────────────────────────────────────────────────────────
    Kept apart from the payment panel on purpose: the fare is settled by the
    time this appears, and nothing here is owed. */
-.tip{background:#fff;border:1px solid var(--line);border-radius:var(--radius);
+.tip{background:#fff;border:1px solid var(--line);border-radius:14px;
   padding:1rem 1.1rem;margin-top:1rem}
 .tip-title{margin:0 0 .5rem;font-size:.72rem;font-weight:800;letter-spacing:.09em;
   text-transform:uppercase;color:var(--muted)}

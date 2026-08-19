@@ -27,22 +27,72 @@ function positionAge(at: string | null): string {
   return secs < 45 ? "just now" : `${Math.max(Math.round(secs / 60), 1)} min ago`;
 }
 
+/** Five taps, no half measures. Big targets — this is used one-handed. */
+function Stars({
+  value,
+  onPick,
+  label,
+}: {
+  value: number;
+  onPick: (n: number) => void;
+  label: string;
+}) {
+  return (
+    <View style={s.stars}>
+      {[1, 2, 3, 4, 5].map((n) => (
+        <Pressable
+          key={n}
+          onPress={() => onPick(n)}
+          hitSlop={6}
+          accessibilityRole="radio"
+          accessibilityState={{ selected: n === value }}
+          accessibilityLabel={`${n} star${n > 1 ? "s" : ""} for ${label}`}
+        >
+          <Text style={[s.star, n <= value && s.starOn]}>★</Text>
+        </Pressable>
+      ))}
+    </View>
+  );
+}
+
 export default function PaymentScreen({
   trip,
   loading,
   refreshing,
   onRefresh,
+  onRate,
 }: {
   trip: TripView | null;
   loading: boolean;
   refreshing: boolean;
   onRefresh: () => void;
+  onRate: (captain: number, ride: number, note: string | null) => Promise<void>;
 }) {
   // A percentage of the fare is a suggestion, not a limit — someone who wants
   // to give $50 on a $60 trip shouldn't have to ask the office for permission.
   const [otherOpen, setOtherOpen] = React.useState(false);
   const [otherAmount, setOtherAmount] = React.useState("");
   const [otherBad, setOtherBad] = React.useState(false);
+
+  /* How it went. Null means untouched, not zero — and what they have tapped
+     beats whatever the last poll brought back, or a refresh mid-thought would
+     undo it. */
+  const [starsCaptain, setStarsCaptain] = React.useState<number | null>(null);
+  const [starsRide, setStarsRide] = React.useState<number | null>(null);
+  const [rateNote, setRateNote] = React.useState("");
+  const [rateSending, setRateSending] = React.useState(false);
+  const [rateErr, setRateErr] = React.useState<string | null>(null);
+
+  // Seed from whatever they said last time, once, so "update your rating" opens
+  // on their own answer rather than on an empty card.
+  const ratedAt = trip?.rated_at ?? null;
+  React.useEffect(() => {
+    if (!ratedAt) return;
+    setStarsCaptain((v) => v ?? trip?.rating_captain ?? null);
+    setStarsRide((v) => v ?? trip?.rating_ride ?? null);
+    setRateNote((v) => (v ? v : trip?.rating_note ?? ""));
+  }, [ratedAt]);
+
   if (loading) {
     return (
       <View style={s.centre}>
@@ -70,12 +120,14 @@ export default function PaymentScreen({
   // A trip taken before VAT applied shows no tax line rather than a $0 one.
   const vat = trip.vat_cents ?? 0;
 
-  /* Tips, offered the way Uber offers them: after the ride, once the fare is
-     settled, and never as part of the bill. The buttons start a message to the
-     office because no payment provider is connected yet — the same thing the
-     Pay button does. Percentages are of the fare, not the fare plus tax. */
+  /* Tips, offered the way Uber offers them: after the ride is over, and never as
+     part of the bill. Not when the fare is paid — that happens before boarding,
+     and nobody tips a captain they haven't met. The database decides the window
+     (`can_tip`); the buttons start a message to the office because no payment
+     provider is connected yet, the same thing the Pay button does. Percentages
+     are of the fare, not the fare plus tax. */
   const tip = trip.tip_cents ?? 0;
-  const canTip = !!trip.paid_at && !!trip.captain && trip.can_reply;
+  const canTip = !!trip.can_tip && !!trip.captain;
   const captain = trip.captain ? `Capt. ${trip.captain}` : "your captain";
   const askForTip = (cents: number) =>
     Alert.alert(
@@ -106,6 +158,25 @@ export default function PaymentScreen({
     .filter((o, i, all) => all.findIndex((x) => x.cents === o.cents) === i);
   const settled = !!trip.paid_at;
   const tooEarly = trip.status === "requested" || trip.status === "quoted";
+
+  /* How it went, asked before the tip. Two scores, because a good captain can
+     have a bad boat and dispatch has to be able to tell which it is looking at. */
+  const canRate = !!trip.can_rate;
+  const pickedCaptain = starsCaptain ?? trip.rating_captain ?? 0;
+  const pickedRide = starsRide ?? trip.rating_ride ?? 0;
+  const rateReady = pickedCaptain > 0 && pickedRide > 0 && !rateSending;
+  const sendRating = async () => {
+    if (!rateReady) return;
+    setRateSending(true);
+    setRateErr(null);
+    try {
+      await onRate(pickedCaptain, pickedRide, rateNote.trim() || null);
+    } catch (e: any) {
+      setRateErr(e?.message ?? "That didn't send. Try again in a moment.");
+    } finally {
+      setRateSending(false);
+    }
+  };
 
   return (
     <ScrollView
@@ -217,6 +288,53 @@ export default function PaymentScreen({
         ) : null}
       </View>
 
+      {canRate ? (
+        <View style={s.card}>
+          <Text style={s.cardTitle}>How was it?</Text>
+          <Text style={s.rateNote}>
+            {trip.rated_at
+              ? "Thanks — you've rated this trip. Change it here if you like."
+              : `How did ${captain} do, and how was the trip itself?`}
+          </Text>
+
+          {/* The name without the "Capt." — five stars and a title don't fit
+              side by side on a phone, and the trip card above already says it. */}
+          <View style={s.rateRow}>
+            <Text style={s.rateLabel} numberOfLines={1}>
+              {trip.captain ?? "Your captain"}
+            </Text>
+            <Stars value={pickedCaptain} onPick={setStarsCaptain} label={captain} />
+          </View>
+          <View style={s.rateRow}>
+            <Text style={s.rateLabel} numberOfLines={1}>
+              {trip.boat ?? "The trip"}
+            </Text>
+            <Stars value={pickedRide} onPick={setStarsRide} label="the trip" />
+          </View>
+
+          <TextInput
+            style={s.rateComment}
+            value={rateNote}
+            onChangeText={setRateNote}
+            placeholder="Anything you'd like to add? (optional)"
+            placeholderTextColor={colors.muted}
+            maxLength={1000}
+            multiline
+          />
+
+          <Pressable
+            style={[s.rateBtn, !rateReady && s.rateBtnOff]}
+            disabled={!rateReady}
+            onPress={sendRating}
+          >
+            <Text style={s.rateBtnText}>
+              {rateSending ? "Sending…" : trip.rated_at ? "Update rating" : "Send rating"}
+            </Text>
+          </Pressable>
+          {rateErr ? <Text style={s.rateErr}>{rateErr}</Text> : null}
+        </View>
+      ) : null}
+
       {tip > 0 || canTip ? (
         <View style={s.card}>
           <Text style={s.cardTitle}>Tip your captain</Text>
@@ -232,7 +350,7 @@ export default function PaymentScreen({
               ? "Every cent of it goes to the captain."
               : tip > 0
               ? "Want to add more? Every cent goes to the captain."
-              : `Nothing owed — the fare is settled. This is extra, and all of it goes to ${captain}.`}
+              : `Hope the trip went well. Nothing is owed — this is extra, and all of it goes to ${captain}.`}
           </Text>
 
           {canTip ? (
@@ -367,6 +485,41 @@ const s = StyleSheet.create({
   onwayText: { flex: 1 },
   onwayTitle: { fontSize: 15, fontWeight: "800", color: colors.deep },
   onwaySub: { fontSize: 12.5, color: colors.muted, marginTop: 1 },
+
+  rateNote: { fontSize: 13.5, color: colors.muted, lineHeight: 19, marginBottom: 6 },
+  rateRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 10,
+    paddingVertical: 4,
+  },
+  rateLabel: { flexShrink: 1, fontSize: 15, fontWeight: "700", color: colors.ink },
+  stars: { flexDirection: "row", gap: 2 },
+  star: { fontSize: 27, lineHeight: 32, color: "#d8e0e6", paddingHorizontal: 2 },
+  starOn: { color: "#f2b01e" },
+  rateComment: {
+    marginTop: 10,
+    borderWidth: 1.5,
+    borderColor: colors.line,
+    borderRadius: radius.md,
+    paddingHorizontal: 11,
+    paddingVertical: 9,
+    fontSize: 15,
+    color: colors.ink,
+    minHeight: 60,
+    textAlignVertical: "top",
+  },
+  rateBtn: {
+    marginTop: 10,
+    alignItems: "center",
+    paddingVertical: 13,
+    borderRadius: radius.md,
+    backgroundColor: colors.deep,
+  },
+  rateBtnOff: { backgroundColor: "#c8d5dd" },
+  rateBtnText: { fontSize: 16, fontWeight: "800", color: colors.white },
+  rateErr: { marginTop: 7, fontSize: 13, fontWeight: "600", color: colors.danger },
 
   tipGiven: { fontSize: 17, fontWeight: "800", color: colors.green, marginBottom: 3 },
   tipNote: { fontSize: 13.5, color: colors.muted, lineHeight: 19 },

@@ -4,7 +4,7 @@ import { Pressable, SafeAreaView, StyleSheet, Text, View } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import BookScreen from "./src/screens/BookScreen";
 import PaymentScreen from "./src/screens/PaymentScreen";
-import { fetchTrip, type TripView } from "./src/lib/trip";
+import { fetchTrip, rateTrip, type TripView } from "./src/lib/trip";
 import { colors, radius } from "./src/lib/theme";
 
 /* Two tabs, because a passenger only ever does two things: ask for a boat, and
@@ -57,6 +57,15 @@ export default function App() {
             onRefresh={() => {
               setRefreshing(true);
               load(false);
+            }}
+            /* The token lives here, not on the screen — the screen shows a trip
+               and shouldn't have to know how it was found. Reload after, because
+               the tip card is waiting on the rating landing. */
+            onRate={async (captain, ride, note) => {
+              const token = await AsyncStorage.getItem(TRIP_TOKEN_KEY);
+              if (!token) throw new Error("We've lost the link to that trip.");
+              await rateTrip(token, captain, ride, note);
+              await load(false);
             }}
           />
         )}

@@ -60,8 +60,29 @@
       <div class="pay-slot" id="paySlot"></div>
     </section>
 
-    <!-- Tips. Offered after the trip is paid for, the way Uber offers them after
-         the ride: the fare is settled, and this is extra, for the captain. -->
+    <!-- How it went. Asked once the trip is over, and asked before the tip: the
+         rating is where the verdict is actually made, and a bad crossing
+         shouldn't have a tip button as its first question. -->
+    <section class="rate" id="rateSection" hidden>
+      <h2 class="rate-title">How was it?</h2>
+      <p class="rate-note" id="rateNote"></p>
+      <div class="rate-row">
+        <span class="rate-label" id="rateCaptainLabel">Your captain</span>
+        <div class="stars" id="starsCaptain" role="radiogroup" aria-labelledby="rateCaptainLabel"></div>
+      </div>
+      <div class="rate-row">
+        <span class="rate-label" id="rateRideLabel">The trip</span>
+        <div class="stars" id="starsRide" role="radiogroup" aria-labelledby="rateRideLabel"></div>
+      </div>
+      <textarea id="rateComment" class="rate-comment" maxlength="1000" rows="2"
+                placeholder="Anything you'd like to add? (optional)"
+                aria-label="Anything you'd like to add"></textarea>
+      <button type="button" id="rateSend" class="rate-send">Send rating</button>
+      <p class="rate-err" id="rateErr" hidden></p>
+    </section>
+
+    <!-- Tips. Offered after the ride and after the rating, the way Uber offers
+         them: the fare is settled, and this is extra, for the captain. -->
     <section class="tip" id="tipSection" hidden>
       <h2 class="tip-title">Tip your captain</h2>
       <div class="tip-given" id="tipGiven" hidden></div>

@@ -41,6 +41,18 @@ export type TripView = {
   can_reply: boolean;
   /** False until the trip is paid for. The office stays reachable regardless. */
   can_message_captain: boolean;
+  /** When the captain closed the trip out. Null until then. */
+  completed_at: string | null;
+  /* How it went, 1-5 each, and when they said so. Null until they do. */
+  rating_captain: number | null;
+  rating_ride: number | null;
+  rating_note: string | null;
+  rated_at: string | null;
+  /** True for the week after the ride — a rating stays changeable that long. */
+  can_rate: boolean;
+  /* True once the ride is over — a completed trip, with a boat on it, inside the
+     week the database allows a tip to be added. Never true before the ride. */
+  can_tip: boolean;
   messages: TripMessage[];
 };
 
@@ -66,6 +78,27 @@ export async function sendTripMessage(
     p_token: token,
     p_body: body,
     p_channel: channel,
+  });
+  if (error) throw error;
+}
+
+/**
+ * How the captain did, and how the trip went.
+ *
+ * Both scores are required — the database refuses one without the other, since
+ * half an answer tells dispatch nothing about which of the two went wrong.
+ */
+export async function rateTrip(
+  token: string,
+  captain: number,
+  ride: number,
+  note?: string | null
+): Promise<void> {
+  const { error } = await supabase.rpc("trip_rate", {
+    p_token: token,
+    p_captain: captain,
+    p_ride: ride,
+    p_note: note?.trim() ? note.trim() : null,
   });
   if (error) throw error;
 }

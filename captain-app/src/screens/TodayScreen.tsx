@@ -12,6 +12,7 @@ import {
   tripsInWeek,
   upcomingTrips,
   type Boat,
+  type BoatRating,
   type Message,
   type Trip,
 } from "../lib/data";
@@ -24,6 +25,7 @@ export default function TodayScreen({
   trips,
   messages,
   boat,
+  rating,
   refreshing,
   busyTripId,
   onRefresh,
@@ -37,6 +39,8 @@ export default function TodayScreen({
   trips: Trip[];
   messages: Map<string, Message[]>;
   boat: Boat | null;
+  /** What his passengers have scored him, or null until anyone has. */
+  rating: BoatRating | null;
   refreshing: boolean;
   busyTripId: string | null;
   onRefresh: () => void;
@@ -110,6 +114,20 @@ export default function TodayScreen({
         </View>
       </View>
 
+      {/* His own score, with the number of trips it rests on. Absent entirely
+          until someone has rated him — "no rating yet" is the truth, and a 0.0
+          would be a lie about a captain who has simply not been rated. */}
+      {rating && rating.captain_avg != null ? (
+        <View style={s.rateStrip}>
+          <Text style={s.rateStars}>{"★".repeat(Math.round(rating.captain_avg))}</Text>
+          <Text style={s.rateVal}>{rating.captain_avg.toFixed(1)}</Text>
+          <Text style={s.rateCount}>
+            from {rating.rated_trips} rated {rating.rated_trips === 1 ? "trip" : "trips"}
+            {rating.ride_avg != null ? ` · boat ${rating.ride_avg.toFixed(1)}` : ""}
+          </Text>
+        </View>
+      ) : null}
+
       <Text style={s.heading}>Today</Text>
       {today.length === 0 ? (
         <Empty>Nothing on today. The office will send jobs here.</Empty>
@@ -182,6 +200,22 @@ const s = StyleSheet.create({
   },
   stripVal: { fontSize: 20, fontWeight: "800", color: colors.white, marginTop: 2 },
   stripSmall: { fontSize: 14, fontWeight: "700", color: colors.white, marginTop: 5 },
+
+  rateStrip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginBottom: 6,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    backgroundColor: colors.white,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.line,
+  },
+  rateStars: { fontSize: 16, color: "#f2b01e", letterSpacing: 1 },
+  rateVal: { fontSize: 17, fontWeight: "800", color: colors.ink },
+  rateCount: { flexShrink: 1, fontSize: 12.5, color: colors.muted },
 
   heading: {
     fontSize: 11,

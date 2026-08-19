@@ -7,6 +7,7 @@
 <meta name="robots" content="noindex, nofollow">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%E2%9A%93%3C/text%3E%3C/svg%3E">
 <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css">
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -40,6 +41,7 @@
       <button data-view="bookings" class="vtab active">Bookings</button>
       <button data-view="clients" class="vtab">Clients</button>
       <button data-view="boats" class="vtab">Boats</button>
+      <button data-view="map" class="vtab">Map</button>
       <button data-view="payout" class="vtab">Payout</button>
     </div>
     <span id="countInfo" class="muted"></span>
@@ -71,6 +73,15 @@
     <div id="boatsEmpty" class="empty-state" style="display:none">No boats yet.</div>
   </div>
 
+  <!-- Where the fleet is. Only boats that are switched on and reporting appear
+       on the map; everyone else is named underneath it, because a map that
+       quietly leaves boats out is worse than no map. -->
+  <div id="mapWrap" style="display:none">
+    <div id="fleetMap" class="fleet-map"></div>
+    <div id="mapNote" class="map-note"></div>
+    <div id="mapMissing" class="map-missing"></div>
+  </div>
+
   <div id="payoutWrap" style="display:none">
     <div class="week-bar">
       <button type="button" id="weekPrev" class="week-nav" aria-label="Earlier week">‹</button>
@@ -87,6 +98,7 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/libphonenumber-js@1/bundle/libphonenumber-min.js"></script>
 <script src="script.js"></script>
 </body>

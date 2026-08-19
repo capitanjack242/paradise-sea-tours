@@ -201,6 +201,32 @@ export async function fetchMyBoat(userId: string): Promise<Boat | null> {
   return (data?.[0] as unknown as Boat) ?? null;
 }
 
+export type BoatRating = {
+  rated_trips: number;
+  captain_avg: number | null;
+  ride_avg: number | null;
+};
+
+/**
+ * How his passengers have scored him.
+ *
+ * The count comes back with the average because an average over three trips is
+ * not a reputation, and a captain being shown "3.7" without being shown that it
+ * rests on three trips is being told something misleading. The database scopes
+ * this to his own boat — there is no way to ask it about anyone else's.
+ */
+export async function fetchMyRating(boatId: string): Promise<BoatRating | null> {
+  const { data, error } = await supabase.rpc("boat_ratings");
+  if (error) throw error;
+  const mine = (data as any[] | null)?.find((r) => r.boat_id === boatId);
+  if (!mine) return null;
+  return {
+    rated_trips: mine.rated_trips ?? 0,
+    captain_avg: mine.captain_avg == null ? null : Number(mine.captain_avg),
+    ride_avg: mine.ride_avg == null ? null : Number(mine.ride_avg),
+  };
+}
+
 /**
  * Say where this boat is.
  *

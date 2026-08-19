@@ -245,6 +245,19 @@ h1{font-family:'Baloo 2','Inter',sans-serif;margin:0}
 .pay-owing{font-size:.78rem;font-weight:700;color:#8a6d00}
 .pay-breakdown{font-size:.78rem;color:var(--muted);font-variant-numeric:tabular-nums}
 
+/* What the passenger said about it. Amber when either score is 3 or under —
+   that is the row worth reading before Friday. */
+.rating-row{margin-top:.4rem;padding:.45em .7em;border-radius:8px;
+  background:var(--foam,#f4fbfd);border:1px solid var(--line)}
+.rating-row.rating-low{background:#fdf3dd;border-color:#f0dca8}
+.rate-pair{display:flex;flex-wrap:wrap;align-items:center;gap:.35rem .6rem}
+.rate-lab{font-size:.72rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--muted)}
+.rate-stars{font-size:.95rem;letter-spacing:.04em;color:#f2b01e;line-height:1}
+.rate-off{color:#d8e0e6}
+.rate-said{margin-top:.35rem;font-size:.83rem;color:var(--ink);font-style:italic;
+  overflow-wrap:anywhere}
+
 /* Tips sit beside the payment, not inside it: not part of the bill, not taxed,
    and no commission comes off them. */
 .tip-row{display:flex;flex-wrap:wrap;align-items:center;gap:.5rem;margin-top:.4rem;
@@ -360,3 +373,50 @@ h1{font-family:'Baloo 2','Inter',sans-serif;margin:0}
   .cancel-reason{flex:1}
   .btn-complete-row,.btn-confirm-row{width:100%}
 }
+
+
+/* ── the fleet on a map ───────────────────────────────────────────────────
+   Sized to be read at arm's length on the office screen, and still usable on a
+   phone. Pins carry the boat's name rather than a dot, because "which one is
+   that" is the only question anyone asks of a map like this. */
+.fleet-map{height:min(62vh,560px);min-height:340px;border-radius:12px;
+  border:1px solid var(--line);overflow:hidden;background:#dfeaf0}
+.fleet-map .leaflet-container{font:inherit}
+
+.pin-wrap{background:none;border:none}
+.pin{position:relative;display:inline-block;white-space:nowrap;transform:translate(-50%,-140%);
+  padding:.22em .55em;border-radius:999px;font-size:.78rem;font-weight:700;
+  color:#fff;box-shadow:0 1px 4px rgba(6,36,59,.35)}
+.pin b{font-weight:800}
+/* The tail is coloured per variant rather than inherited — `inherit` on a
+   border colour picks up the text colour, which is white here. */
+.pin::after{content:"";position:absolute;left:50%;bottom:-5px;width:0;height:0;
+  transform:translateX(-50%);border:5px solid transparent}
+.pin-run{background:#0a7a8c}
+.pin-run::after{border-top-color:#0a7a8c}
+.pin-idle{background:#1a7f52}
+.pin-idle::after{border-top-color:#1a7f52}
+/* A cold fix is drawn hollow: still worth seeing, not to be trusted as "now". */
+.pin-cold{background:#fff;color:var(--muted);border:1.5px dashed #b9ccd8;font-weight:600}
+.pin-cold::after{border-top-color:#b9ccd8}
+.pin-pop{font-size:.9rem;line-height:1.45}
+.pin-pop strong{font-size:1rem}
+.pin-pop a{color:var(--deep);font-weight:600}
+
+.map-note{display:flex;flex-wrap:wrap;gap:.5rem 1rem;align-items:center;
+  margin-top:.6rem;font-size:.82rem;color:var(--muted)}
+.map-key{display:inline-flex;align-items:center;gap:.35rem}
+.key{width:.7rem;height:.7rem;border-radius:999px;display:inline-block}
+.key-run{background:#0a7a8c}
+.key-idle{background:#1a7f52}
+.key-cold{background:#fff;border:1.5px dashed #b9ccd8}
+.map-warn{font-weight:600;color:#a8760a}
+
+.map-missing{margin-top:.7rem;display:grid;gap:.4rem}
+.miss-row{display:flex;flex-wrap:wrap;align-items:baseline;gap:.3rem .6rem;
+  padding:.5em .7em;border-radius:8px;background:var(--foam,#f4fbfd);
+  border:1px solid var(--line);font-size:.85rem}
+.miss-lab{font-size:.7rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--muted)}
+.miss-names{font-weight:700;color:var(--ink)}
+.miss-why{color:var(--muted)}

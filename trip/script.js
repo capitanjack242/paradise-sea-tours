@@ -124,6 +124,7 @@ function render(t) {
 
   renderBoatPosition(t);
   renderPayment(t);
+  renderRating(t);
   renderTip(t);
 
   // Only the channel being looked at. The office one is always available; the
@@ -160,10 +161,15 @@ function render(t) {
   composer.hidden = !open;
   closedNote.hidden = !!t.can_reply;
 
-  // The one case the composer is hidden but the trip is live: the captain
-  // channel, not yet paid for. Say so instead of showing an empty panel.
+  // Two cases where the composer is hidden but the thread is still open, both on
+  // the captain tab: the trip isn't paid for yet, or it's over and he's off it.
+  // Say which instead of showing an empty panel.
   const lockNote = document.getElementById("captainLockNote");
   lockNote.hidden = !(t.can_reply && channel === "captain" && !canCaptain);
+  lockNote.textContent =
+    t.status === "completed"
+      ? "Your captain is off this trip now. We're on the other tab if anything's outstanding — and you can still leave him a tip above."
+      : "Your captain opens up here once the trip is paid for. Until then we're on the other tab and happy to help.";
 }
 
 /** What's owed, what's been paid, and how it gets paid. */
@@ -256,11 +262,101 @@ function renderBoatPosition(t) {
   box.href = `https://www.google.com/maps/search/?api=1&query=${t.boat_lat},${t.boat_lng}`;
 }
 
+/* How it went.
+
+   Asked once, after the ride, and asked before the tip — a tip is a verdict, and
+   this is where the verdict is made. Two scores because they are two different
+   things: a good captain can have a bad boat, and dispatch has to be able to
+   tell those apart. Neither is required to leave, but the tip waits on them. */
+function renderRating(t) {
+  const section = document.getElementById("rateSection");
+  const note = document.getElementById("rateNote");
+  const err = document.getElementById("rateErr");
+  const send = document.getElementById("rateSend");
+  const comment = document.getElementById("rateComment");
+  const captain = t.captain ? `Capt. ${t.captain}` : "your captain";
+
+  if (!t.can_rate) {
+    section.hidden = true;
+    return;
+  }
+  section.hidden = false;
+  document.getElementById("rateCaptainLabel").textContent = captain;
+  document.getElementById("rateRideLabel").textContent = t.boat || "The trip";
+
+  // Their own answer wins over anything typed since, but only until they touch
+  // a star — otherwise a poll two seconds later would undo what they just did.
+  if (rating.captain === null) rating.captain = t.rating_captain || null;
+  if (rating.ride === null) rating.ride = t.rating_ride || null;
+  if (!comment.value && t.rating_note) comment.value = t.rating_note;
+
+  note.textContent = t.rated_at
+    ? "Thanks — you've rated this trip. Change it here if you like."
+    : `How did ${captain} do, and how was the trip itself?`;
+  drawStars("starsCaptain", "captain");
+  drawStars("starsRide", "ride");
+
+  const ready = rating.captain && rating.ride;
+  send.disabled = !ready;
+  send.textContent = t.rated_at ? "Update rating" : "Send rating";
+  if (ready) err.hidden = true;
+}
+
+/** What they've picked so far. Null means untouched, not zero. */
+const rating = { captain: null, ride: null, sending: false };
+
+function drawStars(elementId, which) {
+  const box = document.getElementById(elementId);
+  const picked = rating[which] || 0;
+  box.innerHTML = [1, 2, 3, 4, 5]
+    .map(
+      (n) => `<button type="button" class="star${n <= picked ? " on" : ""}"
+                 role="radio" aria-checked="${n === picked}" data-n="${n}"
+                 aria-label="${n} star${n > 1 ? "s" : ""}">★</button>`
+    )
+    .join("");
+  box.onclick = (e) => {
+    const btn = e.target.closest("button[data-n]");
+    if (!btn) return;
+    rating[which] = Number(btn.dataset.n);
+    if (lastTrip) renderRating(lastTrip);
+  };
+}
+
+document.getElementById("rateSend").addEventListener("click", async () => {
+  const err = document.getElementById("rateErr");
+  const send = document.getElementById("rateSend");
+  if (!rating.captain || !rating.ride || rating.sending) return;
+
+  rating.sending = true;
+  send.disabled = true;
+  const { error } = await db.rpc("trip_rate", {
+    p_token: token,
+    p_captain: rating.captain,
+    p_ride: rating.ride,
+    p_note: document.getElementById("rateComment").value.trim() || null,
+  });
+  rating.sending = false;
+  send.disabled = false;
+
+  if (error) {
+    err.textContent = /closed|between/i.test(error.message || "")
+      ? error.message
+      : "That didn't send. Check your connection and try again.";
+    err.hidden = false;
+    return;
+  }
+  err.hidden = true;
+  await load(); // the tip card is waiting on this
+});
+
 /* Tips.
 
-   Offered once the fare is settled and there's a captain to give it to — the
-   same moment Uber offers one, after the ride rather than before it. Nothing
-   here is owed: the balance is already nil, and this is extra.
+   Offered when the ride is over and the passenger has said how it went — rate
+   first, tip if it was warranted. Not when the fare is paid: the fare is paid
+   before anyone boards, and nobody tips a captain they haven't met yet. The
+   window stays open for a week afterwards, which is the server's rule
+   (`can_tip`), not this page's.
 
    The button starts a message rather than taking money, because no payment
    provider is connected yet. That's the same thing the Pay button does. When
@@ -274,10 +370,9 @@ function renderTip(t) {
 
   const tip = t.tip_cents || 0;
   const captain = t.captain ? `Capt. ${t.captain}` : "your captain";
-  // Tipping opens when the trip is paid for and there's a named captain. A
-  // finished trip still shows a tip that was given, but can't take a new one:
-  // the message thread it goes through is closed by then.
-  const canTip = !!t.paid_at && !!t.captain && !!t.can_reply;
+  // The server decides: trip completed, a boat on it, inside the week. A tip
+  // already given still shows after that window closes, it just can't be topped up.
+  const canTip = !!t.can_tip && !!t.captain;
 
   if (!tip && !canTip) {
     section.hidden = true;
@@ -300,7 +395,7 @@ function renderTip(t) {
 
   note.textContent = tip
     ? "Want to add more? Every cent goes to the captain."
-    : `Nothing owed — the fare is settled. This is extra, and all of it goes to ${captain}.`;
+    : `Hope the trip went well. Nothing is owed — this is extra, and all of it goes to ${captain}.`;
 
   // Percentages of the fare, not the fare plus tax: nobody tips on tax.
   const base = t.fare_cents || 0;
