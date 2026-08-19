@@ -23,26 +23,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/configure-pages@v5
-      - name: Assemble site (web/ at root, control/, captain/ and trip/ under their paths)
-        run: |
-          mkdir -p _site
-          cp -r web/. _site/
-          mkdir -p _site/control
-          cp -r control/. _site/control/
-          mkdir -p _site/captain
-          cp -r captain/. _site/captain/
-          mkdir -p _site/trip
-          cp -r trip/. _site/trip/
-
-          # Stamp our own CSS/JS with the commit hash so a browser can never
-          # serve a stale stylesheet or script after a deploy. Done here rather
-          # than in the source files so nobody has to remember to bump it.
-          V="${GITHUB_SHA::8}"
-          find _site -name '*.html' -print0 | xargs -0 sed -i \
-            -e "s|href=\"styles\.css\"|href=\"styles.css?v=$V\"|g" \
-            -e "s|src=\"script\.js\"|src=\"script.js?v=$V\"|g"
-          echo "Stamped assets with v=$V"
-          grep -o 'styles\.css?v=[a-f0-9]*' _site/index.html | head -1
+      # One build script, shared with Cloudflare Pages, so the two deploys
+      # cannot drift apart while both are running during the cutover.
+      - name: Assemble site
+        run: sh scripts/build-site.sh
       - uses: actions/upload-pages-artifact@v3
         with:
           path: _site

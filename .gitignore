@@ -9,3 +9,4 @@ __pycache__/
 # Machine-specific dev server config
 .claude/
 supabase/.temp/
+_site/
