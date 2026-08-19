@@ -1008,10 +1008,11 @@ async function sendMessage(bookingId, body, card) {
 
 /* Payment, and what it unlocks.
 
-   No provider is wired up yet, so today this is dispatch recording money that
-   arrived some other way — cash on the dock, a bank transfer. When a payment
-   link exists it calls the same database function this button calls, and this
-   panel doesn't change.
+   No provider is wired up yet, so today this is dispatch recording a payment
+   that was taken by hand while we get Fygaro connected. It is scaffolding, not
+   a way of working: fares are card only, and no trip runs before the card link
+   is live. When that link exists it calls the same database function this
+   button calls, and this panel doesn't change.
 
    It earns its place on the card because payment is what opens the captain to
    the passenger: an unpaid trip means dispatch is the only way through, and a

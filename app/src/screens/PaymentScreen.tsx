@@ -279,7 +279,7 @@ export default function PaymentScreen({
             onPress={() =>
               Alert.alert(
                 "Card payments aren't switched on yet",
-                "Message the office and we'll take payment directly — cash on the dock or a transfer."
+                "We'll have this connected before your trip. Message the office if you need anything meanwhile."
               )
             }
           >
