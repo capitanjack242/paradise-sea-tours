@@ -2,8 +2,9 @@
   // The site is static — there is no Worker code, only files. Cloudflare serves
   // the assets directly and this file just says where they are.
   //
-  // `_site` is produced by scripts/build-site.sh, the same script GitHub Pages
-  // runs, so both deploys serve an identical tree while we run them in parallel.
+  // `_site` is produced by scripts/build-site.sh, which Cloudflare runs as the
+  // build command. GitHub Pages served the same tree until it was retired on
+  // 19 Aug 2026; this is the only host now.
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "paradise-sea-express",
   "compatibility_date": "2026-08-19",

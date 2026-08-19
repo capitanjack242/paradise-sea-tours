@@ -2,11 +2,11 @@
 # Assemble the deployable site into _site/.
 #
 # The repo keeps each surface in its own folder; the site wants them at their
-# own paths. This is the one place that mapping lives, so GitHub Pages and
-# Cloudflare Pages build exactly the same tree and can't drift apart while both
-# are running during the cutover.
+# own paths. This is the one place that mapping lives.
 #
-# Cloudflare Pages: build command `sh scripts/build-site.sh`, output `_site`.
+# Cloudflare runs this as the build command and serves `_site` (see
+# wrangler.jsonc). It was shared with GitHub Pages during the cutover; Pages was
+# retired 19 Aug 2026 and Cloudflare is now the only host.
 
 set -eu
 
