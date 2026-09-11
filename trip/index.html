@@ -18,6 +18,14 @@
 
   <div id="loading" class="notice">Loading your trip…</div>
 
+  <!-- The connection failed before anything loaded. Not the same as a missing
+       trip, and it keeps retrying on its own. -->
+  <div id="unreachable" class="notice" hidden>
+    <h2>Can't reach us right now</h2>
+    <p>Your trip is still there — this is a signal problem, not a booking
+       problem. We'll keep trying every few seconds; you don't need to do anything.</p>
+  </div>
+
   <div id="notFound" class="notice" hidden>
     <h2>We couldn't find that trip</h2>
     <p>The link may be incomplete, or the booking may have been removed.
@@ -25,6 +33,11 @@
   </div>
 
   <main id="tripView" hidden>
+    <!-- A poll failed after the trip loaded. What's below is the last answer we
+         got, not necessarily the current one. -->
+    <p id="reconnecting" class="reconnect" hidden>
+      Can't reach us at the moment — showing the last update. Trying again…
+    </p>
     <section class="trip-card">
       <div id="statusBanner" class="status" hidden></div>
       <div class="route" id="route"></div>

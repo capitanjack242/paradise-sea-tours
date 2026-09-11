@@ -45,6 +45,7 @@ let pollTimer = null;
 let boatsList = []; // active boats available to assign, loaded once per session
 let realtimeChannel = null;
 let refreshTimer = null;
+let boatsTimer = null;      // a boat moved or switched on/off; redraw it alone
 let pendingRefresh = false; // a change landed while the user was typing
 
 // ── auth ─────────────────────────────────────────────────────────────────
@@ -76,8 +77,7 @@ async function showDashboard(session) {
   loginView.style.display = "none";
   dashView.style.display = "block";
   whoami.textContent = session.user.email;
-  await loadBoats();
-  await loadBookings();
+  await loadBookings(); // loads the boats first; see there
   startLiveUpdates();
 }
 
@@ -100,6 +100,14 @@ function startLiveUpdates() {
       { event: "*", schema: "public", table: "messages" },
       () => scheduleRefresh()
     )
+    // Boats change on their own clock — a captain switching on, a position
+    // every 45 seconds — and none of that is a reason to rebuild the bookings
+    // list. They get their own, lighter refresh.
+    .on(
+      "postgres_changes",
+      { event: "*", schema: "public", table: "boats" },
+      () => scheduleBoatsRefresh()
+    )
     .subscribe((status) => {
       setLiveStatus(status === "SUBSCRIBED" ? "live" : "polling");
     });
@@ -110,7 +118,8 @@ function startLiveUpdates() {
 function teardownLiveUpdates() {
   clearInterval(pollTimer);
   clearTimeout(refreshTimer);
-  pollTimer = refreshTimer = null;
+  clearTimeout(boatsTimer);
+  pollTimer = refreshTimer = boatsTimer = null;
   pendingRefresh = false;
   if (realtimeChannel) {
     db.removeChannel(realtimeChannel);
@@ -123,6 +132,18 @@ function teardownLiveUpdates() {
 function scheduleRefresh() {
   clearTimeout(refreshTimer);
   refreshTimer = setTimeout(() => refreshUnlessTyping(), 400);
+}
+
+/* A boat moved, or a captain switched on or off. Reload the fleet and redraw
+   whichever view is looking at it — the Boats tab or the map — without
+   touching the bookings list, which may be mid-edit. */
+function scheduleBoatsRefresh() {
+  clearTimeout(boatsTimer);
+  boatsTimer = setTimeout(async () => {
+    await loadBoats();
+    if (currentView === "boats") renderBoats();
+    else if (currentView === "map") renderMap();
+  }, 400);
 }
 
 function refreshUnlessTyping() {
@@ -218,6 +239,11 @@ document.getElementById("refreshBtn").addEventListener("click", loadBookings);
 
 // ── data ─────────────────────────────────────────────────────────────────
 async function loadBookings() {
+  // The fleet first, every time. Boats used to load once at sign-in and never
+  // again, so the map, the Boats tab and the availability labels on every card
+  // showed the world as it was when the page opened — a boat switched on at
+  // 8am still read "Unavailable" at noon. Five rows; the cost is nothing.
+  await loadBoats();
   const { data, error } = await db
     .from("bookings")
     .select("*, boats(name, captain_name, captain_whatsapp, owner_id)")
@@ -994,6 +1020,7 @@ async function sendMessage(bookingId, body, card) {
   if (!text) return;
   card?.classList.add("row-saving");
   const { error } = await db
+    .from("messages")
     // The office speaks in the office channel — the one a passenger can always
     // reach, paid or not.
     .insert({ booking_id: bookingId, sender: "dispatch", body: text, channel: "office" });

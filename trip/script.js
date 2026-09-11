@@ -12,6 +12,8 @@ const token = new URLSearchParams(location.search).get("t");
 
 const loading = document.getElementById("loading");
 const notFound = document.getElementById("notFound");
+const unreachable = document.getElementById("unreachable");
+const reconnecting = document.getElementById("reconnecting");
 const tripView = document.getElementById("tripView");
 const thread = document.getElementById("thread");
 const composer = document.getElementById("composer");
@@ -56,21 +58,43 @@ async function load() {
   const { data, error } = await db.rpc("trip_thread", { p_token: token });
   if (error) {
     console.error(error);
-    return showNotFound();
+    // A request that failed is not a trip that doesn't exist. This page is read
+    // on docks with one bar of signal; one dropped poll used to replace the
+    // whole trip with "we couldn't find that" and stop asking — permanently,
+    // until someone thought to reload. Keep what's on screen, say the
+    // connection is the problem, and let the next poll try again.
+    return showUnreachable();
   }
-  if (!data) return showNotFound();
+  if (!data) return showNotFound(); // the database answered: no such trip
 
   loading.hidden = true;
   notFound.hidden = true;
+  unreachable.hidden = true;
+  reconnecting.hidden = true;
   tripView.hidden = false;
   render(data);
+}
+
+/* Nothing came back. If the trip is already on screen, keep it there with a
+   line saying it may be stale; if nothing has loaded yet, say we're trying.
+   Either way the poll keeps running — that is the whole fix. */
+function showUnreachable() {
+  loading.hidden = true;
+  if (lastTrip) {
+    reconnecting.hidden = false;
+    return;
+  }
+  tripView.hidden = true;
+  notFound.hidden = true;
+  unreachable.hidden = false;
 }
 
 function showNotFound() {
   loading.hidden = true;
   tripView.hidden = true;
+  unreachable.hidden = true;
   notFound.hidden = false;
-  clearInterval(pollTimer);
+  clearInterval(pollTimer); // it isn't going to appear
 }
 
 function render(t) {
