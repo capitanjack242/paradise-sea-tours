@@ -1,7 +1,6 @@
 import React from "react";
 import {
   ActivityIndicator,
-  Alert,
   Linking,
   Pressable,
   RefreshControl,
@@ -13,6 +12,7 @@ import {
 } from "react-native";
 import { colors, radius } from "../lib/theme";
 import { formatMoney, vatLabel } from "../lib/bookings";
+import { IN_NASSAU } from "../lib/nassau";
 import type { TripView } from "../lib/trip";
 
 /* What's owed, and what paying unlocks.
@@ -61,12 +61,16 @@ export default function PaymentScreen({
   refreshing,
   onRefresh,
   onRate,
+  onMessage,
 }: {
   trip: TripView | null;
   loading: boolean;
   refreshing: boolean;
   onRefresh: () => void;
   onRate: (captain: number, ride: number, note: string | null) => Promise<void>;
+  /** Open the Messages tab with a line already typed — how Pay and the tip
+      buttons work until the payment link exists, same as on the web page. */
+  onMessage: (draft: string) => void;
 }) {
   // A percentage of the fare is a suggestion, not a limit — someone who wants
   // to give $50 on a $60 trip shouldn't have to ask the office for permission.
@@ -130,12 +134,7 @@ export default function PaymentScreen({
   const canTip = !!trip.can_tip && !!trip.captain;
   const captain = trip.captain ? `Capt. ${trip.captain}` : "your captain";
   const askForTip = (cents: number) =>
-    Alert.alert(
-      "Card payments aren't switched on yet",
-      `Message the office and we'll add a ${formatMoney(cents)} tip for ${
-        trip?.captain ? `Capt. ${trip.captain}` : "your captain"
-      }. All of it goes to them.`
-    );
+    onMessage(`I'd like to add a ${formatMoney(cents)} tip for ${captain}.`);
 
   const submitOther = () => {
     const dollars = parseFloat(otherAmount);
@@ -191,6 +190,7 @@ export default function PaymentScreen({
         <Text style={s.tripMeta}>
           {trip.scheduled_at
             ? new Date(trip.scheduled_at).toLocaleString(undefined, {
+                ...IN_NASSAU,
                 weekday: "short",
                 month: "short",
                 day: "numeric",
@@ -276,12 +276,7 @@ export default function PaymentScreen({
         {!settled && !tooEarly ? (
           <Pressable
             style={({ pressed }) => [s.payBtn, pressed && s.payBtnDown]}
-            onPress={() =>
-              Alert.alert(
-                "Card payments aren't switched on yet",
-                "We'll have this connected before your trip. Message the office if you need anything meanwhile."
-              )
-            }
+            onPress={() => onMessage("I'd like to pay for my trip.")}
           >
             <Text style={s.payBtnText}>Pay {formatMoney(due)}</Text>
           </Pressable>

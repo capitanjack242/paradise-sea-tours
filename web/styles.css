@@ -233,3 +233,6 @@ img{max-width:100%}
   font-size:.82rem;opacity:.95;font-variant-numeric:tabular-nums;
 }
 .fare-split b{font-weight:700}
+
+/* The clock the form means, said next to the field that asks for it. */
+.tz-hint{font-weight:500;font-size:.78em;color:var(--muted,#5b7688);margin-left:.3em}

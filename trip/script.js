@@ -10,6 +10,11 @@ const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const token = new URLSearchParams(location.search).get("t");
 
+/* Every time on this page is Nassau's. The person reading it may be standing
+   on the dock with a phone still set to Berlin, and "10:30" has to mean the
+   10:30 the captain is turning up for. */
+const NASSAU = { timeZone: "America/Nassau" };
+
 const loading = document.getElementById("loading");
 const notFound = document.getElementById("notFound");
 const unreachable = document.getElementById("unreachable");
@@ -110,7 +115,7 @@ function render(t) {
 
   const when = t.scheduled_at
     ? new Date(t.scheduled_at).toLocaleString(undefined, {
-        weekday: "long", month: "long", day: "numeric", hour: "numeric", minute: "2-digit",
+        ...NASSAU, weekday: "long", month: "long", day: "numeric", hour: "numeric", minute: "2-digit",
       })
     : "Time to be confirmed";
   document.getElementById("meta").textContent =
@@ -119,7 +124,7 @@ function render(t) {
   const back = document.getElementById("returnLeg");
   if (t.return_at) {
     const at = new Date(t.return_at).toLocaleString(undefined, {
-      weekday: "long", hour: "numeric", minute: "2-digit",
+      ...NASSAU, weekday: "long", hour: "numeric", minute: "2-digit",
     });
     back.innerHTML = `<span class="lab">Coming back</span> Your captain collects you again at ${esc(at)}`;
     back.hidden = false;
@@ -475,7 +480,7 @@ function renderTip(t) {
 }
 
 function bubble(m) {
-  const at = new Date(m.at).toLocaleString(undefined, { hour: "numeric", minute: "2-digit" });
+  const at = new Date(m.at).toLocaleString(undefined, { ...NASSAU, hour: "numeric", minute: "2-digit" });
   const mine = m.sender === "customer";
   const who = mine ? "You" : m.sender === "captain" ? "Your captain" : "Paradise Sea Express";
   return `<div class="bub ${mine ? "mine" : "theirs"}">

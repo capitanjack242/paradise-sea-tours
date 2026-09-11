@@ -29,6 +29,7 @@ import {
   type TripType,
 } from "../lib/bookings";
 import { checkPermission, locate, type Fix } from "../lib/location";
+import { nassauDayAt } from "../lib/nassau";
 import { colors, radius } from "../lib/theme";
 
 const TIMES = [
@@ -40,17 +41,10 @@ const TIMES = [
 
 const DAYS = ["Today", "Tomorrow"] as const;
 
-/** Turn "Today" + "10:30 AM" into a real Date. */
+/** Turn "Today" + "10:30 AM" into a real instant — on Nassau's clock and
+    calendar, not the phone's. See lib/nassau.ts for why that matters. */
 function toDate(day: string, time: string): Date {
-  const d = new Date();
-  if (day === "Tomorrow") d.setDate(d.getDate() + 1);
-  const m = time.match(/^(\d+):(\d+)\s*(AM|PM)$/i);
-  if (m) {
-    let h = Number(m[1]) % 12;
-    if (m[3].toUpperCase() === "PM") h += 12;
-    d.setHours(h, Number(m[2]), 0, 0);
-  }
-  return d;
+  return nassauDayAt(day === "Tomorrow" ? 1 : 0, time);
 }
 
 /** Where the key to the trip lives once we have one. Read by App.tsx. */
@@ -247,7 +241,7 @@ export default function BookScreen({ onBooked }: { onBooked?: () => void }) {
 
         <View style={s.row}>
           <View style={s.col}>
-            <PickerField label="Go out" value={outTime} options={TIMES} onChange={setOutTime} />
+            <PickerField label="Go out (Nassau time)" value={outTime} options={TIMES} onChange={setOutTime} />
           </View>
           {tripType === "Round trip" && (
             <View style={s.col}>

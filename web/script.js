@@ -48,8 +48,40 @@ const phoneInput = form.querySelector('[name="phone"]');
 const returnWrap = document.getElementById("returnWrap");
 const tripTypeInput = form.querySelector('[name="triptype"]');
 
-// Today, in the browser's own timezone — no past dates offered.
-const today = () => new Date().toLocaleDateString("en-CA");
+/* Every time on this form is Nassau time.
+
+   A visitor's phone is often still on home time — a cruise passenger who landed
+   this morning, a European who never switched roaming on. Read "10:30" in the
+   phone's own zone and a Berlin phone books 4:30am Nassau, and a captain waits
+   at dawn for nobody. So the date picker's "today" is Nassau's today, and the
+   day+time they choose is turned into an instant using Nassau's clock, not the
+   phone's. */
+const NASSAU_TZ = "America/Nassau";
+
+/** Minutes Nassau's clock is ahead of UTC at a given instant (-240 or -300). */
+function nassauOffsetMinutes(at) {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: NASSAU_TZ, hourCycle: "h23",
+    year: "numeric", month: "2-digit", day: "2-digit",
+    hour: "2-digit", minute: "2-digit", second: "2-digit",
+  }).formatToParts(at);
+  const n = (t) => Number(parts.find((x) => x.type === t).value);
+  const wall = Date.UTC(n("year"), n("month") - 1, n("day"), n("hour"), n("minute"), n("second"));
+  return Math.round((wall - at.getTime()) / 60000);
+}
+
+/** The instant at which Nassau's clocks read the given date ("YYYY-MM-DD") and time ("HH:MM"). */
+function nassauInstant(dateStr, timeStr) {
+  const [y, mo, d] = dateStr.split("-").map(Number);
+  const [h, mi] = timeStr.split(":").map(Number);
+  const wall = Date.UTC(y, mo - 1, d, h, mi);
+  // Two passes: the offset can differ either side of a clock change.
+  const first = wall - nassauOffsetMinutes(new Date(wall)) * 60000;
+  return new Date(wall - nassauOffsetMinutes(new Date(first)) * 60000);
+}
+
+// Today, in Nassau — no past dates offered.
+const today = () => new Intl.DateTimeFormat("en-CA", { timeZone: NASSAU_TZ }).format(new Date());
 dateInput.min = today();
 dateInput.value = today();
 
@@ -166,12 +198,12 @@ function validateTrip() {
   }
   if (d.pickup === d.destination) return "Your pickup and destination are the same.";
 
-  const scheduledAt = new Date(`${d.date}T${d.time}`);
+  const scheduledAt = nassauInstant(d.date, d.time);
   if (scheduledAt.getTime() <= Date.now()) return "Please choose a date and time in the future.";
 
   if (d.triptype === "Round trip") {
     if (!d.returntime) return "Tell us what time you'd like collecting again.";
-    const back = new Date(`${d.date}T${d.returntime}`);
+    const back = nassauInstant(d.date, d.returntime);
     if (back <= scheduledAt) return "The return has to be after you head out.";
   }
   return null;
@@ -189,7 +221,8 @@ document.getElementById("requestBtn").addEventListener("click", () => {
 
   const d = Object.fromEntries(new FormData(form).entries());
   const { total: totalCents } = currentFare();
-  const when = new Date(`${d.date}T${d.time}`).toLocaleString(undefined, {
+  const when = nassauInstant(d.date, d.time).toLocaleString(undefined, {
+    timeZone: NASSAU_TZ,
     weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit",
   });
   document.getElementById("holdingText").innerHTML =
@@ -331,7 +364,7 @@ form.addEventListener("submit", async (e) => {
   // decides whether a captain goes back for someone.
   const returnAt =
     d.triptype === "Round trip" && d.returntime
-      ? new Date(`${d.date}T${d.returntime}`).toISOString()
+      ? nassauInstant(d.date, d.returntime).toISOString()
       : null;
 
   const { error } = await db.from("bookings").insert({
@@ -339,7 +372,7 @@ form.addEventListener("submit", async (e) => {
     contact_phone: parsedPhone.number, // E.164
     pickup: d.pickup,
     destination: d.destination,
-    scheduled_at: new Date(`${d.date}T${d.time}`).toISOString(),
+    scheduled_at: nassauInstant(d.date, d.time).toISOString(),
     return_at: returnAt,
     passengers: Number(d.guests) || 1,
     trip_type: d.triptype,
