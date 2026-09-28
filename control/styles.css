@@ -420,3 +420,9 @@ h1{font-family:'Baloo 2','Inter',sans-serif;margin:0}
   color:var(--muted)}
 .miss-names{font-weight:700;color:var(--ink)}
 .miss-why{color:var(--muted)}
+
+/* Forgotten password: a quiet link under Sign in, and the note it leaves. */
+.forgot-link{background:none;border:0;padding:0;margin:.7rem 0 0;font:inherit;font-size:.85rem;
+  color:var(--teal);text-decoration:underline;cursor:pointer}
+.forgot-link:disabled{opacity:.5;cursor:default}
+.err.ok{color:#1d7a46}

@@ -49,14 +49,76 @@ document.getElementById("logoutBtn").addEventListener("click", async () => {
 
 document.getElementById("refreshBtn").addEventListener("click", () => loadTrips());
 
-db.auth.onAuthStateChange((_event, session) => {
+db.auth.onAuthStateChange((event, session) => {
+  if (event === "PASSWORD_RECOVERY") recovering = true;
+  if (recovering) return showNewPassword();
   if (session) showTrips(session);
   else showLogin();
 });
 
 db.auth.getSession().then(({ data }) => {
+  if (recovering) return showNewPassword();
   if (data.session) showTrips(data.session);
   else showLogin();
+});
+
+/* ── forgotten password ───────────────────────────────────────────────────
+   "Forgot password?" emails a link back to this same page. Opening it signs
+   the person in for one purpose — choosing a new password — so until that's
+   done the board stays shut and the new-password form is all they see. */
+const forgotBtn = document.getElementById("forgotBtn");
+const newPwForm = document.getElementById("newPwForm");
+const newPwMsg = document.getElementById("newPwMsg");
+// Read from the address before the login library tidies it away.
+let recovering = /type=recovery/.test(location.hash);
+
+forgotBtn.addEventListener("click", async () => {
+  const email = document.getElementById("email").value.trim();
+  loginError.classList.remove("ok");
+  if (!email) {
+    loginError.textContent = "Type your email above first, then tap Forgot password.";
+    return;
+  }
+  forgotBtn.disabled = true;
+  const { error } = await db.auth.resetPasswordForEmail(email, {
+    redirectTo: location.origin + location.pathname,
+  });
+  forgotBtn.disabled = false;
+  if (error) {
+    loginError.textContent = /rate|seconds|many/i.test(error.message || "")
+      ? "Too many reset emails just now — wait a while and try again."
+      : error.message;
+    return;
+  }
+  // Said the same whether or not the address has a login, so this can't be
+  // used to find out who works here.
+  loginError.classList.add("ok");
+  loginError.textContent = "If that email has a login, a reset link is on its way. Check your inbox.";
+});
+
+function showNewPassword() {
+  loginView.style.display = "";
+  loginForm.style.display = "none";
+  newPwForm.style.display = "";
+  document.getElementById("newPw").focus();
+}
+
+newPwForm.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  newPwMsg.textContent = "";
+  const pw = document.getElementById("newPw").value;
+  if (pw !== document.getElementById("newPw2").value) {
+    newPwMsg.textContent = "Those don't match.";
+    return;
+  }
+  const { error } = await db.auth.updateUser({ password: pw });
+  if (error) {
+    newPwMsg.textContent = error.message;
+    return;
+  }
+  // Done: reload the page clean, already signed in with the new password.
+  recovering = false;
+  location.replace(location.pathname);
 });
 
 function showLogin() {

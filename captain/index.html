@@ -20,6 +20,17 @@
     <label>Password<input id="password" type="password" required autocomplete="current-password"></label>
     <button type="submit" class="btn btn-primary btn-block">Sign in</button>
     <p id="loginError" class="err"></p>
+    <button type="button" id="forgotBtn" class="forgot-link">Forgot password?</button>
+  </form>
+
+  <!-- Opened from the reset email: choose a new password, then straight in. -->
+  <form id="newPwForm" class="login-card" style="display:none">
+    <h1 class="brand">Paradise<strong>Sea Express</strong></h1>
+    <p class="muted">Choose a new password</p>
+    <label>New password<input id="newPw" type="password" required minlength="8" autocomplete="new-password"></label>
+    <label>Same again<input id="newPw2" type="password" required minlength="8" autocomplete="new-password"></label>
+    <button type="submit" class="btn btn-primary btn-block">Save and sign in</button>
+    <p id="newPwMsg" class="err"></p>
   </form>
 </div>
 

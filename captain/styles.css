@@ -177,3 +177,9 @@ body{margin:0;background:var(--foam);color:var(--ink);
 .thread-locked{margin:.6rem 0 0;font-size:.88rem;font-weight:600;color:#8a6d00;
   background:#fff8e1;border:1px solid #e8d6a8;border-radius:8px;padding:.6em .8em;
   line-height:1.45}
+
+/* Forgotten password: a quiet link under Sign in, and the note it leaves. */
+.forgot-link{background:none;border:0;padding:0;margin:.7rem 0 0;font:inherit;font-size:.85rem;
+  color:var(--teal);text-decoration:underline;cursor:pointer}
+.forgot-link:disabled{opacity:.5;cursor:default}
+.err.ok{color:#1d7a46}
