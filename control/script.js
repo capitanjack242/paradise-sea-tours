@@ -293,12 +293,16 @@ async function loadBookings() {
   // caller is the office before returning anything.
   const { data, error } = await db
     .rpc("staff_bookings")
-    .select("*, boats(name, captain_name, captain_whatsapp, owner_id)")
-    .order("created_at", { ascending: false });
+    .select("*, boats(name, captain_name, captain_whatsapp, owner_id)");
   if (error) {
     console.error("load bookings failed:", error);
     return;
   }
+  // Newest first. Sorted here rather than by the API: ordering the result of
+  // this function by created_at is refused ("column bookings.created_at does
+  // not exist") although selecting it works — an API quirk with functions
+  // that return a table's rows.
+  data.sort((a, b) => (b.created_at || "").localeCompare(a.created_at || ""));
   window.__allBookings = data;
   await loadMessages();
   if (currentView === "clients") renderClients(data);
