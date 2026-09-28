@@ -3,7 +3,9 @@ import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from "r
 import { Card, Empty } from "../components/ui";
 import { colors, radius } from "../lib/theme";
 import {
+  IN_NASSAU,
   money,
+  owedIn,
   payWeek,
   splitFare,
   splitTrips,
@@ -31,7 +33,7 @@ export default function EarningsScreen({
   const [offset, setOffset] = React.useState(0);
   const week = payWeek(offset);
   const rows = tripsInWeek(trips, offset);
-  const split = splitTrips(rows, boat);
+  const split = splitTrips(rows, boat, week.start);
 
   // Each trip keeps the rate it closed out at, so a week can legitimately span
   // two rates. Name the rate only when there's one of it to name.
@@ -45,7 +47,7 @@ export default function EarningsScreen({
   const settled = rows.length > 0 && rows.every((t) => t.paid_out_at);
 
   const dayMonth = (d: Date) =>
-    d.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
+    d.toLocaleDateString(undefined, { ...IN_NASSAU, weekday: "short", month: "short", day: "numeric" });
 
   return (
     <ScrollView
@@ -120,7 +122,10 @@ export default function EarningsScreen({
         <Empty>No finished runs in this week.</Empty>
       ) : (
         <Card>
-          {rows.map((t, i) => (
+          {rows.map((t, i) => {
+            const owed = owedIn(t, week.start);
+            const tip = owed.tip ? t.tip_cents ?? 0 : 0;
+            return (
             <View key={t.id} style={[s.row, i === rows.length - 1 && s.rowLast]}>
               <View style={s.rowLeft}>
                 <Text style={s.rowRoute} numberOfLines={1}>
@@ -129,29 +134,32 @@ export default function EarningsScreen({
                 <Text style={s.rowMeta}>
                   {t.scheduled_at
                     ? new Date(t.scheduled_at).toLocaleDateString(undefined, {
+                        ...IN_NASSAU,
                         weekday: "short",
                         day: "numeric",
                         month: "short",
                       })
                     : "—"}{" "}
                   · {t.passengers ?? "?"} passengers
-                  {t.paid_out_at ? " · paid" : ""}
+                  {t.paid_out_at && !owed.carried ? " · paid" : ""}
+                  {owed.carried ? " · still owed from an earlier week" : ""}
                 </Text>
               </View>
               <View style={s.rowRight}>
-                <Text style={[s.rowMoney, t.paid_out_at && s.rowMoneyPaid]}>
+                <Text style={[s.rowMoney, t.paid_out_at && !owed.carried && s.rowMoneyPaid]}>
                   {money(
-                    splitFare(t.quoted_price_cents ?? 0, tripPct(t, boat)).net + (t.tip_cents ?? 0)
+                    (owed.fare ? splitFare(t.quoted_price_cents ?? 0, tripPct(t, boat)).net : 0) + tip
                   )}
                 </Text>
-                {(t.tip_cents ?? 0) > 0 ? (
-                  <Text style={s.rowTip}>incl. {money(t.tip_cents)} tip</Text>
-                ) : tripPct(t, boat) > 0 ? (
+                {tip > 0 ? (
+                  <Text style={s.rowTip}>{owed.fare ? `incl. ${money(tip)} tip` : "tip"}</Text>
+                ) : owed.fare && tripPct(t, boat) > 0 ? (
                   <Text style={s.rowGross}>of {money(t.quoted_price_cents)}</Text>
                 ) : null}
               </View>
             </View>
-          ))}
+            );
+          })}
         </Card>
       )}
 

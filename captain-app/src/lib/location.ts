@@ -53,8 +53,11 @@ export async function locate(): Promise<Fix | null> {
 
   if (!position) {
     // Out at sea a precise fix can be slow. A slightly old position a few
-    // hundred metres out still tells a passenger the boat is coming.
-    position = await Location.getLastKnownPositionAsync().catch(() => null);
+    // hundred metres out still tells a passenger the boat is coming — but only
+    // slightly old. The database stamps whatever arrives as "now", so a fix
+    // from an hour ago would reach the passenger as "just now". Two minutes is
+    // the most we'll pass off as current; beyond that, report nothing.
+    position = await Location.getLastKnownPositionAsync({ maxAge: 2 * 60 * 1000 }).catch(() => null);
   }
   if (!position) return null;
 

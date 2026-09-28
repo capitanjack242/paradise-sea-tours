@@ -1,18 +1,26 @@
 import React from "react";
 import { StatusBar } from "expo-status-bar";
-import { Pressable, SafeAreaView, StyleSheet, Text, View } from "react-native";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from "react-native";
 import BookScreen from "./src/screens/BookScreen";
 import PaymentScreen from "./src/screens/PaymentScreen";
 import MessagesScreen, { type Channel } from "./src/screens/MessagesScreen";
-import { fetchTrip, rateTrip, sendTripMessage, type TripMessage, type TripView } from "./src/lib/trip";
+import {
+  fetchTrip,
+  forgetTrip,
+  rateTrip,
+  savedTrips,
+  sendTripMessage,
+  showTrip,
+  type TripMessage,
+  type TripView,
+} from "./src/lib/trip";
+import { IN_NASSAU } from "./src/lib/nassau";
 import { colors, radius } from "./src/lib/theme";
 
 /* Three tabs: ask for a boat, settle up for it, and talk to whoever is running
    it. The third was missing — the Payment screen promised a captain "reachable
    in Messages" and there was nowhere to reach him. */
 
-const TRIP_TOKEN_KEY = "paradise.trip.token";
 type Tab = "book" | "pay" | "messages";
 
 /** Replies that have arrived since the passenger last wrote — the badge. */
@@ -35,20 +43,43 @@ export default function App() {
   // Lifted here so Pay and the tip buttons can open Messages with a line ready.
   const [channel, setChannel] = React.useState<Channel>("office");
   const [draft, setDraft] = React.useState("");
+  // Every trip this phone has booked, for the switcher, and which one is showing.
+  const [others, setOthers] = React.useState<{ token: string; trip: TripView }[]>([]);
+  const [current, setCurrent] = React.useState<string | null>(null);
 
-  const load = React.useCallback(async (showSpinner = true) => {
+  /** `all` also refreshes the other saved trips — the switcher's labels. The
+      fifteen-second poll only needs the one on screen. */
+  const load = React.useCallback(async (showSpinner = true, all = showSpinner) => {
     if (showSpinner) setLoading(true);
     try {
-      const token = await AsyncStorage.getItem(TRIP_TOKEN_KEY);
-      if (!token) {
+      const saved = await savedTrips();
+      setCurrent(saved.current);
+      if (!saved.current) {
         setTrip(null);
         return;
       }
-      const next = await fetchTrip(token);
+      const next = await fetchTrip(saved.current);
       // Only a real "no such trip" clears the screen. A request that failed —
       // one bar of signal on a dock — keeps whatever was already showing.
       if (next !== null) setTrip(next);
-      else setTrip(null);
+      else {
+        await forgetTrip(saved.current);
+        setTrip(null);
+      }
+      if (all && saved.tokens.length > 1) {
+        const found = await Promise.all(
+          saved.tokens.map(async (token) => {
+            try {
+              const t = token === saved.current ? next : await fetchTrip(token);
+              if (t === null) await forgetTrip(token);
+              return t ? { token, trip: t } : null;
+            } catch {
+              return null; // a dropped request is not a deleted trip
+            }
+          })
+        );
+        setOthers(found.filter((x): x is { token: string; trip: TripView } => x !== null));
+      }
     } catch (e: any) {
       console.warn("could not load the trip:", e?.message ?? e);
     } finally {
@@ -56,6 +87,13 @@ export default function App() {
       setRefreshing(false);
     }
   }, []);
+
+  async function switchTo(token: string) {
+    await showTrip(token);
+    setCurrent(token);
+    setDraft("");
+    load(true, false);
+  }
 
   React.useEffect(() => {
     load();
@@ -78,7 +116,7 @@ export default function App() {
   }
 
   async function withToken<T>(fn: (token: string) => Promise<T>): Promise<T> {
-    const token = await AsyncStorage.getItem(TRIP_TOKEN_KEY);
+    const { current: token } = await savedTrips();
     if (!token) throw new Error("We've lost the link to that trip.");
     return fn(token);
   }
@@ -89,13 +127,38 @@ export default function App() {
     <SafeAreaView style={s.root}>
       <StatusBar style="dark" />
 
+      {/* More than one trip booked from this phone: say which one is showing,
+          and let them switch. Only on the trip tabs — booking is its own thing. */}
+      {tab !== "book" && others.length > 1 ? (
+        <ScrollView
+          horizontal
+          style={s.tripsBar}
+          contentContainerStyle={s.tripsBarInner}
+          showsHorizontalScrollIndicator={false}
+        >
+          {others.map(({ token, trip: t }) => (
+            <Pressable
+              key={token}
+              onPress={() => switchTo(token)}
+              style={[s.tripChip, token === current && s.tripChipOn]}
+              accessibilityRole="button"
+              accessibilityState={{ selected: token === current }}
+            >
+              <Text style={[s.tripChipText, token === current && s.tripChipTextOn]} numberOfLines={1}>
+                {tripLabel(t)}
+              </Text>
+            </Pressable>
+          ))}
+        </ScrollView>
+      ) : null}
+
       <View style={s.body}>
         {tab === "book" ? (
           /* A booking hands back the key to the trip, so pick it up straight
              away — otherwise the Payment tab sits empty until the next launch. */
           <BookScreen
             onBooked={() => {
-              load(false);
+              load(false, true);
             }}
           />
         ) : tab === "pay" ? (
@@ -143,7 +206,7 @@ export default function App() {
           active={tab === "pay"}
           onPress={() => {
             setTab("pay");
-            load(false);
+            load(false, true);
           }}
         />
         <Tab
@@ -155,6 +218,20 @@ export default function App() {
       </View>
     </SafeAreaView>
   );
+}
+
+/** "Sat 10:30 AM · Cruise Port → Rose Island" — enough to tell two trips apart. */
+function tripLabel(t: TripView): string {
+  const short = (place: string | null) => (place ?? "?").replace(/^Nassau /, "").split(/ [&/(]/)[0];
+  const when = t.scheduled_at
+    ? new Date(t.scheduled_at).toLocaleString(undefined, {
+        ...IN_NASSAU,
+        weekday: "short",
+        hour: "numeric",
+        minute: "2-digit",
+      })
+    : "";
+  return `${when ? `${when} · ` : ""}${short(t.pickup)} → ${short(t.destination)}`;
 }
 
 function Tab({
@@ -185,6 +262,19 @@ function Tab({
 const s = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.white },
   body: { flex: 1 },
+  tripsBar: { flexGrow: 0, borderBottomWidth: 1, borderBottomColor: colors.line },
+  tripsBarInner: { gap: 8, paddingHorizontal: 10, paddingVertical: 8 },
+  tripChip: {
+    paddingVertical: 7,
+    paddingHorizontal: 12,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: colors.line,
+    backgroundColor: colors.foam,
+  },
+  tripChipOn: { backgroundColor: colors.deep, borderColor: colors.deep },
+  tripChipText: { fontSize: 13, fontWeight: "600", color: colors.muted },
+  tripChipTextOn: { color: colors.white },
   tabs: {
     flexDirection: "row",
     gap: 8,

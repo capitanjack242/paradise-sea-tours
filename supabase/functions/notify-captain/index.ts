@@ -2,7 +2,7 @@
 // have to open the app to discover.
 //
 // Two Database Webhooks point here (Database → Webhooks in the dashboard):
-//   • messages / INSERT  — someone wrote on a trip they're running
+//   • messages / INSERT  — someone wrote to them on a trip they're running
 //   • bookings / UPDATE   — a run was confirmed to them
 //
 // Required secrets (supabase secrets set …):
@@ -124,6 +124,11 @@ Deno.serve(async (req: Request) => {
   if (table === "messages") {
     // A captain doesn't need telling about his own message.
     if (rec.sender === "captain") return json({ skipped: "own message" });
+    // Only his own side of the conversation. A passenger writing to the office
+    // — "the captain was late", "can I pay cash" — is not his to read, and a
+    // push notification is a way of reading it. The database already hides the
+    // office channel from him; this was the one path that didn't.
+    if (rec.channel !== "captain") return json({ skipped: "office channel" });
 
     const { data: booking } = await admin
       .from("bookings")

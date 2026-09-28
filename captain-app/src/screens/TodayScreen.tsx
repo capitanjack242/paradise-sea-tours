@@ -4,6 +4,7 @@ import TripCard from "../components/TripCard";
 import { Card, Empty, Switch } from "../components/ui";
 import { colors, radius } from "../lib/theme";
 import {
+  IN_NASSAU,
   awaitingReply,
   money,
   payWeek,
@@ -55,13 +56,14 @@ export default function TodayScreen({
   const today = todaysTrips(trips);
   const ahead = upcomingTrips(trips);
   const thisWeek = tripsInWeek(trips, 0);
-  const { payday } = payWeek(0);
+  const { payday, start: weekStart } = payWeek(0);
   // Same figure the Earnings tab leads with: what he's actually paid. Each trip
   // is split at the rate it was closed out at, not today's.
-  const week = splitTrips(thisWeek, boat);
+  const week = splitTrips(thisWeek, boat, weekStart);
 
   const since = boat?.availability_changed_at
     ? new Date(boat.availability_changed_at).toLocaleString(undefined, {
+        ...IN_NASSAU,
         weekday: "short",
         hour: "numeric",
         minute: "2-digit",
@@ -109,7 +111,7 @@ export default function TodayScreen({
         <View style={s.stripRight}>
           <Text style={s.stripLab}>Paid</Text>
           <Text style={s.stripSmall}>
-            {payday.toLocaleDateString(undefined, { weekday: "short", day: "numeric", month: "short" })}
+            {payday.toLocaleDateString(undefined, { ...IN_NASSAU, weekday: "short", day: "numeric", month: "short" })}
           </Text>
         </View>
       </View>

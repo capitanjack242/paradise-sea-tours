@@ -29,6 +29,7 @@ import {
   type TripType,
 } from "../lib/bookings";
 import { checkPermission, locate, type Fix } from "../lib/location";
+import { rememberTrip } from "../lib/trip";
 import { nassauDayAt } from "../lib/nassau";
 import { colors, radius } from "../lib/theme";
 
@@ -47,8 +48,6 @@ function toDate(day: string, time: string): Date {
   return nassauDayAt(day === "Tomorrow" ? 1 : 0, time);
 }
 
-/** Where the key to the trip lives once we have one. Read by App.tsx. */
-const TRIP_TOKEN_KEY = "paradise.trip.token";
 const CONTACT_NAME_KEY = "paradise.contact.name";
 const CONTACT_PHONE_KEY = "paradise.contact.phone";
 
@@ -128,7 +127,7 @@ export default function BookScreen({ onBooked }: { onBooked?: () => void }) {
   const route = matchRoute(routes, pickup, destination);
   const fare = quoteCents(route, passengers, tripType);
   const { vat, total } = withVat(fare, vatPct);
-  const perPerson = route?.price_cents ?? null;
+  const perPerson = fare != null ? route?.price_cents ?? null : null;
 
   /** Everything about the trip except who's taking it — checked before sign-in. */
   function validateTrip(): { scheduledAt: Date; returnAt: Date | null } | null {
@@ -177,10 +176,11 @@ export default function BookScreen({ onBooked }: { onBooked?: () => void }) {
         notes: notes.trim() || undefined,
         location: where,
       });
-      // The key to the trip, kept on the phone. Without this the payment tab,
-      // the captain thread and tips would all stay empty forever.
+      // The key to the trip, kept on the phone alongside any earlier ones.
+      // Without it the payment tab, the captain thread and tips would all stay
+      // empty forever.
+      await rememberTrip(token);
       await AsyncStorage.multiSet([
-        [TRIP_TOKEN_KEY, token],
         [CONTACT_NAME_KEY, contactName],
         [CONTACT_PHONE_KEY, contactPhone],
       ]);
@@ -316,6 +316,8 @@ export default function BookScreen({ onBooked }: { onBooked?: () => void }) {
               <Text style={s.fareNote}>
                 {total != null
                   ? "Fixed price, VAT included. Nothing charged until a captain says yes."
+                  : tripType === "Private charter (whole boat)"
+                  ? "Charters are priced for the whole boat — we'll quote it and confirm before you pay anything."
                   : "We'll quote this route and confirm before you pay anything."}
               </Text>
             </>

@@ -30,6 +30,35 @@ const payoutBody = document.getElementById("payoutBody");
 const payoutEmpty = document.getElementById("payoutEmpty");
 const payoutTotals = document.getElementById("payoutTotals");
 
+/* Every time on this board is Nassau's. The office may be run from a laptop
+   still set to another zone, and a pickup at "10:30" has to mean the 10:30 the
+   captain turns up for — and a pay week has to close at midnight in Nassau. */
+const NASSAU_TZ = "America/Nassau";
+const NASSAU = { timeZone: NASSAU_TZ };
+
+/** Minutes Nassau's clock is ahead of UTC at a given instant (-240 or -300). */
+function nassauOffsetMinutes(at) {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: NASSAU_TZ, hourCycle: "h23",
+    year: "numeric", month: "2-digit", day: "2-digit",
+    hour: "2-digit", minute: "2-digit", second: "2-digit",
+  }).formatToParts(at);
+  const n = (t) => Number(parts.find((x) => x.type === t).value);
+  const wall = Date.UTC(n("year"), n("month") - 1, n("day"), n("hour"), n("minute"), n("second"));
+  return Math.round((wall - at.getTime()) / 60000);
+}
+
+/** Nassau's calendar date for an instant, as "YYYY-MM-DD". */
+const nassauDay = (at) => new Intl.DateTimeFormat("en-CA", NASSAU).format(at);
+
+/** The instant Nassau's clocks read midnight on the given calendar day. */
+function nassauMidnight(y, m, d) {
+  const wall = Date.UTC(y, m - 1, d);
+  // Two passes: the offset can differ either side of a clock change.
+  const first = wall - nassauOffsetMinutes(new Date(wall)) * 60000;
+  return new Date(wall - nassauOffsetMinutes(new Date(first)) * 60000);
+}
+
 /** Where a passenger reads their own trip. Their token is the only key. */
 const TRIP_URL = location.origin + location.pathname.replace(/control\/$/, "trip/");
 
@@ -95,10 +124,12 @@ function startLiveUpdates() {
       { event: "*", schema: "public", table: "bookings" },
       () => scheduleRefresh()
     )
+    // A new message only needs the threads redrawn, not every booking fetched
+    // again — the busiest stream on the board shouldn't be the heaviest.
     .on(
       "postgres_changes",
       { event: "*", schema: "public", table: "messages" },
-      () => scheduleRefresh()
+      () => scheduleMessagesRefresh()
     )
     // Boats change on their own clock — a captain switching on, a position
     // every 45 seconds — and none of that is a reason to rebuild the bookings
@@ -119,7 +150,8 @@ function teardownLiveUpdates() {
   clearInterval(pollTimer);
   clearTimeout(refreshTimer);
   clearTimeout(boatsTimer);
-  pollTimer = refreshTimer = boatsTimer = null;
+  clearTimeout(messagesTimer);
+  pollTimer = refreshTimer = boatsTimer = messagesTimer = null;
   pendingRefresh = false;
   if (realtimeChannel) {
     db.removeChannel(realtimeChannel);
@@ -134,6 +166,15 @@ function scheduleRefresh() {
   refreshTimer = setTimeout(() => refreshUnlessTyping(), 400);
 }
 
+let messagesTimer = null;
+function scheduleMessagesRefresh() {
+  clearTimeout(messagesTimer);
+  messagesTimer = setTimeout(async () => {
+    await loadMessages();
+    if (currentView === "bookings") refreshUnlessTyping(false);
+  }, 400);
+}
+
 /* A boat moved, or a captain switched on or off. Reload the fleet and redraw
    whichever view is looking at it — the Boats tab or the map — without
    touching the bookings list, which may be mid-edit. */
@@ -146,7 +187,8 @@ function scheduleBoatsRefresh() {
   }, 400);
 }
 
-function refreshUnlessTyping() {
+/** `refetch` false redraws from what's already loaded — used when only the threads changed. */
+function refreshUnlessTyping(refetch = true) {
   // Never rebuild the list out from under a field being edited. Re-check on a
   // short timer rather than waiting on a blur/focusout event — if that event
   // never fires the deferred reload would be stuck and the board would go
@@ -161,11 +203,12 @@ function refreshUnlessTyping() {
   if (typing) {
     pendingRefresh = true;
     clearTimeout(refreshTimer);
-    refreshTimer = setTimeout(() => refreshUnlessTyping(), 1500);
+    refreshTimer = setTimeout(() => refreshUnlessTyping(refetch), 1500);
     return;
   }
   pendingRefresh = false;
-  loadBookings();
+  if (refetch) loadBookings();
+  else renderBookings(window.__allBookings || []);
 }
 
 function setLiveStatus(state) {
@@ -244,8 +287,12 @@ async function loadBookings() {
   // showed the world as it was when the page opened — a boat switched on at
   // 8am still read "Unavailable" at noon. Five rows; the cost is nothing.
   await loadBoats();
+  // Through the office-only function, not the table: the table withholds the
+  // passenger's link, number and these notes from every signed-in user, since
+  // captains and the office share one database role. The function checks the
+  // caller is the office before returning anything.
   const { data, error } = await db
-    .from("bookings")
+    .rpc("staff_bookings")
     .select("*, boats(name, captain_name, captain_whatsapp, owner_id)")
     .order("created_at", { ascending: false });
   if (error) {
@@ -268,26 +315,24 @@ async function loadBookings() {
    with Jack as how the business actually runs, not an assumption. */
 const PAY_WEEK_ENDS_ON = 5; // 0 Sun … 5 Fri: the day a week is paid out
 
-/** Midnight on the payday-weekday that opens the pay week `offset` weeks away. */
+/** Midnight in Nassau on the payday-weekday that opens the pay week `offset` weeks away. */
 function payWeekStart(offset = 0) {
-  const d = new Date();
-  d.setHours(0, 0, 0, 0);
-  const back = (d.getDay() - PAY_WEEK_ENDS_ON + 7) % 7;
-  d.setDate(d.getDate() - back + offset * 7);
-  return d;
+  const [y, m, d] = nassauDay(new Date()).split("-").map(Number);
+  const weekday = new Date(Date.UTC(y, m - 1, d)).getUTCDay();
+  const back = (weekday - PAY_WEEK_ENDS_ON + 7) % 7;
+  // Date.UTC normalises an overflowing or negative day into the right month.
+  return nassauMidnight(y, m, d - back + offset * 7);
 }
 
 function payWeek(offset = 0) {
   const start = payWeekStart(offset);
-  const end = new Date(start);
-  end.setDate(end.getDate() + 7); // exclusive: the payday itself opens the next week
-  const lastDay = new Date(end);
-  lastDay.setDate(lastDay.getDate() - 1);
+  const end = payWeekStart(offset + 1); // exclusive: the payday itself opens the next week
+  const lastDay = new Date(end.getTime() - 12 * 3600000); // any moment on the Thursday
   return { start, end, payday: end, lastDay };
 }
 
 const dayMonth = (d) =>
-  d.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
+  d.toLocaleDateString(undefined, { ...NASSAU, weekday: "short", month: "short", day: "numeric" });
 
 document.getElementById("weekPrev").addEventListener("click", () => {
   weekOffset -= 1;
@@ -332,11 +377,13 @@ function buildPayout() {
     if (!at) continue;
 
     const inWeek = at >= start && at < end;
-    const tipOwing = (b.tip_cents || 0) > 0 && !b.tip_paid_out_at;
-    // A tip given after its week was paid out would otherwise be stranded in a
-    // settled week nobody opens again. It carries forward into the open week.
-    const strandedTip = !inWeek && at < start && tipOwing && weekOffset === 0;
-    if (!inWeek && !strandedTip) continue;
+    // Money still owed from an earlier week is paid with the open one: a trip
+    // closed out late, a tip given after its Friday, a week somebody forgot to
+    // settle. Otherwise it sits in a week nobody opens again.
+    const carried = weekOffset === 0 && at < start;
+    const fareDue = !b.paid_out_at && (inWeek || carried);
+    const tipDue = (b.tip_cents || 0) > 0 && !b.tip_paid_out_at && (inWeek || carried);
+    if (!inWeek && !fareDue && !tipDue) continue;
 
     const key = b.assigned_boat_id || "unassigned";
     let row = byBoat.get(key);
@@ -352,6 +399,10 @@ function buildPayout() {
         // figure when that happens.
         rates: new Set(),
         trips: [],
+        // Exactly what "Mark paid" will stamp — the same trips the owed figure
+        // was added up from, so the button can never settle money it didn't show.
+        fareDue: [],
+        tipDue: [],
         owedCents: 0,      // net — what actually goes to the boat
         paidCents: 0,      // net, already settled
         grossCents: 0,     // fares before tax — the base commission is taken on
@@ -362,7 +413,7 @@ function buildPayout() {
       byBoat.set(key, row);
     }
     row.trips.push(b);
-    if (inWeek) {
+    if (inWeek || fareDue) {
       const pct = tripPct(b, row.boat);
       row.rates.add(pct);
       // The fare, not the total: commission on VAT would be a cut of a tax bill.
@@ -370,23 +421,25 @@ function buildPayout() {
       row.grossCents += split.gross;
       row.vatCents += b.vat_cents || 0;
       row.commissionCents += split.commission;
-      if (b.paid_out_at) row.paidCents += split.net;
-      else row.owedCents += split.net;
+      if (fareDue) {
+        row.owedCents += split.net;
+        row.fareDue.push(b);
+      } else {
+        row.paidCents += split.net;
+      }
     }
     // Every cent of a tip goes to the boat, so it joins what's owed without
     // passing through the commission split at all.
-    if (tipOwing) {
+    if (tipDue) {
       row.tipCents += b.tip_cents;
       row.owedCents += b.tip_cents;
+      row.tipDue.push(b);
     }
   }
 
   for (const row of byBoat.values()) {
     row.trips.sort((x, y) => (x.scheduled_at || "").localeCompare(y.scheduled_at || ""));
-    row.unpaid = row.trips.filter((t) => !t.paid_out_at);
-    // A trip whose fare was settled but whose tip wasn't is still owed money.
-    row.tipsUnpaid = row.trips.filter((t) => (t.tip_cents || 0) > 0 && !t.tip_paid_out_at);
-    row.settled = row.unpaid.length === 0 && row.tipsUnpaid.length === 0;
+    row.settled = row.fareDue.length === 0 && row.tipDue.length === 0;
     // One rate across the week gets named; a mixture doesn't get flattened into
     // an average that matches none of the trips.
     const rates = [...row.rates];
@@ -478,23 +531,28 @@ function dollars(cents) {
 
 function payoutHtml(r) {
   const open = expandedPayouts.has(r.key);
+  const { start } = payWeek(weekOffset);
   const tripRows = r.trips
     .map((t) => {
+      const fareDue = r.fareDue.includes(t);
+      const tipDue = r.tipDue.includes(t);
+      const carried = new Date(t.scheduled_at) < start;
       const when = t.scheduled_at
         ? new Date(t.scheduled_at).toLocaleString(undefined, {
+        ...NASSAU,
             weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit",
           })
         : "—";
       return `
         <tr>
-          <td>${esc(when)}</td>
+          <td>${esc(when)}${carried ? ` <span class="tip-flag">from an earlier week</span>` : ""}</td>
           <td>${esc(t.pickup || "—")} → ${esc(t.destination || "—")}</td>
           <td>${t.passengers ?? "?"}</td>
-          <td>${t.paid_out_at ? `<span class="pill pill-completed">Paid</span>` : ""}</td>
-          <td class="num${t.paid_out_at ? " unpaid" : ""}">${dollars(
-            (t.paid_out_at ? 0 : splitFare(t.quoted_price_cents || 0, tripPct(t, r.boat)).net) +
-            ((t.tip_cents || 0) > 0 && !t.tip_paid_out_at ? t.tip_cents : 0)
-          )}${(t.tip_cents || 0) > 0 ? ` <span class="tip-flag">+tip</span>` : ""}</td>
+          <td>${t.paid_out_at && !tipDue ? `<span class="pill pill-completed">Paid</span>` : ""}</td>
+          <td class="num${fareDue || tipDue ? "" : " unpaid"}">${dollars(
+            (fareDue ? splitFare(t.quoted_price_cents || 0, tripPct(t, r.boat)).net : 0) +
+            (tipDue ? t.tip_cents : 0)
+          )}${tipDue ? ` <span class="tip-flag">+tip</span>` : ""}</td>
         </tr>`;
     })
     .join("");
@@ -540,7 +598,7 @@ function payoutHtml(r) {
 
 async function markPaid(key, card) {
   const row = buildPayout().find((r) => r.key === key);
-  if (!row || (!row.unpaid.length && !row.tipsUnpaid.length)) return;
+  if (!row || (!row.fareDue.length && !row.tipDue.length)) return;
 
   const stamp = new Date().toISOString();
   card?.classList.add("row-saving");
@@ -548,18 +606,18 @@ async function markPaid(key, card) {
   // Two stamps, because they come apart: a trip whose fare was paid out last
   // Friday can still be carrying a tip that hasn't been handed over.
   const errors = [];
-  if (row.unpaid.length) {
+  if (row.fareDue.length) {
     const { error } = await db
       .from("bookings")
       .update({ paid_out_at: stamp })
-      .in("id", row.unpaid.map((t) => t.id));
+      .in("id", row.fareDue.map((t) => t.id));
     if (error) errors.push(error.message);
   }
-  if (row.tipsUnpaid.length) {
+  if (row.tipDue.length) {
     const { error } = await db
       .from("bookings")
       .update({ tip_paid_out_at: stamp })
-      .in("id", row.tipsUnpaid.map((t) => t.id));
+      .in("id", row.tipDue.map((t) => t.id));
     if (error) errors.push(error.message);
   }
   card?.classList.remove("row-saving");
@@ -569,11 +627,11 @@ async function markPaid(key, card) {
     loadBookings();
     return;
   }
-  for (const t of row.unpaid) {
+  for (const t of row.fareDue) {
     const b = (window.__allBookings || []).find((x) => x.id === t.id);
     if (b) b.paid_out_at = stamp;
   }
-  for (const t of row.tipsUnpaid) {
+  for (const t of row.tipDue) {
     const b = (window.__allBookings || []).find((x) => x.id === t.id);
     if (b) b.tip_paid_out_at = stamp;
   }
@@ -593,7 +651,7 @@ function renderBoats() {
     if (!bk.assigned_boat_id) continue;
     if (["cancelled"].includes(bk.status)) continue;
     const at = bk.scheduled_at ? new Date(bk.scheduled_at) : null;
-    if (!at || at.toDateString() !== new Date().toDateString()) continue;
+    if (!at || nassauDay(at) !== nassauDay(new Date())) continue;
     runsToday.set(bk.assigned_boat_id, (runsToday.get(bk.assigned_boat_id) || 0) + 1);
   }
 
@@ -628,6 +686,7 @@ function boatHtml(b, runs, working) {
 
   const changed = b.availability_changed_at
     ? new Date(b.availability_changed_at).toLocaleString(undefined, {
+        ...NASSAU,
         weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit",
       })
     : null;
@@ -635,7 +694,7 @@ function boatHtml(b, runs, working) {
   // A switch left on since yesterday is a claim worth doubting.
   const stale =
     on && b.availability_changed_at &&
-    new Date(b.availability_changed_at).toDateString() !== new Date().toDateString();
+    nassauDay(new Date(b.availability_changed_at)) !== nassauDay(new Date());
 
   return `
     <article class="boat-card${on ? " is-out" : ""}">
@@ -703,7 +762,7 @@ function boatWhereHtml(b, on, working) {
    that reported twenty minutes ago is still worth seeing — it says roughly
    where she was — but it is not where she is. */
 
-const NASSAU = [25.0793, -77.3383]; // Prince George Wharf, near enough
+const NASSAU_WHARF = [25.0793, -77.3383]; // Prince George Wharf, near enough
 const STALE_MINS = 10;
 
 let fleetMap = null;
@@ -731,7 +790,7 @@ function renderMap() {
   }
 
   if (!fleetMap) {
-    fleetMap = L.map("fleetMap", { scrollWheelZoom: false }).setView(NASSAU, 12);
+    fleetMap = L.map("fleetMap", { scrollWheelZoom: false }).setView(NASSAU_WHARF, 12);
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
       maxZoom: 18,
       attribution: "&copy; OpenStreetMap",
@@ -799,7 +858,7 @@ function renderMap() {
   } else if (drawn.length === 1) {
     fleetMap.setView([drawn[0].last_lat, drawn[0].last_lng], 14);
   } else {
-    fleetMap.setView(NASSAU, 12);
+    fleetMap.setView(NASSAU_WHARF, 12);
   }
 
   countInfo.textContent = `${drawn.length} of ${boatsList.length} reporting`;
@@ -899,7 +958,7 @@ function clientHtml(c) {
   // an upcoming booking the last time we saw them.
   const when = c.lastAt ? new Date(c.lastAt) : null;
   const last = when
-    ? `${when > new Date() ? "next" : "last"} ${when.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}`
+    ? `${when > new Date() ? "next" : "last"} ${when.toLocaleDateString(undefined, { ...NASSAU, month: "short", day: "numeric", year: "numeric" })}`
     : "—";
   const spent = c.spentCents ? `$${(c.spentCents / 100).toFixed(2).replace(/\.00$/, "")}` : "—";
   return `
@@ -934,6 +993,7 @@ function tripsTableHtml(c) {
     const at = b.scheduled_at || b.created_at;
     const when = at
       ? new Date(at).toLocaleString(undefined, {
+        ...NASSAU,
           month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit",
         })
       : "—";
@@ -986,9 +1046,14 @@ function prettyPhone(raw) {
 }
 
 async function loadMessages() {
+  // Every thread ever written is a lot to fetch on every change. The board only
+  // opens threads on live trips and recent ones — a tip can land a week after a
+  // trip — so older conversations stay in the database, not the browser.
+  const since = new Date(Date.now() - 60 * 86400000).toISOString();
   const { data, error } = await db
     .from("messages")
     .select("id, booking_id, sender, body, channel, created_at")
+    .gte("created_at", since)
     .order("created_at");
   if (error) {
     console.error("load messages failed:", error);
@@ -1056,11 +1121,12 @@ function paymentHtml(b) {
 
   if (b.paid_at) {
     const when = new Date(b.paid_at).toLocaleString(undefined, {
+        ...NASSAU,
       month: "short", day: "numeric", hour: "numeric", minute: "2-digit",
     });
     return `<div class="pay-row is-paid">
       <span class="pay-state">✓ Paid ${dollars(paid)}</span>
-      <span class="pay-when">${esc(when)} · captain reachable</span>
+      <span class="pay-when">${esc(when)}${b.status === "completed" ? "" : " · captain reachable"}</span>
       ${outstanding > 0 ? `<span class="pay-owing">${dollars(outstanding)} still outstanding</span>` : ""}
     </div>`;
   }
@@ -1137,6 +1203,7 @@ function threadHtml(b) {
     ? thread
         .map((m) => {
           const at = new Date(m.created_at).toLocaleString(undefined, {
+        ...NASSAU,
             month: "short", day: "numeric", hour: "numeric", minute: "2-digit",
           });
           const who = m.sender === "customer" ? esc(b.contact_name || "Passenger")
@@ -1209,6 +1276,7 @@ function offerHtml(b) {
 
 function shortTime(iso) {
   return new Date(iso).toLocaleString(undefined, {
+        ...NASSAU,
     weekday: "short", hour: "numeric", minute: "2-digit",
   });
 }
@@ -1470,35 +1538,6 @@ function cardMessage(card, text) {
 }
 
 // ── rendering helpers ────────────────────────────────────────────────────
-function customerConfirmMessage(b) {
-  const when = b.scheduled_at
-    ? new Date(b.scheduled_at).toLocaleString(undefined, {
-        weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit",
-      })
-    : null;
-  const lines = [`Hi ${b.contact_name || "there"}! This is Paradise Sea Express confirming your booking:`];
-  lines.push(`${b.pickup || "?"} → ${b.destination || "?"}`);
-  if (when) lines.push(when);
-  if (b.return_at) {
-    lines.push(`Back at ${new Date(b.return_at).toLocaleString(undefined, {
-      hour: "numeric", minute: "2-digit",
-    })}`);
-  }
-  if (b.boats?.name) {
-    lines.push(`Boat: ${b.boats.name}${b.boats.captain_name ? ` (Capt. ${b.boats.captain_name})` : ""}`);
-  }
-  if (b.quoted_price_cents != null) {
-    lines.push(
-      b.vat_cents
-        ? `Price: $${(b.total_cents / 100).toFixed(2)} ` +
-          `($${(b.quoted_price_cents / 100).toFixed(2)} + $${(b.vat_cents / 100).toFixed(2)} VAT)`
-        : `Price: $${(b.quoted_price_cents / 100).toFixed(2)}`
-    );
-  }
-  lines.push("See you soon!");
-  return lines.join("\n");
-}
-
 /* Where the passenger said they were standing, if they shared it.
    Dispatch sees this on any live trip, without waiting for a captain to accept
    — when a captain phones in saying he can't find anyone, the office is who
@@ -1534,10 +1573,12 @@ function howOld(minutes) {
 function cardHtml(b) {
   const when = b.scheduled_at
     ? new Date(b.scheduled_at).toLocaleString(undefined, {
+        ...NASSAU,
         weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit",
       })
     : "No time given";
   const received = new Date(b.created_at).toLocaleString(undefined, {
+        ...NASSAU,
     month: "short", day: "numeric", hour: "numeric", minute: "2-digit",
   });
   const price = b.quoted_price_cents != null ? (b.quoted_price_cents / 100).toFixed(2) : "";
@@ -1585,8 +1626,16 @@ function cardHtml(b) {
             <label>Fare</label>
             <div class="ro-value">${price ? `$${price}` : "—"}</div>
           </div>
+          ${b.status === "completed"
+            // The rating and the tip only exist after the ride, so a finished
+            // card is exactly where the office needs to see them — and the tip
+            // is recorded here, since until the card link exists it's the
+            // office that takes it.
+            ? `${paymentHtml(b)}${ratingHtml(b)}${tipHtml(b)}`
+            : ""}
         </div>
-      </div>`
+      </div>
+      <p class="card-msg" hidden></p>`
     : `<div class="card-controls">
         <div class="control">
           <label>Boat</label>
@@ -1639,6 +1688,7 @@ function cardHtml(b) {
         <div class="trip-meta">${when} · ${b.passengers ?? "?"} pax · ${esc(b.trip_type || "")}</div>
         ${b.return_at
           ? `<div class="return-leg">↩ Collect again ${esc(new Date(b.return_at).toLocaleString(undefined, {
+        ...NASSAU,
                weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }))}</div>`
           : b.trip_type === "Round trip"
           ? `<div class="return-leg missing">↩ Round trip with no return time — check with the customer</div>`

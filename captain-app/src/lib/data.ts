@@ -251,9 +251,43 @@ export async function setAvailability(boatId: string, available: boolean): Promi
 /* ── shaping ──────────────────────────────────────────────────────────────
    Kept next to the queries so the screens stay about layout. */
 
+/* Every date and time in this app is Nassau's. A captain's phone is almost
+   always set to it already, but a pay week closing at midnight has to close at
+   the same moment on his phone as on the office's board. */
+export const NASSAU_TZ = "America/Nassau";
+export const IN_NASSAU = { timeZone: NASSAU_TZ } as const;
+
+/** Nassau's calendar date for an instant, as "YYYY-MM-DD". */
+export const nassauDay = (at: Date): string => new Intl.DateTimeFormat("en-CA", IN_NASSAU).format(at);
+
+/** Minutes Nassau's clock is ahead of UTC at a given instant (-240 or -300). */
+function nassauOffsetMinutes(at: Date): number {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: NASSAU_TZ,
+    hourCycle: "h23",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  }).formatToParts(at);
+  const n = (t: string) => Number(parts.find((p) => p.type === t)?.value);
+  const wall = Date.UTC(n("year"), n("month") - 1, n("day"), n("hour"), n("minute"), n("second"));
+  return Math.round((wall - at.getTime()) / 60000);
+}
+
+/** The instant Nassau's clocks read midnight on the given calendar day. */
+function nassauMidnight(y: number, m: number, d: number): Date {
+  const wall = Date.UTC(y, m - 1, d);
+  // Two passes: the offset can differ either side of a clock change.
+  const first = wall - nassauOffsetMinutes(new Date(wall)) * 60000;
+  return new Date(wall - nassauOffsetMinutes(new Date(first)) * 60000);
+}
+
 export const isToday = (iso: string | null): boolean => {
   if (!iso) return false;
-  return new Date(iso).toDateString() === new Date().toDateString();
+  return nassauDay(new Date(iso)) === nassauDay(new Date());
 };
 
 /** Today's work, including a run that started this morning and overran. */
@@ -281,20 +315,32 @@ export function upcomingTrips(trips: Trip[]): Trip[] {
 const PAY_WEEK_ENDS_ON = 5; // 0 Sun … 5 Fri
 
 export function payWeekStart(offset = 0): Date {
-  const d = new Date();
-  d.setHours(0, 0, 0, 0);
-  const back = (d.getDay() - PAY_WEEK_ENDS_ON + 7) % 7;
-  d.setDate(d.getDate() - back + offset * 7);
-  return d;
+  const [y, m, d] = nassauDay(new Date()).split("-").map(Number);
+  const weekday = new Date(Date.UTC(y, m - 1, d)).getUTCDay();
+  const back = (weekday - PAY_WEEK_ENDS_ON + 7) % 7;
+  // Date.UTC normalises an overflowing or negative day into the right month.
+  return nassauMidnight(y, m, d - back + offset * 7);
 }
 
 export function payWeek(offset = 0) {
   const start = payWeekStart(offset);
-  const end = new Date(start);
-  end.setDate(end.getDate() + 7);
-  const lastDay = new Date(end);
-  lastDay.setDate(lastDay.getDate() - 1);
+  const end = payWeekStart(offset + 1);
+  const lastDay = new Date(end.getTime() - 12 * 3600000); // any moment on the Thursday
   return { start, end, lastDay, payday: end };
+}
+
+/**
+ * What of a trip is counted in the week being looked at.
+ *
+ * A trip in the week counts in full. A trip from an earlier week counts only
+ * for what hasn't been paid yet — a fare closed out late, a tip given after
+ * its Friday — because that is paid with the open week. Same rule as the
+ * dispatch board, so the figure here is the figure the office pays.
+ */
+export function owedIn(t: Trip, weekStart: Date): { fare: boolean; tip: boolean; carried: boolean } {
+  const carried = !!t.scheduled_at && new Date(t.scheduled_at) < weekStart;
+  if (!carried) return { fare: true, tip: true, carried };
+  return { fare: !t.paid_out_at, tip: (t.tip_cents ?? 0) > 0 && !t.tip_paid_out_at, carried };
 }
 
 export function tripsInWeek(trips: Trip[], offset = 0): Trip[] {
@@ -303,7 +349,11 @@ export function tripsInWeek(trips: Trip[], offset = 0): Trip[] {
     .filter((t) => {
       if (t.status !== "completed" || !t.scheduled_at) return false;
       const at = new Date(t.scheduled_at);
-      return at >= start && at < end;
+      if (at >= start && at < end) return true;
+      // Money still owed from an earlier week rides with the open one.
+      if (offset !== 0 || at >= start) return false;
+      const owed = owedIn(t, start);
+      return owed.fare || owed.tip;
     })
     .sort((a, b) => (b.scheduled_at ?? "").localeCompare(a.scheduled_at ?? ""));
 }
@@ -318,11 +368,14 @@ export const sumCents = (trips: Trip[]): number =>
  * than a percentage of a total. Tips are added afterwards and untouched by any
  * of it — a tip is the passenger's money going straight to the captain.
  */
-export function splitTrips(trips: Trip[], boat: Boat | null): WeekTotal {
+export function splitTrips(trips: Trip[], boat: Boat | null, weekStart?: Date): WeekTotal {
   return trips.reduce<WeekTotal>(
     (acc, t) => {
-      const s = splitFare(t.quoted_price_cents ?? 0, tripPct(t, boat));
-      const tip = t.tip_cents ?? 0;
+      const owed = weekStart ? owedIn(t, weekStart) : { fare: true, tip: true };
+      const s = owed.fare
+        ? splitFare(t.quoted_price_cents ?? 0, tripPct(t, boat))
+        : { gross: 0, commission: 0, net: 0 };
+      const tip = owed.tip ? t.tip_cents ?? 0 : 0;
       return {
         gross: acc.gross + s.gross,
         commission: acc.commission + s.commission,

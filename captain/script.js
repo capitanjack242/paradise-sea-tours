@@ -10,6 +10,10 @@ const SUPABASE_URL = "https://fjdoaonnoezbbitbawzs.supabase.co";
 const SUPABASE_KEY = "sb_publishable_RjTM-t2isu1Teq9P5z37PQ_h_Oy3EpP";
 const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+/* Every time on this board is Nassau's, whatever the phone is set to. */
+const NASSAU = { timeZone: "America/Nassau" };
+const nassauDay = (at) => new Intl.DateTimeFormat("en-CA", NASSAU).format(at);
+
 const loginView = document.getElementById("loginView");
 const tripsView = document.getElementById("tripsView");
 const loginForm = document.getElementById("loginForm");
@@ -100,6 +104,7 @@ function renderAvailability() {
 
   const since = myBoat.availability_changed_at
     ? new Date(myBoat.availability_changed_at).toLocaleString(undefined, {
+        ...NASSAU,
         weekday: "short", hour: "numeric", minute: "2-digit",
       })
     : null;
@@ -169,10 +174,16 @@ document.getElementById("tabs").addEventListener("click", (e) => {
 // ── data ─────────────────────────────────────────────────────────────────
 async function loadTrips() {
   // Row-level security limits this to trips assigned to the signed-in captain,
-  // so there's no filter here to get wrong.
+  // so there's no filter here to get wrong. The columns are named because the
+  // table withholds the passenger's link, number and the office's notes from a
+  // captain — asking for "*" would be refused outright.
   const { data, error } = await db
     .from("bookings")
-    .select("*, boats(name)")
+    .select(
+      "id, status, pickup, destination, scheduled_at, return_at, passengers, trip_type, " +
+        "contact_name, notes, quoted_price_cents, paid_at, offered_at, captain_response, " +
+        "decline_reason, pickup_lat, pickup_lng, located_at, boats(name)"
+    )
     .order("scheduled_at", { ascending: true });
   if (error) {
     console.error("load trips failed:", error);
@@ -243,6 +254,7 @@ function threadHtml(b) {
   const bubbles = t.length
     ? t.map((m) => {
         const at = new Date(m.created_at).toLocaleString(undefined, {
+        ...NASSAU,
           hour: "numeric", minute: "2-digit",
         });
         const who = m.sender === "customer" ? esc(b.contact_name || "Passenger")
@@ -280,9 +292,7 @@ function threadHtml(b) {
 
 function isToday(iso) {
   if (!iso) return false;
-  const d = new Date(iso);
-  const now = new Date();
-  return d.toDateString() === now.toDateString();
+  return nassauDay(new Date(iso)) === nassauDay(new Date());
 }
 
 function matchesTab(b) {
@@ -432,6 +442,7 @@ function howOld(minutes) {
 function tripHtml(b) {
   const when = b.scheduled_at
     ? new Date(b.scheduled_at).toLocaleString(undefined, {
+        ...NASSAU,
         weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit",
       })
     : "No time given";
@@ -467,6 +478,7 @@ function tripHtml(b) {
       })()}
       ${b.return_at
         ? `<div class="return-leg">↩ Collect them again at ${esc(new Date(b.return_at).toLocaleString(undefined, {
+        ...NASSAU,
              weekday: "short", hour: "numeric", minute: "2-digit" }))}</div>`
         : b.trip_type === "Round trip"
         ? `<div class="return-leg missing">↩ Round trip — no return time given, check with the office</div>`

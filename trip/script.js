@@ -8,7 +8,16 @@ const SUPABASE_URL = "https://fjdoaonnoezbbitbawzs.supabase.co";
 const SUPABASE_KEY = "sb_publishable_RjTM-t2isu1Teq9P5z37PQ_h_Oy3EpP";
 const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-const token = new URLSearchParams(location.search).get("t");
+const params = new URLSearchParams(location.search);
+const token = params.get("t");
+
+// Arrived straight from the website's booking form. Say "save this", then tidy
+// the flag out of the address so a bookmark or a shared link doesn't repeat it.
+if (params.get("new") === "1") {
+  document.getElementById("savePage").hidden = false;
+  params.delete("new");
+  history.replaceState(null, "", `${location.pathname}?${params}`);
+}
 
 /* Every time on this page is Nassau's. The person reading it may be standing
    on the dock with a phone still set to Berlin, and "10:30" has to mean the

@@ -2,7 +2,7 @@ import React from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { BigButton, Card, Pill } from "./ui";
 import { colors, radius } from "../lib/theme";
-import { howOld, isBeingAsked, money, waitingAt, type Message, type Trip } from "../lib/data";
+import { IN_NASSAU, howOld, isBeingAsked, money, waitingAt, type Message, type Trip } from "../lib/data";
 import { openMap } from "../lib/maps";
 
 /* One job. At most one action is ever offered — whichever the trip is actually
@@ -11,6 +11,7 @@ import { openMap } from "../lib/maps";
 const timeOf = (iso: string | null, withDay = false) =>
   iso
     ? new Date(iso).toLocaleString(undefined, {
+        ...IN_NASSAU,
         ...(withDay ? { weekday: "short" as const } : {}),
         hour: "numeric",
         minute: "2-digit",

@@ -41,19 +41,29 @@ through the account. Change the rate with
 `update app_settings set vat_pct = <n>;` — trips already taken keep the rate
 they were taken at.
 
-Security: RLS on every table. Public can read active services and create a
-booking request; customers see their own bookings; captains see assigned ones;
-admins see everything (`is_admin()`).
+Security: RLS on every table, and two rules about columns on top of it.
 
-## Setup (one-time)
-1. Create a free project at <https://supabase.com/dashboard>.
-2. In the SQL Editor, run `migrations/0001_init.sql` then `seed.sql`
-   (or use the Supabase CLI — `supabase db push`).
-3. Grab from Project Settings → API:
-   - **Project URL** and **anon public key** → safe for the app/control frontends.
-   - **service_role key** → SECRET, server-side only. Never commit or ship to the browser.
+- **What a captain may change** is a list of what IS allowed (answering an offer,
+  marking a confirmed trip aboard, then finished), not a list of what isn't. A
+  column added later is locked to captains until someone decides otherwise.
+- **What a captain may read**: the table withholds `access_token`,
+  `contact_phone` and `dispatch_notes` from every signed-in user, because the
+  office and the captains share the `authenticated` role. The office reads the
+  full row through `staff_bookings()`, which checks `is_admin()` itself. A
+  column added to `bookings` later is NOT readable through the API until it is
+  granted: `grant select (new_column) on bookings to authenticated;`
+- **What a stranger's booking may carry**: `public_booking_intake()` resets
+  everything on a public booking except the fields a passenger chooses, caps
+  lengths, and refuses more than three requests from one number in ten minutes.
 
-## Next
-- `app/` — customer booking PWA (reads `services`, creates `bookings`).
-- `control/` — staff view to quote/confirm/assign bookings.
-- Stripe payments + (Phase 3) realtime dispatch & captain app.
+## Applying changes
+Migrations are applied with the CLI, which is linked to the project:
+```bash
+TMPDIR=$HOME/.cache/supabase-tmp/ supabase db push --linked --dry-run   # see what would run
+TMPDIR=$HOME/.cache/supabase-tmp/ supabase db push --linked
+```
+The `TMPDIR` is needed on this Mac because Colima's Docker VM only shares /Users.
+
+To test a migration first, `supabase db dump --linked -f schema.sql` gives the
+live schema (no data); load it into a local `public.ecr.aws/supabase/postgres`
+container and run the migration against that.

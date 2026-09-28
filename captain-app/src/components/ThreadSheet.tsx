@@ -11,7 +11,7 @@ import {
   View,
 } from "react-native";
 import { colors, radius } from "../lib/theme";
-import type { Message, Trip } from "../lib/data";
+import { IN_NASSAU, type Message, type Trip } from "../lib/data";
 
 /* The only channel to a passenger — captains are never given a phone number.
 
@@ -98,6 +98,7 @@ export default function ThreadSheet({
                     ? "Office"
                     : "You";
                 const at = new Date(m.created_at).toLocaleString(undefined, {
+        ...IN_NASSAU,
                   hour: "numeric",
                   minute: "2-digit",
                 });

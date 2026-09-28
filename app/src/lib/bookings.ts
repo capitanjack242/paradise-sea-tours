@@ -89,6 +89,9 @@ export function quoteCents(
   tripType: TripType
 ): number | null {
   if (!route?.price_cents) return null;
+  // A charter is the whole boat by the hour, not seats on a route. The price
+  // list doesn't cover it, so the office quotes it — the database does the same.
+  if (tripType === "Private charter (whole boat)") return null;
   const legs = tripType === "Round trip" ? 2 : 1;
   return route.price_cents * passengers * legs;
 }

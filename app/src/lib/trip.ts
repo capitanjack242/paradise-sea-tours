@@ -1,4 +1,57 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { supabase } from "./supabase";
+
+/* ── which trips this phone holds the keys to ─────────────────────────────
+   One key per booking. The app used to keep only the latest, so booking the
+   ride back into town replaced the ride out, and the first trip — its messages,
+   its payment, its tip — became unreachable from the phone that booked it. */
+
+/** The trip on screen. Kept under the original key so older installs carry on. */
+const CURRENT_TRIP_KEY = "paradise.trip.token";
+/** Every trip booked from this phone, newest first. */
+const ALL_TRIPS_KEY = "paradise.trips";
+/** Enough to cover a holiday's worth of rides without growing forever. */
+const KEEP_TRIPS = 10;
+
+export async function savedTrips(): Promise<{ tokens: string[]; current: string | null }> {
+  const [[, list], [, current]] = await AsyncStorage.multiGet([ALL_TRIPS_KEY, CURRENT_TRIP_KEY]);
+  let tokens: string[] = [];
+  try {
+    const parsed = JSON.parse(list ?? "[]");
+    if (Array.isArray(parsed)) tokens = parsed.filter((t) => typeof t === "string");
+  } catch {
+    // A damaged list is not worth losing the current trip over.
+  }
+  // An install from before the list existed has only the single key.
+  if (current && !tokens.includes(current)) tokens.unshift(current);
+  return { tokens, current: current ?? tokens[0] ?? null };
+}
+
+/** A new booking: first in the list, and the one on screen. */
+export async function rememberTrip(token: string): Promise<void> {
+  const { tokens } = await savedTrips();
+  const next = [token, ...tokens.filter((t) => t !== token)].slice(0, KEEP_TRIPS);
+  await AsyncStorage.multiSet([
+    [ALL_TRIPS_KEY, JSON.stringify(next)],
+    [CURRENT_TRIP_KEY, token],
+  ]);
+}
+
+/** Put a different saved trip on screen. */
+export async function showTrip(token: string): Promise<void> {
+  await AsyncStorage.setItem(CURRENT_TRIP_KEY, token);
+}
+
+/** A key the database no longer recognises — the booking was removed. */
+export async function forgetTrip(token: string): Promise<void> {
+  const { tokens, current } = await savedTrips();
+  const next = tokens.filter((t) => t !== token);
+  await AsyncStorage.setItem(ALL_TRIPS_KEY, JSON.stringify(next));
+  if (current === token) {
+    if (next[0]) await AsyncStorage.setItem(CURRENT_TRIP_KEY, next[0]);
+    else await AsyncStorage.removeItem(CURRENT_TRIP_KEY);
+  }
+}
 
 /* A passenger's own trip, read the same way the web trip page reads it: through
    the token-keyed function, never a table. The app has no more access to the

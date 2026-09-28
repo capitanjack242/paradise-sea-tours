@@ -151,6 +151,9 @@ function currentFare() {
   const d = Object.fromEntries(new FormData(form).entries());
   const none = { fare: null, vat: null, total: null, route: undefined };
   if (!d.pickup || !d.destination) return none;
+  // A charter is the whole boat by the hour; the per-seat price list doesn't
+  // cover it, and the office quotes it before anything is paid.
+  if (d.triptype === "Private charter (whole boat)") return none;
   const route = matchRoute(d.pickup, d.destination);
   if (!route?.price_cents) return { ...none, route };
   const legs = d.triptype === "Round trip" ? 2 : 1;
@@ -183,6 +186,8 @@ function renderFare() {
     math.textContent = "";
     note.textContent = !d.pickup || !d.destination
       ? "Pick your route and we'll show the price."
+      : d.triptype === "Private charter (whole boat)"
+      ? "Charters are priced for the whole boat — we'll quote it and confirm before you pay anything."
       : "We'll quote this trip and confirm before you pay anything.";
   }
 }
@@ -226,8 +231,8 @@ document.getElementById("requestBtn").addEventListener("click", () => {
     weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit",
   });
   document.getElementById("holdingText").innerHTML =
-    `Holding: <b>${d.pickup} → ${d.destination}</b><br>${when} · ${d.guests} ` +
-    `${Number(d.guests) === 1 ? "person" : "people"} · ${d.triptype}` +
+    `Holding: <b>${escHtml(d.pickup)} → ${escHtml(d.destination)}</b><br>${when} · ${escHtml(d.guests)} ` +
+    `${Number(d.guests) === 1 ? "person" : "people"} · ${escHtml(d.triptype)}` +
     (totalCents != null ? ` · ${money(totalCents)} incl. VAT` : "");
 
   tripStep.hidden = true;
@@ -367,39 +372,38 @@ form.addEventListener("submit", async (e) => {
       ? nassauInstant(d.date, d.returntime).toISOString()
       : null;
 
-  const { error } = await db.from("bookings").insert({
-    contact_name: d.name.trim(),
-    contact_phone: parsedPhone.number, // E.164
-    pickup: d.pickup,
-    destination: d.destination,
-    scheduled_at: nassauInstant(d.date, d.time).toISOString(),
-    return_at: returnAt,
-    passengers: Number(d.guests) || 1,
-    trip_type: d.triptype,
-    notes: d.notes?.trim() || null,
+  // The same door the app uses. It creates the booking and hands back the key
+  // to it, so the customer lands on their own trip page — messages, paying,
+  // their captain — instead of a thank-you with no way back to the trip.
+  const { data: tripToken, error } = await db.rpc("request_boat", {
+    p_contact_name: d.name.trim(),
+    p_contact_phone: parsedPhone.number, // E.164
+    p_pickup: d.pickup,
+    p_destination: d.destination,
+    p_scheduled_at: nassauInstant(d.date, d.time).toISOString(),
+    p_return_at: returnAt,
+    p_passengers: Number(d.guests) || 1,
+    p_trip_type: d.triptype,
+    p_notes: d.notes?.trim() || null,
   });
 
-  if (error) {
-    console.error("booking insert failed:", error);
-    status.textContent =
-      `Something went wrong sending your request. Please call us at ${CONFIG.phoneDisplay} instead.`;
+  if (error || !tripToken) {
+    console.error("booking failed:", error);
+    // The database explains its own refusals in words written for a customer
+    // ("choose a time in the future", "you've just asked for a few boats").
+    // Anything else is a connection problem, and the phone still works.
+    const said = error?.message || "";
+    const forCustomer = /^(We|Your|Please|Tell us|How many|Choose|That|You)/.test(said);
+    status.textContent = forCustomer
+      ? said
+      : `Something went wrong sending your request. Please call us at ${CONFIG.phoneDisplay} instead.`;
     status.classList.add("err");
     return;
   }
 
-  status.textContent =
-    "Thanks! We're confirming a captain now — you'll hear from us shortly, and you don't pay anything until a captain says yes.";
+  status.textContent = "Request sent — opening your trip page…";
   status.classList.add("ok");
-  form.reset();
-  phoneConfirmed = false;
-  identityStep.hidden = true;
-  tripStep.hidden = false;
-  dateInput.min = today();
-  dateInput.value = today();
-  tripTypeInput.value = "One way";
-  document.querySelectorAll(".seg-item").forEach((b, i) => b.classList.toggle("is-on", i === 0));
-  returnWrap.hidden = true;
-  renderFare();
+  location.href = `trip/?t=${encodeURIComponent(tripToken)}&new=1`;
 });
 
 // fleet: pull real active boats/captains instead of showing generic placeholders
