@@ -1185,14 +1185,21 @@ function paymentHtml(b) {
     : "";
 
   if (b.paid_at) {
+    const refunded = b.refunded_cents || 0;
+    const refundable = paid - refunded;
     const when = new Date(b.paid_at).toLocaleString(undefined, {
         ...NASSAU,
       month: "short", day: "numeric", hour: "numeric", minute: "2-digit",
     });
     return `<div class="pay-row is-paid">
       <span class="pay-state">✓ Paid ${dollars(paid)}</span>
-      <span class="pay-when">${esc(when)}${b.status === "completed" ? "" : " · captain reachable"}</span>
+      <span class="pay-when">${esc(when)}${b.status === "completed" || b.status === "cancelled" ? "" : " · captain reachable"}</span>
       ${outstanding > 0 ? `<span class="pay-owing">${dollars(outstanding)} still outstanding</span>` : ""}
+      ${refunded ? `<span class="pay-owing">${dollars(refunded)} refunded</span>` : ""}
+      ${b.receipt_no ? `<span class="pay-when">Receipt No. ${b.receipt_no}</span>` : ""}
+      ${refundable > 0
+        ? `<button type="button" class="btn-record-refund" data-id="${b.id}" data-max="${refundable}">Record refund</button>`
+        : ""}
     </div>`;
   }
 
@@ -1496,6 +1503,35 @@ function renderBookings(all) {
       loadBookings();
     });
   });
+  // The refund itself is done in Fygaro's dashboard — there is no refund API.
+  // This writes it down, so the trip, the passenger's receipt and the books agree.
+  bookingsBody.querySelectorAll("button.btn-record-refund").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const card = btn.closest(".booking-card");
+      const max = Number(btn.dataset.max);
+      const typed = prompt(
+        `Refunded in Fygaro — how much? (up to ${dollars(max)})`,
+        (max / 100).toFixed(2)
+      );
+      if (typed == null) return;
+      const cents = Math.round(parseFloat(typed) * 100);
+      if (!Number.isFinite(cents) || cents <= 0 || cents > max) {
+        return cardMessage(card, `Enter an amount up to ${dollars(max)}.`);
+      }
+      const reference = prompt("Fygaro refund reference or a note (optional)") || null;
+      btn.disabled = true;
+      card?.classList.add("row-saving");
+      const { error } = await db.rpc("record_refund", {
+        p_booking: btn.dataset.id,
+        p_amount_cents: cents,
+        p_reference: reference,
+      });
+      card?.classList.remove("row-saving");
+      btn.disabled = false;
+      if (error) return cardMessage(card, error.message);
+      loadBookings();
+    });
+  });
   bookingsBody.querySelectorAll("button.btn-mark-paid-booking").forEach((btn) => {
     btn.addEventListener("click", async () => {
       const card = btn.closest(".booking-card");
@@ -1716,6 +1752,9 @@ function cardHtml(b) {
             // is recorded here, since until the card link exists it's the
             // office that takes it.
             ? `${paymentHtml(b)}${ratingHtml(b)}${tipHtml(b)}`
+            // A cancelled trip that was paid for is where a refund gets recorded.
+            : b.paid_at
+            ? paymentHtml(b)
             : ""}
         </div>
       </div>

@@ -62,6 +62,7 @@ export default function PaymentScreen({
   onRefresh,
   onRate,
   onPay,
+  onReceipt,
 }: {
   trip: TripView | null;
   loading: boolean;
@@ -72,6 +73,8 @@ export default function PaymentScreen({
       ("already paid for"), or null once it has handed off — to Fygaro, or, if
       card payments aren't switched on yet, to a message to the office. */
   onPay: (kind: "fare" | "tip", tipCents: number | null, fallback: string) => Promise<string | null>;
+  /** Open the trip's receipt (a web page the passenger can print or save). */
+  onReceipt: () => void;
 }) {
   const [paying, setPaying] = React.useState(false);
   const [payErr, setPayErr] = React.useState<string | null>(null);
@@ -296,6 +299,14 @@ export default function PaymentScreen({
           </Pressable>
         ) : null}
         {payErr && !settled ? <Text style={s.payErr}>{payErr}</Text> : null}
+        {trip.refunded_cents ? (
+          <Text style={s.refunded}>{formatMoney(trip.refunded_cents)} refunded</Text>
+        ) : null}
+        {trip.receipt_no ? (
+          <Pressable onPress={onReceipt} hitSlop={8}>
+            <Text style={s.receiptLink}>View receipt</Text>
+          </Pressable>
+        ) : null}
       </View>
 
       {canRate ? (
@@ -582,6 +593,8 @@ const s = StyleSheet.create({
   },
   payBtnDown: { opacity: 0.85 },
   payErr: { color: colors.danger, fontSize: 13, marginTop: 8 },
+  refunded: { color: colors.muted, fontSize: 13, marginTop: 8 },
+  receiptLink: { color: colors.deep, fontSize: 14, fontWeight: "700", textDecorationLine: "underline", marginTop: 10 },
   payBtnText: { color: colors.white, fontSize: 17, fontWeight: "800" },
 
   note: { marginTop: 16, fontSize: 12.5, color: colors.muted, textAlign: "center", lineHeight: 18 },

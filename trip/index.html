@@ -73,10 +73,35 @@
         <div class="pay-line" id="payVatLine"><span>VAT (<span id="payVatPct">10</span>%)</span><strong id="payVat">—</strong></div>
         <div class="pay-line pay-total" id="payTotalLine"><span>Total</span><strong id="payTotal">—</strong></div>
         <div class="pay-line" id="payPaidLine" hidden><span>Paid</span><strong id="payPaid">—</strong></div>
+        <div class="pay-line" id="payRefundLine" hidden><span>Refunded</span><strong id="payRefund">—</strong></div>
         <div class="pay-line pay-due" id="payDueLine"><span>Due</span><strong id="payDue">—</strong></div>
       </div>
       <div class="pay-state" id="payState"></div>
       <div class="pay-slot" id="paySlot"></div>
+      <button type="button" class="receipt-open" id="receiptOpen" hidden>View receipt</button>
+    </section>
+
+    <!-- The receipt. Shown once the trip has been paid; printing the page
+         prints only this. The company details come from the database, filled
+         in once the company and its VAT number exist. -->
+    <section class="receipt" id="receipt" hidden>
+      <div class="receipt-head">
+        <div>
+          <strong id="rcBusiness">Paradise Sea Express</strong>
+          <div id="rcAddress"></div>
+          <div id="rcTin"></div>
+        </div>
+        <div class="receipt-no">
+          <span>Receipt</span>
+          <strong id="rcNo">—</strong>
+          <span id="rcDate"></span>
+        </div>
+      </div>
+      <div class="receipt-trip" id="rcTrip"></div>
+      <div class="receipt-lines" id="rcLines"></div>
+      <div class="receipt-actions">
+        <button type="button" class="receipt-print" id="receiptPrint">Print or save as PDF</button>
+      </div>
     </section>
 
     <!-- How it went. Asked once the trip is over, and asked before the tip: the

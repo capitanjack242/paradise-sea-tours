@@ -8,6 +8,7 @@ import {
   fetchTrip,
   forgetTrip,
   payLink,
+  receiptUrl,
   rateTrip,
   savedTrips,
   sendTripMessage,
@@ -180,6 +181,7 @@ export default function App() {
                 await load(false);
               })
             }
+            onReceipt={() => withToken(async (token) => Linking.openURL(receiptUrl(token)))}
             onPay={(kind, tipCents, fallback) =>
               withToken(async (token) => {
                 const r = await payLink(token, kind, tipCents ?? undefined);

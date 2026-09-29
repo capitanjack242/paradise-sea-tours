@@ -240,6 +240,16 @@ function renderPayment(t) {
   }
   document.getElementById("payPaid").textContent = money(paid);
   document.getElementById("payPaidLine").hidden = paid === 0;
+  const refunded = t.refunded_cents || 0;
+  document.getElementById("payRefund").textContent = money(refunded);
+  document.getElementById("payRefundLine").hidden = refunded === 0;
+  // A receipt exists from the first payment on.
+  const receiptOpen = document.getElementById("receiptOpen");
+  receiptOpen.hidden = !t.receipt_no;
+  receiptOpen.onclick = () => showReceipt(t);
+  if (t.receipt_no && location.hash === "#receipt" && document.getElementById("receipt").hidden) {
+    showReceipt(t); // arrived from the app's "View receipt"
+  }
   document.getElementById("payDue").textContent = money(due);
   document.getElementById("payDueLine").hidden = due === 0;
 
@@ -311,6 +321,67 @@ async function startPayment(kind, tipCents, fallbackText, btn, noteEl) {
   msgInput.value = msgInput.value || fallbackText;
   msgInput.focus();
 }
+
+/* The receipt.
+
+   Everything a VAT receipt needs: who issued it and their VAT number, a
+   receipt number, the date, what was bought, the fare, the tax and the total —
+   and, separately, any tip, which carries no VAT. The company details are one
+   row in the database (app_settings), read here rather than typed in. */
+let business = null;
+async function loadBusiness() {
+  if (business) return business;
+  const { data } = await db
+    .from("app_settings")
+    .select("business_name, business_address, vat_tin")
+    .limit(1);
+  business = data?.[0] || { business_name: "Paradise Sea Express" };
+  return business;
+}
+
+async function showReceipt(t) {
+  const box = document.getElementById("receipt");
+  const money = (c) => `$${((c || 0) / 100).toFixed(2)}`;
+  const b = await loadBusiness();
+  document.getElementById("rcBusiness").textContent = b.business_name || "Paradise Sea Express";
+  document.getElementById("rcAddress").textContent = b.business_address || "Nassau, The Bahamas";
+  document.getElementById("rcTin").textContent = b.vat_tin ? `VAT TIN ${b.vat_tin}` : "";
+  document.getElementById("rcNo").textContent = `No. ${t.receipt_no}`;
+  document.getElementById("rcDate").textContent = t.paid_at
+    ? new Date(t.paid_at).toLocaleDateString(undefined, { ...NASSAU, day: "numeric", month: "long", year: "numeric" })
+    : "";
+
+  const when = t.scheduled_at
+    ? new Date(t.scheduled_at).toLocaleString(undefined, {
+        ...NASSAU, weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit",
+      })
+    : "";
+  document.getElementById("rcTrip").textContent =
+    `Boat transfer · ${t.pickup || "—"} → ${t.destination || "—"} · ${when} · ` +
+    `${t.passengers ?? "?"} ${t.passengers === 1 ? "passenger" : "passengers"}${t.trip_type ? ` · ${t.trip_type}` : ""}`;
+
+  const vatPct = Number(t.vat_pct || 0);
+  const pct = Number.isInteger(vatPct) ? String(vatPct) : String(vatPct).replace(/0+$/, "");
+  const row = (label, value, cls = "") =>
+    `<div class="rl ${cls}"><span>${esc(label)}</span><strong>${esc(value)}</strong></div>`;
+  const lines = [row("Fare", money(t.fare_cents))];
+  if (t.vat_cents) lines.push(row(`VAT (${pct}%)`, money(t.vat_cents)));
+  lines.push(row("Total", money(t.total_cents ?? t.fare_cents), "rl-total"));
+  lines.push(row("Paid", money(t.amount_paid_cents)));
+  if (t.refunded_cents) lines.push(row("Refunded", `−${money(t.refunded_cents)}`));
+  if (t.tip_cents) {
+    lines.push(row("Tip for your captain", money(t.tip_cents)));
+    lines.push(`<div class="rl rl-note"><span>Tips carry no VAT and go to the captain in full.</span></div>`);
+  }
+  if (!b.vat_tin && t.vat_cents) {
+    lines.push(`<div class="rl rl-note"><span>VAT registration number to follow.</span></div>`);
+  }
+  document.getElementById("rcLines").innerHTML = lines.join("");
+  box.hidden = false;
+  box.scrollIntoView({ block: "start", behavior: "smooth" });
+}
+
+document.getElementById("receiptPrint").addEventListener("click", () => window.print());
 
 /* Where the boat is.
 

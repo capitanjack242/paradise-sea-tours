@@ -90,6 +90,10 @@ export type TripView = {
   boat_located_at: string | null;
   paid_at: string | null;
   amount_paid_cents: number | null;
+  /** Money given back (recorded by the office after refunding in Fygaro). */
+  refunded_cents: number | null;
+  /** Given at the first payment. Null means no receipt yet. */
+  receipt_no: number | null;
   balance_cents: number | null;
   can_reply: boolean;
   /** False until the trip is paid for. The office stays reachable regardless. */
@@ -133,6 +137,11 @@ export async function sendTripMessage(
     p_channel: channel,
   });
   if (error) throw error;
+}
+
+/** The trip's receipt, on the web trip page — printable, and savable as a PDF. */
+export function receiptUrl(token: string): string {
+  return `https://paradiseseaexpress.com/trip/?t=${encodeURIComponent(token)}#receipt`;
 }
 
 /**
