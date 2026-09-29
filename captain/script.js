@@ -515,7 +515,10 @@ function tripHtml(b) {
   // job, only a question.
   const beingAsked = !!b.offered_at && !b.captain_response && !done;
   const declined = b.captain_response === "declined" && !done;
-  const waiting = b.status !== "confirmed" && !aboard && !done && !beingAsked && !declined;
+  // Closed by the database after the offer timeout (0033): the office may have
+  // given it to someone else, so no buttons — a call.
+  const timedOut = b.captain_response === "no_answer" && b.status !== "confirmed" && !aboard && !done;
+  const waiting = b.status !== "confirmed" && !aboard && !done && !beingAsked && !declined && !timedOut;
 
   return `
     <article class="trip${done ? " is-done" : ""}${aboard ? " is-aboard" : ""}">
@@ -572,6 +575,8 @@ function tripHtml(b) {
            </div>`
         : declined
         ? `<div class="waiting-banner">You turned this one down${b.decline_reason ? ` — ${esc(b.decline_reason)}` : ""}</div>`
+        : timedOut
+        ? `<div class="waiting-banner">You didn't answer in time — call the office if you can still take it</div>`
         : waiting
         ? `<div class="waiting-banner">Not confirmed by the office yet</div>`
         : aboard

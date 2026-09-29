@@ -1322,10 +1322,20 @@ function offerHtml(b) {
       </div>`;
   }
 
+  if (b.captain_response === "no_answer") {
+    return `<div class="offer-state offer-no">
+        <strong>✗ ${who} didn't answer in 15 minutes</strong>
+        <span class="offer-hint">Pick another boat, or ring them and ask again.</span>
+        <span class="offer-actions">
+          <button type="button" class="btn-ask-captain" data-id="${b.id}">Ask again</button>
+        </span>
+      </div>`;
+  }
+
   if (b.offered_at) {
     return `<div class="offer-state offer-waiting">
         <strong>Asked ${who} · ${shortTime(b.offered_at)}</strong>
-        <span class="offer-hint">Waiting on an answer. If you get them on the phone:</span>
+        <span class="offer-hint">Waiting on an answer — closes after 15 minutes. If you get them on the phone:</span>
         <span class="offer-actions">
           <button type="button" class="btn-said-yes" data-id="${b.id}">They said yes</button>
           <button type="button" class="btn-said-no" data-id="${b.id}">They said no</button>
@@ -1517,7 +1527,14 @@ function renderBookings(all) {
     btn.addEventListener("click", () =>
       updateBooking(
         btn.dataset.id,
-        { offered_at: new Date().toISOString() },
+        // A fresh question: clears a timed-out answer so the clock starts again.
+        {
+          offered_at: new Date().toISOString(),
+          captain_response: null,
+          response_by: null,
+          responded_at: null,
+          decline_reason: null,
+        },
         btn.closest(".booking-card")
       )
     );
@@ -1561,6 +1578,8 @@ function renderBookings(all) {
           card,
           b.captain_response === "declined"
             ? "That captain turned this down — pick another boat."
+            : b.captain_response === "no_answer"
+            ? "They didn't answer — ask again or pick another boat."
             : "Ask the captain first. Nothing gets promised before a boat says yes."
         );
       }

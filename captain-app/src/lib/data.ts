@@ -22,7 +22,8 @@ export type Trip = {
   /** When the passenger paid. Null means he can't message them yet. */
   paid_at: string | null;
   offered_at: string | null;
-  captain_response: "accepted" | "declined" | null;
+  /** no_answer: nobody answered within the database's offer timeout (0033). */
+  captain_response: "accepted" | "declined" | "no_answer" | null;
   decline_reason: string | null;
   assigned_boat_id: string | null;
   /** The rate this trip was closed out at. Null while it's still running. */

@@ -43,7 +43,10 @@ export default function TripCard({
 
   const aboard = trip.status === "in_progress";
   const asked = isBeingAsked(trip);
-  const waitingOnOffice = !asked && !["confirmed", "in_progress"].includes(trip.status);
+  // An offer he didn't answer in time is closed; the office may have given the
+  // run to someone else, so the card says to call rather than offering buttons.
+  const timedOut = trip.captain_response === "no_answer" && !["confirmed", "in_progress"].includes(trip.status);
+  const waitingOnOffice = !asked && !timedOut && !["confirmed", "in_progress"].includes(trip.status);
   const where = waitingAt(trip);
 
   return (
@@ -124,6 +127,10 @@ export default function TripCard({
               disabled={busy}
             />
           </View>
+        </View>
+      ) : timedOut ? (
+        <View style={s.waitBox}>
+          <Text style={s.waitText}>You didn't answer in time — call the office if you can still take it</Text>
         </View>
       ) : waitingOnOffice ? (
         <View style={s.waitBox}>
