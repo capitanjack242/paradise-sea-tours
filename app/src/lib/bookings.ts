@@ -17,12 +17,20 @@ export type Service = {
 
 export type TripType = "One way" | "Round trip" | "Private charter (whole boat)";
 
-/** The docks a passenger can be picked up from or dropped at. */
-export const LOCATIONS = [
+/** Not a dock, so not in the table — always offered last. */
+export const OTHER_DOCK = "Other (see notes)";
+
+/**
+ * The docks a passenger can be picked up from or dropped at — a fallback only.
+ * The real list is the `docks` table (fetchDocks), shared with the website, so
+ * a new dock is a row rather than a store release.
+ */
+export const LOCATIONS: readonly string[] = [
   "Nassau Cruise Port",
   "Downtown Nassau / Prince George Wharf",
   "Paradise Island & Atlantis",
   "Atlantis Marina",
+  "Carnival Restaurant, Paradise Island Marina",
   "Cabbage Beach",
   "Rose Island & Cays",
   "The Sandbar",
@@ -36,7 +44,16 @@ export const LOCATIONS = [
   "Potter's Cay Dock",
   "Montagu Dock",
   "Poop Deck (East Bay Street)",
-] as const;
+  OTHER_DOCK,
+];
+
+/** The shared dock list, with "Other" on the end. Throws if it can't be read. */
+export async function fetchDocks(): Promise<string[]> {
+  const { data, error } = await supabase.from("docks").select("name").order("sort");
+  if (error) throw error;
+  const names = (data ?? []).map((d) => d.name as string);
+  return names.length ? [...names, OTHER_DOCK] : [...LOCATIONS];
+}
 
 /**
  * Bahamas VAT, read from the database rather than typed into the app.

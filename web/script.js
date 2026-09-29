@@ -95,6 +95,24 @@ document.getElementById("tripSeg").addEventListener("click", (e) => {
   renderFare();
 });
 
+// ── Docks, from the one list the app reads too ───────────────────────────
+/* The options typed into the page are the fallback. When the list loads, both
+   pickers are rebuilt from it, keeping whatever was already chosen, with
+   "Other (see notes)" last — it isn't a dock, so it isn't in the table. */
+const OTHER_DOCK = "Other (see notes)";
+(async () => {
+  const { data, error } = await db.from("docks").select("name").order("sort");
+  if (error || !data?.length) return error && console.error("could not load docks:", error);
+  for (const sel of form.querySelectorAll('select[name="pickup"], select[name="destination"]')) {
+    const chosen = sel.value;
+    const names = [...data.map((d) => d.name), OTHER_DOCK];
+    sel.replaceChildren(...names.map((n) => new Option(n, n, false, n === chosen)));
+    // A default that has left the list falls back to the first dock.
+    if (!names.includes(chosen)) sel.selectedIndex = 0;
+  }
+  renderFare();
+})();
+
 // ── Live fare, from the same published routes the app reads ──────────────
 let routes = [];
 
@@ -118,15 +136,44 @@ function showVatRate() {
 }
 
 (async () => {
-  const { data, error } = await db
-    .from("services")
-    .select("*")
-    .eq("category", "route")
-    .order("sort");
-  if (error) return console.error("could not load routes:", error);
-  routes = data ?? [];
+  const { data, error } = await db.from("services").select("*").order("sort");
+  if (error) return console.error("could not load the price list:", error);
+  routes = (data ?? []).filter((s) => s.category === "route");
+  showPriceList(data ?? []);
   renderFare();
 })();
+
+/* Every price printed on the page, from the same price list the booking form
+   quotes from. The numbers typed into the HTML are only what shows if this
+   read fails — change a fare in the database and the cards, the "from $…" line
+   and the small print all follow, with no edit to the page. A service priced
+   "by quote" (no price) leaves its typed text alone. */
+function showPriceList(services) {
+  const bySlug = new Map(services.map((s) => [s.slug, s]));
+  const whole = (cents) => (cents % 100 ? (cents / 100).toFixed(2) : String(cents / 100));
+
+  document.querySelectorAll("[data-price]").forEach((el) => {
+    const s = bySlug.get(el.dataset.price);
+    if (s?.price_cents != null) el.textContent = whole(s.price_cents);
+  });
+  document.querySelectorAll("[data-minutes]").forEach((el) => {
+    const s = bySlug.get(el.dataset.minutes);
+    if (s?.est_minutes != null) el.textContent = String(s.est_minutes);
+  });
+
+  // "from $15", and the range in the small print, across a whole category.
+  const priced = (cat) =>
+    services.filter((s) => s.category === cat && s.is_active !== false && s.price_cents != null)
+      .map((s) => s.price_cents);
+  const fill = (attr, pick) =>
+    document.querySelectorAll(`[${attr}]`).forEach((el) => {
+      const prices = priced(el.getAttribute(attr));
+      if (prices.length) el.textContent = whole(pick(prices));
+    });
+  fill("data-price-from", (p) => Math.min(...p));
+  fill("data-price-min", (p) => Math.min(...p));
+  fill("data-price-max", (p) => Math.max(...p));
+}
 
 function matchRoute(pickup, destination) {
   const norm = (x) => (x ?? "").toLowerCase();

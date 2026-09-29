@@ -58,7 +58,7 @@
     </div>
     <div class="hero-stats">
       <div><strong>~10&nbsp;min</strong><span>Cruise Port → Paradise Island</span></div>
-      <div><strong>from&nbsp;$15</strong><span>per person + VAT</span></div>
+      <div><strong>from&nbsp;$<span data-price-from="route">15</span></strong><span>per person + VAT</span></div>
       <div><strong>7am–10pm</strong><span>every day</span></div>
     </div>
   </div>
@@ -137,27 +137,27 @@
       <div class="price-card featured">
         <div class="ribbon">Most popular</div>
         <h3>Paradise Island &amp; Atlantis</h3>
-        <div class="price">$<span>15</span><small>/person</small></div>
-        <p class="price-note">one way · ~10 min</p>
+        <div class="price">$<span data-price="paradise-island">15</span><small>/person</small></div>
+        <p class="price-note">one way · ~<span data-minutes="paradise-island">10</span> min</p>
         <ul><li>From the Cruise Port or downtown</li><li>Atlantis &amp; beach club</li><li>Kids ride too</li></ul>
         <a href="#book" class="btn btn-primary btn-block">Book</a>
       </div>
       <div class="price-card">
         <h3>Cabbage Beach</h3>
-        <div class="price">$<span>15</span><small>/person</small></div>
-        <p class="price-note">one way · ~12 min</p>
+        <div class="price">$<span data-price="cabbage-beach">15</span><small>/person</small></div>
+        <p class="price-note">one way · ~<span data-minutes="cabbage-beach">12</span> min</p>
         <ul><li>Skip the road traffic</li><li>Drop &amp; scheduled pickup</li><li>Beach day ready</li></ul>
         <a href="#book" class="btn btn-primary btn-block">Book</a>
       </div>
       <div class="price-card">
         <h3>Rose Island &amp; Cays</h3>
-        <div class="price">$<span>25</span><small>/person</small></div>
-        <p class="price-note">one way · ~25 min</p>
+        <div class="price">$<span data-price="rose-island">25</span><small>/person</small></div>
+        <p class="price-note">one way · ~<span data-minutes="rose-island">25</span> min</p>
         <ul><li>Snorkeling &amp; quiet beaches</li><li>The Sandbar runs</li><li>Round trips available</li></ul>
         <a href="#book" class="btn btn-primary btn-block">Book</a>
       </div>
     </div>
-    <p class="fineprint">* Launch sample fares ($12–$25 per person by route), before <span data-vat-rate>10</span>% VAT. Private full-boat charters and group rates quoted on request.</p>
+    <p class="fineprint">* Route fares $<span data-price-min="route">15</span>–$<span data-price-max="route">25</span> per person, before <span data-vat-rate>10</span>% VAT. Private full-boat charters and group rates quoted on request.</p>
   </div>
 </section>
 
@@ -169,7 +169,7 @@
     <div class="pricing">
       <div class="price-card">
         <h3>6-Guest Boat</h3>
-        <div class="price">$<span>120</span><small>/hr</small></div>
+        <div class="price">$<span data-price="charter-6">120</span><small>/hr</small></div>
         <p class="price-note">center console · up to 6 guests</p>
         <ul><li>Harbour &amp; island hops</li><li>Snorkel stops</li><li>2-hr minimum</li></ul>
         <a href="#book" class="btn btn-primary btn-block">Book</a>
@@ -177,14 +177,14 @@
       <div class="price-card featured">
         <div class="ribbon">Best for groups</div>
         <h3>8-Guest Cruiser</h3>
-        <div class="price">$<span>150</span><small>/hr</small></div>
+        <div class="price">$<span data-price="charter-8">150</span><small>/hr</small></div>
         <p class="price-note">seating &amp; cooler · up to 8 guests</p>
         <ul><li>Beach days &amp; cays</li><li>Sunset cruises</li><li>2-hr minimum</li></ul>
         <a href="#book" class="btn btn-primary btn-block">Book</a>
       </div>
       <div class="price-card">
         <h3>Luxury Charter</h3>
-        <div class="price">$<span>250</span><small>/hr</small></div>
+        <div class="price">$<span data-price="charter-lux">250</span><small>/hr</small></div>
         <p class="price-note">premium · up to 12 guests</p>
         <ul><li>Events &amp; celebrations</li><li>Premium comfort</li><li>2-hr minimum</li></ul>
         <a href="#book" class="btn btn-primary btn-block">Book</a>
@@ -205,13 +205,13 @@
         <div class="route-emoji">🎣</div>
         <h3>Reef Fishing</h3>
         <p>Bottom fishing on the reefs for snapper, grouper and more. Great for families and first-timers.</p>
-        <span class="tag">Half day · from $400/boat</span>
+        <span class="tag">Half day · from $<span data-price="fishing-reef">400</span>/boat</span>
       </article>
       <article class="card route">
         <div class="route-emoji">🐟</div>
         <h3>Deep-Sea / Offshore</h3>
         <p>Troll the deep blue for mahi, tuna, wahoo and marlin. Big-game action offshore.</p>
-        <span class="tag">Half day · from $700/boat</span>
+        <span class="tag">Half day · from $<span data-price="fishing-deepsea">700</span>/boat</span>
       </article>
       <article class="card route">
         <div class="route-emoji">🌅</div>
@@ -297,7 +297,7 @@
             <option>Potter's Cay Dock</option>
             <option>Montagu Dock</option>
             <option>Poop Deck (East Bay Street)</option>
-            <option>Other / Custom (see notes)</option>
+            <option>Other (see notes)</option>
           </select>
         </label>
 
