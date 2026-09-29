@@ -7,7 +7,7 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "ios": {
-      "supportsTablet": true,
+      "supportsTablet": false,
       "bundleIdentifier": "com.paradiseseaexpress.captain",
       "infoPlist": {
         "UIBackgroundModes": [
@@ -46,7 +46,6 @@
       [
         "expo-location",
         {
-          "locationAlwaysAndWhenInUsePermission": "Paradise Sea Express shows the office and your passengers where your boat is while you are switched on as available. Switch off and it stops, and your last position is deleted.",
           "locationWhenInUsePermission": "Paradise Sea Express shows the office and your passengers where your boat is while you are switched on as available. Switch off and it stops, and your last position is deleted.",
           "isIosBackgroundLocationEnabled": false,
           "isAndroidBackgroundLocationEnabled": false

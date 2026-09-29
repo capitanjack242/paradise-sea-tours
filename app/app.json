@@ -8,7 +8,7 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "ios": {
-      "supportsTablet": true,
+      "supportsTablet": false,
       "bundleIdentifier": "com.paradiseseaexpress.app",
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "So the captain picking you up can see where you're waiting on the dock. Only while the app is open, and only until your trip is finished."
