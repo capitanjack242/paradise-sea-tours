@@ -1,12 +1,13 @@
 import React from "react";
 import { StatusBar } from "expo-status-bar";
-import { Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Linking, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from "react-native";
 import BookScreen from "./src/screens/BookScreen";
 import PaymentScreen from "./src/screens/PaymentScreen";
 import MessagesScreen, { type Channel } from "./src/screens/MessagesScreen";
 import {
   fetchTrip,
   forgetTrip,
+  payLink,
   rateTrip,
   savedTrips,
   sendTripMessage,
@@ -179,7 +180,21 @@ export default function App() {
                 await load(false);
               })
             }
-            onMessage={(text) => openMessages(text, "office")}
+            onPay={(kind, tipCents, fallback) =>
+              withToken(async (token) => {
+                const r = await payLink(token, kind, tipCents ?? undefined);
+                if (r.url) {
+                  // Fygaro's card page, in the phone's browser. The trip polls
+                  // every fifteen seconds, so it shows as paid on the way back.
+                  await Linking.openURL(r.url);
+                  return null;
+                }
+                if (r.connected && r.error) return r.error;
+                // Card payments not switched on yet: the office takes it from here.
+                openMessages(fallback, "office");
+                return null;
+              })
+            }
           />
         ) : (
           <MessagesScreen

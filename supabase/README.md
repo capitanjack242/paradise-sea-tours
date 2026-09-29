@@ -67,3 +67,23 @@ The `TMPDIR` is needed on this Mac because Colima's Docker VM only shares /Users
 To test a migration first, `supabase db dump --linked -f schema.sql` gives the
 live schema (no data); load it into a local `public.ecr.aws/supabase/postgres`
 container and run the migration against that.
+
+## Card payments (Fygaro)
+Built and deployed, switched off until the account exists. Until then the Pay
+and Tip buttons fall back to a message to the office.
+
+- `functions/pay-link` — makes a signed Fygaro link for what a trip owes, or a tip.
+  The amount comes from the database, never from the caller.
+- `functions/fygaro-hook` — Fygaro calls it when a card payment succeeds. It checks
+  the signature, then `record_provider_payment()` (0032) records it once — a
+  resent notification is ignored.
+
+**To switch on** (needs a Fygaro **Pro** plan — signed links are Pro-only):
+1. Fygaro → Settings → API Credentials → Generate New. Keep the secret; it can't be shown again.
+2. On the payment button: turn on JWT (Advanced Settings), set the Hook to
+   `https://fjdoaonnoezbbitbawzs.supabase.co/functions/v1/fygaro-hook`, and the
+   return URL to `https://paradiseseaexpress.com/trip/`.
+3. `supabase secrets set FYGARO_BUTTON_URL=… FYGARO_KEY_ID=… FYGARO_SECRET=…`
+4. Pay a real $1 test, check it lands on the trip, refund it in Fygaro.
+
+Refunds are done in Fygaro's dashboard; there is no refund API.

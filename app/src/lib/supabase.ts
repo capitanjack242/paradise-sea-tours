@@ -4,8 +4,8 @@ import { createClient } from "@supabase/supabase-js";
 
 // Publishable key — safe on a device, access is scoped by row-level security.
 // Same project the website and dispatch board already use.
-const SUPABASE_URL = "https://fjdoaonnoezbbitbawzs.supabase.co";
-const SUPABASE_KEY = "sb_publishable_RjTM-t2isu1Teq9P5z37PQ_h_Oy3EpP";
+export const SUPABASE_URL = "https://fjdoaonnoezbbitbawzs.supabase.co";
+export const SUPABASE_KEY = "sb_publishable_RjTM-t2isu1Teq9P5z37PQ_h_Oy3EpP";
 
 export const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, {
   auth: {

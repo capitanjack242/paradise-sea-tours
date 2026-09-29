@@ -61,17 +61,30 @@ export default function PaymentScreen({
   refreshing,
   onRefresh,
   onRate,
-  onMessage,
+  onPay,
 }: {
   trip: TripView | null;
   loading: boolean;
   refreshing: boolean;
   onRefresh: () => void;
   onRate: (captain: number, ride: number, note: string | null) => Promise<void>;
-  /** Open the Messages tab with a line already typed — how Pay and the tip
-      buttons work until the payment link exists, same as on the web page. */
-  onMessage: (draft: string) => void;
+  /** Pay by card. Resolves with a message to show if the server refused
+      ("already paid for"), or null once it has handed off — to Fygaro, or, if
+      card payments aren't switched on yet, to a message to the office. */
+  onPay: (kind: "fare" | "tip", tipCents: number | null, fallback: string) => Promise<string | null>;
 }) {
+  const [paying, setPaying] = React.useState(false);
+  const [payErr, setPayErr] = React.useState<string | null>(null);
+  const pay = async (kind: "fare" | "tip", tipCents: number | null, fallback: string) => {
+    if (paying) return;
+    setPaying(true);
+    setPayErr(null);
+    try {
+      setPayErr(await onPay(kind, tipCents, fallback));
+    } finally {
+      setPaying(false);
+    }
+  };
   // A percentage of the fare is a suggestion, not a limit — someone who wants
   // to give $50 on a $60 trip shouldn't have to ask the office for permission.
   const [otherOpen, setOtherOpen] = React.useState(false);
@@ -127,14 +140,14 @@ export default function PaymentScreen({
   /* Tips, offered the way Uber offers them: after the ride is over, and never as
      part of the bill. Not when the fare is paid — that happens before boarding,
      and nobody tips a captain they haven't met. The database decides the window
-     (`can_tip`); the buttons start a message to the office because no payment
-     provider is connected yet, the same thing the Pay button does. Percentages
-     are of the fare, not the fare plus tax. */
+     (`can_tip`). Paid by card like the fare — or, until card payments are
+     switched on, a message to the office. Percentages are of the fare, not the
+     fare plus tax. */
   const tip = trip.tip_cents ?? 0;
   const canTip = !!trip.can_tip && !!trip.captain;
   const captain = trip.captain ? `Capt. ${trip.captain}` : "your captain";
   const askForTip = (cents: number) =>
-    onMessage(`I'd like to add a ${formatMoney(cents)} tip for ${captain}.`);
+    pay("tip", cents, `I'd like to add a ${formatMoney(cents)} tip for ${captain}.`);
 
   const submitOther = () => {
     const dollars = parseFloat(otherAmount);
@@ -275,12 +288,14 @@ export default function PaymentScreen({
 
         {!settled && !tooEarly ? (
           <Pressable
-            style={({ pressed }) => [s.payBtn, pressed && s.payBtnDown]}
-            onPress={() => onMessage("I'd like to pay for my trip.")}
+            style={({ pressed }) => [s.payBtn, (pressed || paying) && s.payBtnDown]}
+            onPress={() => pay("fare", null, "I'd like to pay for my trip.")}
+            disabled={paying}
           >
-            <Text style={s.payBtnText}>Pay {formatMoney(due)}</Text>
+            <Text style={s.payBtnText}>{paying ? "Opening…" : `Pay ${formatMoney(due)}`}</Text>
           </Pressable>
         ) : null}
+        {payErr && !settled ? <Text style={s.payErr}>{payErr}</Text> : null}
       </View>
 
       {canRate ? (
@@ -566,6 +581,7 @@ const s = StyleSheet.create({
     backgroundColor: colors.teal,
   },
   payBtnDown: { opacity: 0.85 },
+  payErr: { color: colors.danger, fontSize: 13, marginTop: 8 },
   payBtnText: { color: colors.white, fontSize: 17, fontWeight: "800" },
 
   note: { marginTop: 16, fontSize: 12.5, color: colors.muted, textAlign: "center", lineHeight: 18 },

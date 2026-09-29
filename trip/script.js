@@ -264,16 +264,52 @@ function renderPayment(t) {
     return;
   }
 
-  // The button is here before the payment provider is. Rather than let it do
-  // nothing, it opens the office thread with the message already started —
-  // which is how a passenger actually pays today.
+  // Card payment through Fygaro. Until the account is connected the server
+  // says so, and the button opens the office thread with the message started.
   slot.innerHTML = `<button type="button" class="pay-btn" id="payBtn">Pay ${money(due)}</button>`;
 
-  document.getElementById("payBtn").onclick = () => {
-    setChannel("office");
-    msgInput.value = msgInput.value || "I'd like to pay for my trip.";
-    msgInput.focus();
-  };
+  const payBtn = document.getElementById("payBtn");
+  payBtn.onclick = () =>
+    startPayment("fare", null, "I'd like to pay for my trip.", payBtn, state);
+}
+
+/* Off to Fygaro's card page, for exactly what's owed.
+
+   The amount is decided by our server from the database, not sent from here —
+   this page only says "the fare" or "a tip of this much". If card payments
+   aren't connected yet, or the server can't be reached, the passenger still
+   gets somewhere: a message to the office, already started. */
+async function startPayment(kind, tipCents, fallbackText, btn, noteEl) {
+  btn.disabled = true;
+  let answer = null;
+  try {
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/pay-link`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        apikey: SUPABASE_KEY,
+        Authorization: `Bearer ${SUPABASE_KEY}`,
+      },
+      body: JSON.stringify({ token, kind, tip_cents: tipCents }),
+    });
+    answer = await res.json();
+  } catch {
+    // No signal. Fall through to the office message below.
+  }
+  btn.disabled = false;
+
+  if (answer?.url) {
+    location.href = answer.url;
+    return;
+  }
+  if (answer?.connected && answer.error) {
+    // The server's own words ("already paid for", "choose a tip between…").
+    noteEl.textContent = answer.error;
+    return;
+  }
+  setChannel("office");
+  msgInput.value = msgInput.value || fallbackText;
+  msgInput.focus();
 }
 
 /* Where the boat is.
@@ -396,9 +432,8 @@ document.getElementById("rateSend").addEventListener("click", async () => {
    window stays open for a week afterwards, which is the server's rule
    (`can_tip`), not this page's.
 
-   The button starts a message rather than taking money, because no payment
-   provider is connected yet. That's the same thing the Pay button does. When
-   the link exists it takes its place and the office stops being involved. */
+   Paid by card through the same door as the fare (startPayment); until card
+   payments are connected, it starts a message to the office instead. */
 function renderTip(t) {
   const section = document.getElementById("tipSection");
   const given = document.getElementById("tipGiven");
@@ -453,14 +488,11 @@ function renderTip(t) {
     // to give $50 on a $60 trip shouldn't have to ask the office for permission.
     `<button type="button" class="tip-btn tip-btn-other" id="tipOtherBtn">Other<span>any amount</span></button>`;
 
-  const ask = (cents) => {
-    setChannel("office");
-    msgInput.value = `I'd like to add a ${money(cents)} tip for ${captain}.`;
-    msgInput.focus();
-  };
+  const ask = (cents, btn) =>
+    startPayment("tip", cents, `I'd like to add a ${money(cents)} tip for ${captain}.`, btn, note);
 
   slot.querySelectorAll("button.tip-btn[data-cents]").forEach((btn) => {
-    btn.onclick = () => ask(Number(btn.dataset.cents));
+    btn.onclick = () => ask(Number(btn.dataset.cents), btn);
   });
 
   const amount = document.getElementById("tipAmount");
@@ -480,7 +512,7 @@ function renderTip(t) {
     err.hidden = true;
     other.hidden = true;
     amount.value = "";
-    ask(Math.round(dollars * 100));
+    ask(Math.round(dollars * 100), document.getElementById("tipOtherGo"));
   };
   document.getElementById("tipOtherGo").onclick = submitOther;
   amount.onkeydown = (e) => {

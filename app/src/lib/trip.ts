@@ -1,5 +1,5 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { supabase } from "./supabase";
+import { supabase, SUPABASE_KEY, SUPABASE_URL } from "./supabase";
 
 /* ── which trips this phone holds the keys to ─────────────────────────────
    One key per booking. The app used to keep only the latest, so booking the
@@ -133,6 +133,38 @@ export async function sendTripMessage(
     p_channel: channel,
   });
   if (error) throw error;
+}
+
+/**
+ * A card payment link for this trip — the fare still owed, or a tip.
+ *
+ * The server works the amount out from the database; all this sends is which
+ * of the two, and for a tip how much. Three answers:
+ *   url                 → open it, the passenger pays on Fygaro's page
+ *   connected + error   → the server's own words ("already paid for")
+ *   connected: false    → card payments aren't switched on yet
+ * A failed request comes back as not connected, so the caller's fallback — a
+ * message to the office — still gets the passenger somewhere.
+ */
+export async function payLink(
+  token: string,
+  kind: "fare" | "tip",
+  tipCents?: number
+): Promise<{ connected: boolean; url?: string; error?: string }> {
+  try {
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/pay-link`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        apikey: SUPABASE_KEY,
+        Authorization: `Bearer ${SUPABASE_KEY}`,
+      },
+      body: JSON.stringify({ token, kind, tip_cents: tipCents ?? null }),
+    });
+    return await res.json();
+  } catch {
+    return { connected: false };
+  }
 }
 
 /**
