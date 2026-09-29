@@ -1,0 +1,19 @@
+# Supabase CLI settings for this project. Linked to the live project
+# (fjdoaonnoezbbitbawzs); there is no local stack.
+project_id = "paradise-sea-express"
+
+# None of these functions take a Supabase login, and each checks its caller
+# itself. Without these lines, `supabase functions deploy` switches the login
+# check back on and every call is refused at the door — which happened to
+# notify-captain on 28 Sep 2026.
+[functions.notify-booking]
+verify_jwt = false   # Database Webhook; checks x-webhook-secret
+
+[functions.notify-captain]
+verify_jwt = false   # database triggers (0036); checks x-webhook-secret
+
+[functions.pay-link]
+verify_jwt = false   # passengers have no login; the trip token is the key
+
+[functions.fygaro-hook]
+verify_jwt = false   # Fygaro has no login; checks Fygaro's signature
