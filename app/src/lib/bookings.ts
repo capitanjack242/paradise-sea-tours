@@ -49,7 +49,13 @@ export const LOCATIONS: readonly string[] = [
 ];
 
 /** Drop-off only: somewhere to go, never somewhere to be picked up. Fallback copy of docks.can_pickup. */
-export const DROPOFF_ONLY: readonly string[] = ["Pearl Island", "Floating Bar", "Blue Lagoon"];
+export const DROPOFF_ONLY: readonly string[] = [
+  "Pearl Island",
+  "Floating Bar",
+  "Blue Lagoon",
+  "Pigs Beach",
+  "Rose Island – Goodies",
+];
 
 /** Fallback pickup list, for when the shared list can't be read. */
 export const PICKUPS: readonly string[] = LOCATIONS.filter((n) => !DROPOFF_ONLY.includes(n));
