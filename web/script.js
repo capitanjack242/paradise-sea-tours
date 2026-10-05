@@ -101,11 +101,13 @@ document.getElementById("tripSeg").addEventListener("click", (e) => {
    "Other (see notes)" last — it isn't a dock, so it isn't in the table. */
 const OTHER_DOCK = "Other (see notes)";
 (async () => {
-  const { data, error } = await db.from("docks").select("name").order("sort");
+  const { data, error } = await db.from("docks").select("name, can_pickup").order("sort");
   if (error || !data?.length) return error && console.error("could not load docks:", error);
   for (const sel of form.querySelectorAll('select[name="pickup"], select[name="destination"]')) {
     const chosen = sel.value;
-    const names = [...data.map((d) => d.name), OTHER_DOCK];
+    // Drop-off-only stops (can_pickup false) are somewhere to go, not to start.
+    const docks = sel.name === "pickup" ? data.filter((d) => d.can_pickup !== false) : data;
+    const names = [...docks.map((d) => d.name), OTHER_DOCK];
     sel.replaceChildren(...names.map((n) => new Option(n, n, false, n === chosen)));
     // A default that has left the list falls back to the first dock.
     if (!names.includes(chosen)) sel.selectedIndex = 0;

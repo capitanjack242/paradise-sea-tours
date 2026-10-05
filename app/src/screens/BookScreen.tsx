@@ -21,6 +21,7 @@ import {
   fetchVatPct,
   formatMoney,
   LOCATIONS,
+  PICKUPS,
   matchRoute,
   perPersonCents,
   quoteCents,
@@ -57,6 +58,7 @@ export default function BookScreen({ onBooked }: { onBooked?: () => void }) {
   const [routes, setRoutes] = React.useState<Service[]>([]);
   // The shared dock list; the built-in copy until (or unless) it loads.
   const [docks, setDocks] = React.useState<readonly string[]>(LOCATIONS);
+  const [pickups, setPickups] = React.useState<readonly string[]>(PICKUPS);
   const [vatPct, setVatPct] = React.useState(VAT_FALLBACK_PCT);
   const [loading, setLoading] = React.useState(true);
   const [submitting, setSubmitting] = React.useState(false);
@@ -93,7 +95,10 @@ export default function BookScreen({ onBooked }: { onBooked?: () => void }) {
 
   React.useEffect(() => {
     fetchDocks()
-      .then(setDocks)
+      .then(({ pickups, destinations }) => {
+        setPickups(pickups);
+        setDocks(destinations);
+      })
       .catch((e) => console.warn("could not load docks:", e?.message ?? e));
   }, []);
 
@@ -230,7 +235,7 @@ export default function BookScreen({ onBooked }: { onBooked?: () => void }) {
       </View>
 
       <ScrollView contentContainerStyle={s.body} keyboardShouldPersistTaps="handled">
-        <PickerField label="Pick you up at" value={pickup} options={docks} onChange={setPickup} />
+        <PickerField label="Pick you up at" value={pickup} options={pickups} onChange={setPickup} />
         <PickerField label="Going to" value={destination} options={docks} onChange={setDestination} />
 
         <Segmented<TripType>

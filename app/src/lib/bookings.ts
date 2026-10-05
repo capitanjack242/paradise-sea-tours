@@ -48,12 +48,25 @@ export const LOCATIONS: readonly string[] = [
   OTHER_DOCK,
 ];
 
-/** The shared dock list, with "Other" on the end. Throws if it can't be read. */
-export async function fetchDocks(): Promise<string[]> {
-  const { data, error } = await supabase.from("docks").select("name").order("sort");
+/** Drop-off only: somewhere to go, never somewhere to be picked up. Fallback copy of docks.can_pickup. */
+export const DROPOFF_ONLY: readonly string[] = ["Pearl Island", "Floating Bar", "Blue Lagoon"];
+
+/** Fallback pickup list, for when the shared list can't be read. */
+export const PICKUPS: readonly string[] = LOCATIONS.filter((n) => !DROPOFF_ONLY.includes(n));
+
+/**
+ * The shared dock list, with "Other" on the end: every stop as a destination,
+ * and only the ones that take pickups as a pickup. Throws if it can't be read.
+ */
+export async function fetchDocks(): Promise<{ pickups: string[]; destinations: string[] }> {
+  const { data, error } = await supabase.from("docks").select("name, can_pickup").order("sort");
   if (error) throw error;
-  const names = (data ?? []).map((d) => d.name as string);
-  return names.length ? [...names, OTHER_DOCK] : [...LOCATIONS];
+  const rows = (data ?? []) as { name: string; can_pickup: boolean | null }[];
+  if (!rows.length) return { pickups: [...PICKUPS], destinations: [...LOCATIONS] };
+  return {
+    pickups: [...rows.filter((d) => d.can_pickup !== false).map((d) => d.name), OTHER_DOCK],
+    destinations: [...rows.map((d) => d.name), OTHER_DOCK],
+  };
 }
 
 /**
