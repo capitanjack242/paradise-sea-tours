@@ -153,9 +153,14 @@ function showPriceList(services) {
   const whole = (cents) => (cents % 100 ? (cents / 100).toFixed(2) : String(cents / 100));
 
   // The fares table: every published route, one row each, in the list's order.
-  const fares = services.filter((s) => s.category === "route" && s.is_active !== false && s.price_cents != null);
+  // Only trips to or from the Cruise Port — the table says so in its caption.
+  // Stop-to-stop fares are still quoted live in the booking form.
+  const PORT = "Nassau Cruise Port";
+  const fares = services.filter((s) =>
+    s.category === "route" && s.is_active !== false && s.price_cents != null &&
+    (s.from_point === PORT || s.to_point === PORT));
   if (fares.length) {
-    const other = (s) => (s.from_point === "Nassau Cruise Port" ? s.to_point : s.from_point) || s.title;
+    const other = (s) => (s.from_point === PORT ? s.to_point : s.from_point) || s.title;
     document.getElementById("faresBody").innerHTML = fares
       .map((s) => `<tr><td>${escHtml(other(s))}</td><td>$${whole(s.price_cents)}</td>` +
                   `<td>$${whole(s.round_trip_cents ?? s.price_cents * 2)}</td></tr>`)
