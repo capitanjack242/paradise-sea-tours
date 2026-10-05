@@ -236,3 +236,15 @@ img{max-width:100%}
 
 /* The clock the form means, said next to the field that asks for it. */
 .tz-hint{font-weight:500;font-size:.78em;color:var(--muted,#5b7688);margin-left:.3em}
+
+/* Fares: one row per destination from the Cruise Port, filled from the price list. */
+.fares-wrap{max-width:640px;margin:0 auto;text-align:center}
+.fares-table{width:100%;border-collapse:collapse;background:#fff;border:1px solid var(--line);
+  border-radius:var(--radius);overflow:hidden;margin-bottom:1.4rem;text-align:left}
+.fares-table caption{caption-side:top;padding:.2rem 0 .7rem;color:var(--deep);font-weight:600}
+.fares-table th{background:var(--navy);color:#fff;font-weight:600;padding:.65rem .9rem;font-size:.9rem}
+.fares-table td{padding:.6rem .9rem;border-top:1px solid var(--line);font-size:.97rem}
+.fares-table tbody tr:nth-child(even) td{background:#f6fbfd}
+.fares-table th:not(:first-child),.fares-table td:not(:first-child){text-align:right;white-space:nowrap}
+.fares-table td:not(:first-child){font-weight:600;color:var(--navy)}
+@media (max-width:480px){.fares-table th,.fares-table td{padding:.55rem .6rem;font-size:.9rem}}

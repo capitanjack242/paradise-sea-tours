@@ -152,6 +152,16 @@ function showPriceList(services) {
   const bySlug = new Map(services.map((s) => [s.slug, s]));
   const whole = (cents) => (cents % 100 ? (cents / 100).toFixed(2) : String(cents / 100));
 
+  // The fares table: every published route, one row each, in the list's order.
+  const fares = services.filter((s) => s.category === "route" && s.is_active !== false && s.price_cents != null);
+  if (fares.length) {
+    const other = (s) => (s.from_point === "Nassau Cruise Port" ? s.to_point : s.from_point) || s.title;
+    document.getElementById("faresBody").innerHTML = fares
+      .map((s) => `<tr><td>${escHtml(other(s))}</td><td>$${whole(s.price_cents)}</td>` +
+                  `<td>$${whole(s.round_trip_cents ?? s.price_cents * 2)}</td></tr>`)
+      .join("");
+  }
+
   document.querySelectorAll("[data-price]").forEach((el) => {
     const s = bySlug.get(el.dataset.price);
     if (s?.price_cents != null) el.textContent = whole(s.price_cents);
@@ -175,18 +185,23 @@ function showPriceList(services) {
   fill("data-price-max", (p) => Math.max(...p));
 }
 
+/* The published route between two stops, either way round. Exact names, the
+   same rule the database's quote_fare uses — every stop comes from the one
+   dock list, so there's nothing to guess. */
 function matchRoute(pickup, destination) {
-  const norm = (x) => (x ?? "").toLowerCase();
-  const a = pickup.toLowerCase();
-  const b = destination.toLowerCase();
+  const norm = (x) => (x ?? "").trim().toLowerCase();
+  const a = norm(pickup);
+  const b = norm(destination);
   return routes.find((r) => {
     const from = norm(r.from_point);
     const to = norm(r.to_point);
-    const hit = (x, y) =>
-      (x.includes(from) || from.includes(x)) && (y.includes(to) || to.includes(y));
-    return hit(a, b) || hit(b, a);
+    return (from === a && to === b) || (from === b && to === a);
   });
 }
+
+/** Per person for this trip type: a round trip has its own price, else two legs. */
+const perPersonCents = (route, tripType) =>
+  tripType === "Round trip" ? route.round_trip_cents ?? route.price_cents * 2 : route.price_cents;
 
 const money = (cents) =>
   cents == null ? "—" : `$${(cents / 100).toFixed(2).replace(/\.00$/, "")}`;
@@ -203,8 +218,7 @@ function currentFare() {
   if (d.triptype === "Private charter (whole boat)") return none;
   const route = matchRoute(d.pickup, d.destination);
   if (!route?.price_cents) return { ...none, route };
-  const legs = d.triptype === "Round trip" ? 2 : 1;
-  const fare = route.price_cents * (Number(d.guests) || 1) * legs;
+  const fare = perPersonCents(route, d.triptype) * (Number(d.guests) || 1);
   const vat = Math.round((fare * vatPct) / 100);
   return { fare, vat, total: fare + vat, route };
 }
@@ -226,8 +240,8 @@ function renderFare() {
   }
 
   if (totalCents != null && route) {
-    const legs = d.triptype === "Round trip" ? " × 2 legs" : "";
-    math.textContent = `${d.guests} × ${money(route.price_cents)}${legs}`;
+    const each = money(perPersonCents(route, d.triptype));
+    math.textContent = `${d.guests} × ${each}${d.triptype === "Round trip" ? " round trip" : ""}`;
     note.textContent = "Fixed price, VAT included. Nothing charged until a captain says yes.";
   } else {
     math.textContent = "";

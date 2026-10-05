@@ -10,6 +10,8 @@ export type Service = {
   description: string | null;
   pricing_model: "per_person" | "per_hour" | "per_boat";
   price_cents: number | null;
+  /** Per person there and back. Null means a round trip is two one-ways. */
+  round_trip_cents: number | null;
   from_point: string | null;
   to_point: string | null;
   est_minutes: number | null;
@@ -27,23 +29,32 @@ export const OTHER_DOCK = "Other (see notes)";
  */
 export const LOCATIONS: readonly string[] = [
   "Nassau Cruise Port",
+  "Paradise Island – Margaritaville",
+  "Paradise Island – Carnival",
+  "Pearl Island",
+  "Floating Bar",
+  "Blue Lagoon",
+  "Señor Frog's",
+  "Green Parrot",
+  "Poop Deck",
+  "Fort Montagu",
+  "Pigs Beach",
+  "Rose Island – Goodies",
+  "Junkanoo Beach",
+  "Arawak Cay / Fish Fry",
+  "Goodman's Bay",
+  "Breezes",
+  "Baha Mar",
   "Downtown Nassau / Prince George Wharf",
   "Paradise Island & Atlantis",
   "Atlantis Marina",
-  "Carnival Restaurant, Paradise Island Marina",
   "Cabbage Beach",
   "Rose Island & Cays",
   "The Sandbar",
-  "Breezes Beach",
-  "Baha Mar Dock",
-  "Fish Fry Dock",
   "Long Wharf Beach",
   "Love Beach",
   "Sandyport",
-  "Green Parrot Dock",
   "Potter's Cay Dock",
-  "Montagu Dock",
-  "Poop Deck (East Bay Street)",
   OTHER_DOCK,
 ];
 
@@ -95,8 +106,14 @@ export async function fetchRoutes(): Promise<Service[]> {
   return (data ?? []) as Service[];
 }
 
+/** Per person for this trip type: a round trip has its own price, else two legs. */
+export function perPersonCents(route: Service, tripType: TripType): number | null {
+  if (!route.price_cents) return null;
+  return tripType === "Round trip" ? route.round_trip_cents ?? route.price_cents * 2 : route.price_cents;
+}
+
 /**
- * Fare for a trip. Routes are priced per person; a round trip is both legs.
+ * Fare for a trip. Routes are priced per person; a round trip has its own price.
  * Returns null when we don't have a published price for that pair — dispatch
  * quotes those by hand rather than the app inventing a number.
  */
@@ -109,8 +126,7 @@ export function quoteCents(
   // A charter is the whole boat by the hour, not seats on a route. The price
   // list doesn't cover it, so the office quotes it — the database does the same.
   if (tripType === "Private charter (whole boat)") return null;
-  const legs = tripType === "Round trip" ? 2 : 1;
-  return route.price_cents * passengers * legs;
+  return (perPersonCents(route, tripType) ?? 0) * passengers;
 }
 
 export function formatMoney(cents: number | null): string {
@@ -118,21 +134,23 @@ export function formatMoney(cents: number | null): string {
   return `$${(cents / 100).toFixed(2).replace(/\.00$/, "")}`;
 }
 
-/** Find the published route matching a pickup/destination pair, either way round. */
+/**
+ * The published route between two stops, either way round. Exact names — the
+ * same rule as the database's quote_fare — since every stop comes from the one
+ * dock list.
+ */
 export function matchRoute(
   routes: Service[],
   pickup: string,
   destination: string
 ): Service | undefined {
-  const norm = (s: string | null) => (s ?? "").toLowerCase();
-  const a = pickup.toLowerCase();
-  const b = destination.toLowerCase();
+  const norm = (s: string | null) => (s ?? "").trim().toLowerCase();
+  const a = norm(pickup);
+  const b = norm(destination);
   return routes.find((r) => {
     const from = norm(r.from_point);
     const to = norm(r.to_point);
-    const hit = (x: string, y: string) =>
-      (x.includes(from) || from.includes(x)) && (y.includes(to) || to.includes(y));
-    return hit(a, b) || hit(b, a);
+    return (from === a && to === b) || (from === b && to === a);
   });
 }
 

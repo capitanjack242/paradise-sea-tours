@@ -4,12 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Paradise Sea Express — On-Demand Water Tours in Nassau</title>
-<meta name="description" content="On-demand water tours in Nassau, Bahamas. Fixed per-person fares from the Cruise Port to Paradise Island, Atlantis, Cabbage Beach & Rose Island. Book in seconds.">
+<meta name="description" content="On-demand water tours in Nassau, Bahamas. Fixed per-person fares from the Cruise Port to Paradise Island, Pearl Island, Rose Island, Blue Lagoon & Baha Mar. Book in seconds.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%E2%9B%B5%3C/text%3E%3C/svg%3E">
 <!-- Social share preview -->
 <meta property="og:type" content="website">
 <meta property="og:title" content="Paradise Sea Express — On-Demand Water Tours in Nassau">
-<meta property="og:description" content="Fast, fixed per-person rides across Nassau — Cruise Port to Paradise Island, Atlantis, the beaches & the cays. Book in seconds.">
+<meta property="og:description" content="Fast, fixed per-person rides across Nassau — Cruise Port to Paradise Island, the beaches, the bars & the cays. Book in seconds.">
 <meta property="og:image" content="https://paradiseseaexpress.com/images/conch-pearl.jpg">
 <meta property="og:url" content="https://paradiseseaexpress.com/">
 <meta name="twitter:card" content="summary_large_image">
@@ -51,7 +51,7 @@
     <h1>The fastest way<br>across the water.</h1>
     <p class="lede">Step off the cruise ship and onto a boat. Paradise Sea Express connects
       you to a nearby captained boat for a quick, fixed-price ride to Paradise Island,
-      Atlantis, the beaches and the cays.</p>
+      Pearl Island, the beaches and the cays.</p>
     <div class="hero-cta">
       <a href="#book" class="btn btn-primary btn-lg">Book a ride</a>
       <a href="#" class="btn btn-ghost btn-lg" data-call>📞 Call us</a>
@@ -133,31 +133,34 @@
     <p class="section-sub">Fixed prices shown before you book — no haggling, no surprises.
       Fares below are per person; <span data-vat-rate>10</span>% Bahamas VAT is added at checkout.
       You pay by card once we've confirmed your captain — never before. Prices in USD/BSD.</p>
-    <div class="pricing">
-      <div class="price-card featured">
-        <div class="ribbon">Most popular</div>
-        <h3>Paradise Island &amp; Atlantis</h3>
-        <div class="price">$<span data-price="paradise-island">15</span><small>/person</small></div>
-        <p class="price-note">one way · ~<span data-minutes="paradise-island">10</span> min</p>
-        <ul><li>From the Cruise Port or downtown</li><li>Atlantis &amp; beach club</li><li>Kids ride too</li></ul>
-        <a href="#book" class="btn btn-primary btn-block">Book</a>
-      </div>
-      <div class="price-card">
-        <h3>Cabbage Beach</h3>
-        <div class="price">$<span data-price="cabbage-beach">15</span><small>/person</small></div>
-        <p class="price-note">one way · ~<span data-minutes="cabbage-beach">12</span> min</p>
-        <ul><li>Skip the road traffic</li><li>Drop &amp; scheduled pickup</li><li>Beach day ready</li></ul>
-        <a href="#book" class="btn btn-primary btn-block">Book</a>
-      </div>
-      <div class="price-card">
-        <h3>Rose Island &amp; Cays</h3>
-        <div class="price">$<span data-price="rose-island">25</span><small>/person</small></div>
-        <p class="price-note">one way · ~<span data-minutes="rose-island">25</span> min</p>
-        <ul><li>Snorkeling &amp; quiet beaches</li><li>The Sandbar runs</li><li>Round trips available</li></ul>
-        <a href="#book" class="btn btn-primary btn-block">Book</a>
-      </div>
+    <!-- Filled from the price list (services) by script.js; these rows are only
+         what shows if that read fails. -->
+    <div class="fares-wrap">
+      <table class="fares-table">
+        <caption>From Nassau Cruise Port · per person, before VAT</caption>
+        <thead><tr><th>To</th><th>One way</th><th>Round trip</th></tr></thead>
+        <tbody id="faresBody">
+          <tr><td>Paradise Island – Margaritaville</td><td>$10</td><td>$18</td></tr>
+          <tr><td>Paradise Island – Carnival</td><td>$10</td><td>$18</td></tr>
+          <tr><td>Pearl Island</td><td>$30</td><td>$49</td></tr>
+          <tr><td>Floating Bar</td><td>$25</td><td>$45</td></tr>
+          <tr><td>Blue Lagoon</td><td>$35</td><td>$60</td></tr>
+          <tr><td>Señor Frog's</td><td>$10</td><td>$18</td></tr>
+          <tr><td>Green Parrot</td><td>$10</td><td>$18</td></tr>
+          <tr><td>Poop Deck</td><td>$12</td><td>$20</td></tr>
+          <tr><td>Fort Montagu</td><td>$16</td><td>$28</td></tr>
+          <tr><td>Pigs Beach</td><td>$25</td><td>$45</td></tr>
+          <tr><td>Rose Island – Goodies</td><td>$35</td><td>$60</td></tr>
+          <tr><td>Junkanoo Beach</td><td>$15</td><td>$25</td></tr>
+          <tr><td>Arawak Cay / Fish Fry</td><td>$15</td><td>$25</td></tr>
+          <tr><td>Goodman's Bay</td><td>$35</td><td>$60</td></tr>
+          <tr><td>Breezes</td><td>$40</td><td>$70</td></tr>
+          <tr><td>Baha Mar</td><td>$40</td><td>$70</td></tr>
+        </tbody>
+      </table>
+      <a href="#book" class="btn btn-primary">Book a ride</a>
     </div>
-    <p class="fineprint">* Route fares $<span data-price-min="route">15</span>–$<span data-price-max="route">25</span> per person, before <span data-vat-rate>10</span>% VAT. Private full-boat charters and group rates quoted on request.</p>
+    <p class="fineprint">* Route fares $<span data-price-min="route">15</span>–$<span data-price-max="route">25</span> per person, before <span data-vat-rate>10</span>% VAT. Trips between other stops, private full-boat charters and group rates are quoted on request.</p>
   </div>
 </section>
 
@@ -257,46 +260,64 @@
         <label>Pick you up at
           <select name="pickup" required>
             <option selected>Nassau Cruise Port</option>
+            <option>Paradise Island – Margaritaville</option>
+            <option>Paradise Island – Carnival</option>
+            <option>Pearl Island</option>
+            <option>Floating Bar</option>
+            <option>Blue Lagoon</option>
+            <option>Señor Frog's</option>
+            <option>Green Parrot</option>
+            <option>Poop Deck</option>
+            <option>Fort Montagu</option>
+            <option>Pigs Beach</option>
+            <option>Rose Island – Goodies</option>
+            <option>Junkanoo Beach</option>
+            <option>Arawak Cay / Fish Fry</option>
+            <option>Goodman's Bay</option>
+            <option>Breezes</option>
+            <option>Baha Mar</option>
             <option>Downtown Nassau / Prince George Wharf</option>
             <option>Paradise Island &amp; Atlantis</option>
             <option>Atlantis Marina</option>
-            <option>Carnival Restaurant, Paradise Island Marina</option>
             <option>Cabbage Beach</option>
             <option>Rose Island &amp; Cays</option>
             <option>The Sandbar</option>
-            <option>Breezes Beach</option>
-            <option>Baha Mar Dock</option>
-            <option>Fish Fry Dock</option>
             <option>Long Wharf Beach</option>
             <option>Love Beach</option>
             <option>Sandyport</option>
-            <option>Green Parrot Dock</option>
             <option>Potter's Cay Dock</option>
-            <option>Montagu Dock</option>
-            <option>Poop Deck (East Bay Street)</option>
             <option>Other (see notes)</option>
           </select>
         </label>
         <label>Going to
           <select name="destination" required>
             <option>Nassau Cruise Port</option>
+            <option selected>Paradise Island – Margaritaville</option>
+            <option>Paradise Island – Carnival</option>
+            <option>Pearl Island</option>
+            <option>Floating Bar</option>
+            <option>Blue Lagoon</option>
+            <option>Señor Frog's</option>
+            <option>Green Parrot</option>
+            <option>Poop Deck</option>
+            <option>Fort Montagu</option>
+            <option>Pigs Beach</option>
+            <option>Rose Island – Goodies</option>
+            <option>Junkanoo Beach</option>
+            <option>Arawak Cay / Fish Fry</option>
+            <option>Goodman's Bay</option>
+            <option>Breezes</option>
+            <option>Baha Mar</option>
             <option>Downtown Nassau / Prince George Wharf</option>
-            <option selected>Paradise Island &amp; Atlantis</option>
+            <option>Paradise Island &amp; Atlantis</option>
             <option>Atlantis Marina</option>
-            <option>Carnival Restaurant, Paradise Island Marina</option>
             <option>Cabbage Beach</option>
             <option>Rose Island &amp; Cays</option>
             <option>The Sandbar</option>
-            <option>Breezes Beach</option>
-            <option>Baha Mar Dock</option>
-            <option>Fish Fry Dock</option>
             <option>Long Wharf Beach</option>
             <option>Love Beach</option>
             <option>Sandyport</option>
-            <option>Green Parrot Dock</option>
             <option>Potter's Cay Dock</option>
-            <option>Montagu Dock</option>
-            <option>Poop Deck (East Bay Street)</option>
             <option>Other (see notes)</option>
           </select>
         </label>

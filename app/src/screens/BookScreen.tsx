@@ -22,6 +22,7 @@ import {
   formatMoney,
   LOCATIONS,
   matchRoute,
+  perPersonCents,
   quoteCents,
   VAT_FALLBACK_PCT,
   vatLabel,
@@ -61,7 +62,7 @@ export default function BookScreen({ onBooked }: { onBooked?: () => void }) {
   const [submitting, setSubmitting] = React.useState(false);
 
   const [pickup, setPickup] = React.useState<string>("Nassau Cruise Port");
-  const [destination, setDestination] = React.useState<string>("Paradise Island & Atlantis");
+  const [destination, setDestination] = React.useState<string>("Paradise Island – Margaritaville");
   const [tripType, setTripType] = React.useState<TripType>("One way");
   const [day, setDay] = React.useState<string>("Today");
   const [outTime, setOutTime] = React.useState<string>("10:30 AM");
@@ -136,7 +137,7 @@ export default function BookScreen({ onBooked }: { onBooked?: () => void }) {
   const route = matchRoute(routes, pickup, destination);
   const fare = quoteCents(route, passengers, tripType);
   const { vat, total } = withVat(fare, vatPct);
-  const perPerson = fare != null ? route?.price_cents ?? null : null;
+  const perPerson = fare != null && route ? perPersonCents(route, tripType) : null;
 
   /** Everything about the trip except who's taking it — checked before sign-in. */
   function validateTrip(): { scheduledAt: Date; returnAt: Date | null } | null {
@@ -310,7 +311,7 @@ export default function BookScreen({ onBooked }: { onBooked?: () => void }) {
                 {perPerson != null && (
                   <Text style={s.fareMath}>
                     {passengers} × {formatMoney(perPerson)}
-                    {tripType === "Round trip" ? " × 2 legs" : ""}
+                    {tripType === "Round trip" ? " round trip" : ""}
                   </Text>
                 )}
               </View>
