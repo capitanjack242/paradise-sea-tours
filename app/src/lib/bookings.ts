@@ -45,16 +45,6 @@ export const LOCATIONS: readonly string[] = [
   "Goodman's Bay",
   "Breezes",
   "Baha Mar",
-  "Downtown Nassau / Prince George Wharf",
-  "Paradise Island & Atlantis",
-  "Atlantis Marina",
-  "Cabbage Beach",
-  "Rose Island & Cays",
-  "The Sandbar",
-  "Long Wharf Beach",
-  "Love Beach",
-  "Sandyport",
-  "Potter's Cay Dock",
   OTHER_DOCK,
 ];
 
