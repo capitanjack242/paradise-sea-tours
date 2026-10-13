@@ -1331,7 +1331,7 @@ function offerHtml(b) {
 
   if (b.captain_response === "no_answer") {
     return `<div class="offer-state offer-no">
-        <strong>✗ ${who} didn't answer in 15 minutes</strong>
+        <strong>✗ ${who} didn't answer in 5 minutes</strong>
         <span class="offer-hint">Pick another boat, or ring them and ask again.</span>
         <span class="offer-actions">
           <button type="button" class="btn-ask-captain" data-id="${b.id}">Ask again</button>
@@ -1342,7 +1342,7 @@ function offerHtml(b) {
   if (b.offered_at) {
     return `<div class="offer-state offer-waiting">
         <strong>Asked ${who} · ${shortTime(b.offered_at)}</strong>
-        <span class="offer-hint">Waiting on an answer — closes after 15 minutes. If you get them on the phone:</span>
+        <span class="offer-hint">Waiting on an answer — closes after 5 minutes. If you get them on the phone:</span>
         <span class="offer-actions">
           <button type="button" class="btn-said-yes" data-id="${b.id}">They said yes</button>
           <button type="button" class="btn-said-no" data-id="${b.id}">They said no</button>

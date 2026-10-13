@@ -40,8 +40,9 @@ type Push = {
 
    A run gets the Junkanoo: maximum-importance channel, the custom 25-second
    alert, high priority so Android delivers it even in Doze, and Time Sensitive
-   so iOS lets it through a Focus mode. It also expires after ten minutes —
-   a run that was offered half an hour ago has been dealt with by somebody, and
+   so iOS lets it through a Focus mode. It also expires after five minutes, when
+   the offer itself closes (offer_timeout, 0047) — after that somebody else has
+   it, and
    a phone coming back into signal shouldn't start playing an alarm about it.
 
    A message gets an ordinary notification. Giving both the same treatment is
@@ -54,7 +55,7 @@ const RUN_ALERT = {
   channelId: "runs-v2",
   priority: "high" as const,
   interruptionLevel: "time-sensitive" as const,
-  ttl: 600,
+  ttl: 300,
 };
 
 const MESSAGE_ALERT = {
