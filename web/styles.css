@@ -62,7 +62,7 @@ img{max-width:100%}
 .hero-cta{display:flex;gap:.9rem;flex-wrap:wrap}
 .hero-stats{display:flex;gap:2.4rem;margin-top:3rem;flex-wrap:wrap}
 .hero-stats strong{display:block;font-family:'Baloo 2';font-size:1.7rem}
-.hero-stats span{font-size:.9rem;opacity:.9}
+.hero-stats > div > span{font-size:.9rem;opacity:.9}
 
 /* sections */
 .section{padding:4.5rem 0}
