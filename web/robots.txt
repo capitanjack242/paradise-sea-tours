@@ -1,0 +1,6 @@
+User-agent: *
+Disallow: /control/
+Disallow: /captain/
+Disallow: /trip/
+
+Sitemap: https://paradiseseaexpress.com/sitemap.xml
