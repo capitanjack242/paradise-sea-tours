@@ -100,6 +100,28 @@ document.getElementById("tripSeg").addEventListener("click", (e) => {
    pickers are rebuilt from it, keeping whatever was already chosen, with
    "Other (see notes)" last — it isn't a dock, so it isn't in the table. */
 const OTHER_DOCK = "Other (see notes)";
+
+/* A stop page's "Book" button arrives as /?to=Pearl%20Island#book (or
+   ?from=). Those choices win over the form's defaults, now for the built-in
+   list and again once the dock list has loaded, so the form opens on that trip. */
+const wanted = new URLSearchParams(location.search);
+function applyWanted() {
+  for (const [param, field] of [["from", "pickup"], ["to", "destination"]]) {
+    const v = wanted.get(param);
+    const sel = form.querySelector(`select[name="${field}"]`);
+    if (v && [...sel.options].some((o) => o.value === v)) sel.value = v;
+  }
+  // Going somewhere from the port is the usual trip; don't leave both ends the same.
+  if (wanted.get("to") && form.pickup.value === form.destination.value) {
+    form.pickup.value = "Nassau Cruise Port";
+  }
+}
+applyWanted();
+
+/** Same rule as scripts/build-routes.mjs: the address of a stop's page. */
+const stopSlug = (name) =>
+  name.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase()
+    .replace(/['\u2019]/g, "").replace(/&/g, " and ").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 (async () => {
   const { data, error } = await db.from("docks").select("name, can_pickup").order("sort");
   if (error || !data?.length) return error && console.error("could not load docks:", error);
@@ -112,6 +134,7 @@ const OTHER_DOCK = "Other (see notes)";
     // A default that has left the list falls back to the first dock.
     if (!names.includes(chosen)) sel.selectedIndex = 0;
   }
+  applyWanted();
   renderFare();
 })();
 
@@ -164,7 +187,7 @@ function showPriceList(services) {
   if (fares.length) {
     const other = (s) => (s.from_point === PORT ? s.to_point : s.from_point) || s.title;
     document.getElementById("faresBody").innerHTML = fares
-      .map((s) => `<tr><td>${escHtml(other(s))}</td><td>$${whole(s.price_cents)}</td>` +
+      .map((s) => `<tr><td><a href="/boat-to/${stopSlug(other(s))}/">${escHtml(other(s))}</a></td><td>$${whole(s.price_cents)}</td>` +
                   `<td>$${whole(s.round_trip_cents ?? s.price_cents * 2)}</td></tr>`)
       .join("");
   }

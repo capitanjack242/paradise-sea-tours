@@ -248,3 +248,17 @@ img{max-width:100%}
 .fares-table th:not(:first-child),.fares-table td:not(:first-child){text-align:right;white-space:nowrap}
 .fares-table td:not(:first-child){font-weight:600;color:var(--navy)}
 @media (max-width:480px){.fares-table th,.fares-table td{padding:.55rem .6rem;font-size:.9rem}}
+
+/* Stop pages (/boat-to/…/) */
+.route-page{padding-top:2.5rem}
+.route-page .eyebrow a{color:inherit}
+.route-page .section-title{text-align:left}
+.route-page .section-sub{text-align:left;margin-left:0}
+.route-page .fares-wrap{margin:1.6rem 0 0;max-width:640px;text-align:left}
+.route-page .fares-table a{color:var(--deep)}
+.route-note{background:#f6fbfd;border:1px solid var(--line);border-radius:var(--radius);padding:.8rem 1rem;max-width:640px}
+.route-others-title{font-size:1.2rem;margin:2.2rem 0 .6rem;color:var(--navy)}
+.route-others{line-height:2;max-width:760px}
+.route-others a{color:var(--deep)}
+.fares-table td a{color:inherit;text-decoration:underline;text-decoration-color:var(--line);text-underline-offset:3px}
+.fares-table td a:hover{text-decoration-color:currentColor}

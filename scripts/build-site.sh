@@ -33,5 +33,9 @@ find _site -name '*.html' -print0 | xargs -0 sed -i.bak \
   -e "s|src=\"script\.js\"|src=\"script.js?v=$V\"|g"
 find _site -name '*.bak' -delete
 
+# One page per stop (/boat-to/<stop>/) from the live price list, plus the
+# sitemap that lists them. Falls back to the last snapshot if the API is down.
+node scripts/build-routes.mjs _site "$V"
+
 echo "Assembled _site, assets stamped with v=$V"
 grep -o 'styles\.css?v=[a-z0-9]*' _site/index.html | head -1
