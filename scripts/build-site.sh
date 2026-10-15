@@ -37,5 +37,24 @@ find _site -name '*.bak' -delete
 # sitemap that lists them. Falls back to the last snapshot if the API is down.
 node scripts/build-routes.mjs _site "$V"
 
+# Google Analytics, on the public pages only. Never on /control, /captain or
+# /trip: a trip page's address carries the passenger's private link (?t=…), and
+# Analytics records every address it sees. The ID is public (it is in every
+# page). GA_MEASUREMENT_ID= (set but empty) builds without Analytics.
+GA_ID="${GA_MEASUREMENT_ID-G-D6M5TP558X}"
+case "$GA_ID" in
+  ""|G-[A-Z0-9]*) ;;
+  *) echo "GA_MEASUREMENT_ID should look like G-XXXXXXXXXX — got '$GA_ID'"; exit 1 ;;
+esac
+if [ -n "$GA_ID" ]; then
+  GA="<script async src=\"https://www.googletagmanager.com/gtag/js?id=$GA_ID\"></script><script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag('js',new Date());gtag('config','$GA_ID');</script>"
+  find _site -maxdepth 1 -name '*.html' -print0 > .ga-pages
+  find _site/boat-to -name 'index.html' -print0 >> .ga-pages 2>/dev/null || true
+  xargs -0 sed -i.bak "s#</head>#$GA</head>#" < .ga-pages
+  rm -f .ga-pages
+  find _site -name '*.bak' -delete
+  echo "Google Analytics $GA_ID on $(grep -rl "$GA_ID" _site | wc -l | tr -d ' ') pages"
+fi
+
 echo "Assembled _site, assets stamped with v=$V"
 grep -o 'styles\.css?v=[a-z0-9]*' _site/index.html | head -1
