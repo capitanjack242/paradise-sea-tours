@@ -46,6 +46,15 @@ img{max-width:100%}
 /* hero */
 .hero{position:relative;color:#fff;overflow:hidden;
   background:linear-gradient(160deg,#0a3b5c 0%,#0bbcd6 55%,#5fe1e8 100%)}
+/* The banner sits behind the words; the navy wash on the text side keeps
+   white type readable over the bright sunset. */
+.hero::before{content:"";position:absolute;inset:0;
+  background:
+    linear-gradient(90deg,rgba(6,36,59,.82) 0%,rgba(6,36,59,.6) 40%,rgba(6,36,59,.15) 75%,rgba(6,36,59,0) 100%),
+    url(images/hero-banner.jpg) 65% 70%/cover no-repeat;
+  background:
+    linear-gradient(90deg,rgba(6,36,59,.82) 0%,rgba(6,36,59,.6) 40%,rgba(6,36,59,.15) 75%,rgba(6,36,59,0) 100%),
+    image-set(url(images/hero-banner.webp) type("image/webp"),url(images/hero-banner.jpg) type("image/jpeg")) 65% 70%/cover no-repeat}
 .hero-overlay{position:absolute;inset:0;opacity:.5;
   background:
     radial-gradient(900px 400px at 80% -10%,rgba(255,255,255,.35),transparent),
@@ -63,6 +72,21 @@ img{max-width:100%}
 .hero-stats{display:flex;gap:2.4rem;margin-top:3rem;flex-wrap:wrap}
 .hero-stats strong{display:block;font-family:'Baloo 2';font-size:1.7rem}
 .hero-stats > div > span{font-size:.9rem;opacity:.9}
+/* On a phone the hero is tall and narrow: stretching a 3:1 banner over it
+   blurs it and hides the boat behind the buttons. So the words sit on navy and
+   the banner runs full width along the bottom, its sky fading into the navy. */
+@media(max-width:860px){
+  .hero{background:#0a3b5c}
+  .hero-overlay{display:none}
+  .hero::before{
+    background:
+      linear-gradient(180deg,#0a3b5c calc(100% - 36vw),rgba(10,59,92,0) calc(100% - 26vw)),
+      url(images/hero-banner.jpg) 50% 100%/100% auto no-repeat;
+    background:
+      linear-gradient(180deg,#0a3b5c calc(100% - 36vw),rgba(10,59,92,0) calc(100% - 26vw)),
+      image-set(url(images/hero-banner.webp) type("image/webp"),url(images/hero-banner.jpg) type("image/jpeg")) 50% 100%/100% auto no-repeat}
+  .hero-content{padding-bottom:calc(33.4vw + 1.5rem)}
+}
 
 /* sections */
 .section{padding:4.5rem 0}
