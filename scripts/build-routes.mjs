@@ -99,7 +99,8 @@ function page(stop, docks, routes) {
 <meta property="og:description" content="${esc(description)}">
 <meta property="og:url" content="${ORIGIN}/boat-to/${slug(name)}/">
 <meta property="og:image" content="${ORIGIN}/images/conch-pearl.jpg">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%E2%9B%B5%3C/text%3E%3C/svg%3E">
+<link rel="icon" type="image/png" href="/favicon.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
@@ -108,7 +109,7 @@ function page(stop, docks, routes) {
 <body>
 <header class="nav">
   <div class="container nav-inner">
-    <a href="/" class="brand"><span class="brand-mark">⛵</span><span class="brand-text">Paradise<strong>Sea Express</strong></span></a>
+    <a href="/" class="brand"><picture><source srcset="/images/logo-mark-96.webp" type="image/webp"><img class="brand-mark" src="/images/logo-mark-96.png" width="38" height="38" alt=""></picture><span class="brand-text">Paradise<strong>Sea Express</strong></span></a>
     <nav class="nav-links"><a href="/#pricing">All fares</a><a href="${book}" class="btn btn-sm btn-primary">Book a ride</a></nav>
   </div>
 </header>
