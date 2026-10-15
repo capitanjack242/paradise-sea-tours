@@ -494,7 +494,26 @@ form.addEventListener("submit", async (e) => {
 
   status.textContent = "Request sent — opening your trip page…";
   status.classList.add("ok");
-  location.href = `trip/?t=${encodeURIComponent(tripToken)}&new=1`;
+  // Count the booking in Analytics (when it's switched on) before leaving the
+  // page — the trip page itself is never tracked. Never waits more than a second.
+  let leaving = false;
+  const openTrip = () => {
+    if (leaving) return;
+    leaving = true;
+    location.href = `trip/?t=${encodeURIComponent(tripToken)}&new=1`;
+  };
+  if (typeof window.gtag === "function") {
+    setTimeout(openTrip, 1000);
+    window.gtag("event", "generate_lead", {
+      destination: d.destination,
+      pickup: d.pickup,
+      trip_type: d.triptype,
+      passengers: Number(d.guests) || 1,
+      event_callback: openTrip,
+    });
+  } else {
+    openTrip();
+  }
 });
 
 // fleet: pull real active boats/captains instead of showing generic placeholders

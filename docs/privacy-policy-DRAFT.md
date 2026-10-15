@@ -68,6 +68,11 @@ We use a small number of service providers, only for the purposes above:
   and messages.
 - **Google Maps** — opens when you or a captain tap "open the map". We send only
   the coordinates.
+- **Google Analytics** — counts visits to our public web pages (which pages,
+  roughly which country, what device) using cookies, so we can see what
+  people look for. It never runs on trip pages or in the apps, and never
+  receives your name, number or trip link. You can opt out with Google's
+  [browser add-on](https://tools.google.com/dlpage/gaoptout).
 
 We do not sell your information, and we don't use it for advertising.
 
