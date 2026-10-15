@@ -35,7 +35,7 @@ img{max-width:100%}
   backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
 .nav-inner{display:flex;align-items:center;justify-content:space-between;height:68px}
 .brand{display:flex;align-items:center;gap:.5rem;font-size:1.25rem;color:var(--navy)}
-.brand-mark{font-size:1.4rem}
+.brand-mark{display:block;width:38px;height:38px;border-radius:50%}
 .brand-text strong{color:var(--teal)}
 .nav-links{display:flex;align-items:center;gap:1.4rem;font-weight:500}
 .nav-links a{color:var(--ink);opacity:.85}
@@ -221,6 +221,8 @@ img{max-width:100%}
 .footer{background:var(--navy);color:#cfe2ee;padding:3.5rem 0 1.5rem}
 .footer-grid{display:grid;grid-template-columns:1.4fr 1fr 1fr 1fr;gap:2rem}
 .brand-footer{color:#fff;margin-bottom:.6rem}
+/* The mark is a navy disc: a thin white ring keeps it from melting into the navy footer. */
+.brand-footer .brand-mark{box-shadow:0 0 0 2px #fff}
 .footer h4{color:#fff;margin-bottom:.7rem;font-family:'Inter';font-size:.95rem;text-transform:uppercase;letter-spacing:.08em}
 .footer a:hover{color:var(--aqua)}
 .footer .muted{color:#8fb0c4}
