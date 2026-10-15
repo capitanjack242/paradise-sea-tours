@@ -39,8 +39,9 @@ node scripts/build-routes.mjs _site "$V"
 
 # Google Analytics, on the public pages only. Never on /control, /captain or
 # /trip: a trip page's address carries the passenger's private link (?t=…), and
-# Analytics records every address it sees. Empty ID = no Analytics at all.
-GA_ID="${GA_MEASUREMENT_ID:-}"
+# Analytics records every address it sees. The ID is public (it is in every
+# page). GA_MEASUREMENT_ID= (set but empty) builds without Analytics.
+GA_ID="${GA_MEASUREMENT_ID-G-D6M5TP558X}"
 case "$GA_ID" in
   ""|G-[A-Z0-9]*) ;;
   *) echo "GA_MEASUREMENT_ID should look like G-XXXXXXXXXX — got '$GA_ID'"; exit 1 ;;
