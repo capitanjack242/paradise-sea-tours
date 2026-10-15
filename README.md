@@ -35,6 +35,8 @@ The apps: `cd app && npx expo start` (or `captain-app`); add `--web` for a brows
 - **Site:** push to `main`. Cloudflare runs `scripts/build-site.sh` and serves
   `_site` (see `wrangler.jsonc`).
 - **Database:** `supabase db push --linked` applies new files in
-  `supabase/migrations/`. See `supabase/README.md`.
+  `supabase/migrations/`. See `supabase/README.md`. In a Claude cloud session
+  (HTTPS only, no direct database connection) use
+  `python3 scripts/db-api.py list` / `push --yes` instead.
 - **Edge Functions:** `supabase functions deploy <name>` (needs
   `TMPDIR=$HOME/.cache/supabase-tmp/` on this Mac — Colima only shares /Users).
