@@ -27,6 +27,8 @@ Contact: hello@paradiseseaexpress.com · [ADMIN: registered address]
 | Messages | When you write to us or your captain | To run the trip |
 | Ratings and comments | If you rate a trip | To keep standards up and look after our captains |
 | Payment records | When you pay or tip | To show what is paid and owed, and for tax records |
+| App activity: that the app was installed and opened, and that a boat was requested (route and party size only) | When you use the passenger app | To see which of our ads bring people to the app (see Meta, section 4) |
+| Your phone's advertising ID | **iPhone: only if you tap "Allow" when asked about tracking.** Android: unless you've turned it off in your phone's ad settings | So Meta can tell us which ad led to your install or booking |
 
 We do **not** collect or store your card number. Card payments are taken by our
 payment provider, Fygaro, on its own secure page (see section 4).
@@ -73,12 +75,24 @@ We use a small number of service providers, only for the purposes above:
   people look for. It never runs on trip pages or in the apps, and never
   receives your name, number or trip link. You can opt out with Google's
   [browser add-on](https://tools.google.com/dlpage/gaoptout).
+- **Meta (Facebook and Instagram)** — the passenger app tells Meta when it's
+  installed and opened, and when a boat is requested (the route and number of
+  people, never your name, number or messages), so we can see which of our
+  Facebook and Instagram ads bring people to us. On iPhone, Meta may link this
+  to you only if you allow tracking when the app asks; otherwise it's counted
+  only in anonymous totals. Meta's own [privacy policy](https://www.facebook.com/privacy/policy/)
+  applies to what it receives.
 
-We do not sell your information, and we don't use it for advertising.
+We do not sell your information. Apart from telling Meta about app installs and
+boat requests as above, we don't use it for advertising.
 
 ## 5. Your choices and rights
 
 - Location sharing is optional; booking works without it.
+- Ad tracking is optional. On iPhone, tap "Ask App Not to Track" when asked, or
+  turn it off later in Settings → Privacy & Security → Tracking. On Android,
+  delete or reset your advertising ID in Settings → Google → Ads (or Settings →
+  Privacy → Ads). Booking works either way.
 - You can ask what we hold about you, ask us to correct it, or ask us to delete it
   (except records we must keep by law) by emailing hello@paradiseseaexpress.com.
   We'll answer within [ADMIN: e.g. 30 days].

@@ -17,6 +17,7 @@ import {
   type TripView,
 } from "./src/lib/trip";
 import { IN_NASSAU } from "./src/lib/nassau";
+import { startAdMeasurement } from "./src/lib/ads";
 import { colors, radius } from "./src/lib/theme";
 
 /* Three tabs: ask for a boat, settle up for it, and talk to whoever is running
@@ -100,6 +101,12 @@ export default function App() {
   React.useEffect(() => {
     load();
   }, [load]);
+
+  // Which ad brought this install (Meta). On iPhone this is where Apple's
+  // "allow tracking?" question appears, once. Does nothing without a Meta app ID.
+  React.useEffect(() => {
+    startAdMeasurement();
+  }, []);
 
   // The trip page reads through a function, not a table, so realtime can't
   // reach it. While a trip is on screen, ask again every fifteen seconds so a

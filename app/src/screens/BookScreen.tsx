@@ -14,6 +14,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { PickerField, Segmented, Stepper, Label } from "../components/ui";
 import ContactSheet from "../components/ContactSheet";
 import { prettyPhone } from "../lib/auth";
+import { logBoatRequested } from "../lib/ads";
 import {
   createBooking,
   fetchDocks,
@@ -191,6 +192,7 @@ export default function BookScreen({ onBooked }: { onBooked?: () => void }) {
         notes: notes.trim() || undefined,
         location: where,
       });
+      logBoatRequested({ pickup, destination, passengers });
       // The key to the trip, kept on the phone alongside any earlier ones.
       // Without it the payment tab, the captain thread and tips would all stay
       // empty forever.

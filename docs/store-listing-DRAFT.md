@@ -63,9 +63,19 @@ app actually does:
 | Messages (in-app) | Yes | Yes | App functionality | No |
 | Purchase history (trips and payments) | Yes | Yes | App functionality | No |
 | Other user content (ratings, notes) | Yes | Yes | App functionality, product improvement | No |
+| Device ID (advertising ID) | iPhone: only if the person allows tracking. Android: yes, unless reset or deleted in the phone's ad settings | Yes | Third-party advertising (measuring our Meta ads) | **Yes** |
+| Product interaction (app installed and opened, boat requested: route and party size) | Yes, sent to Meta | Yes when the advertising ID is allowed | Analytics, third-party advertising (measuring our Meta ads) | **Yes** |
 
 Not collected: card details (entered on Fygaro's page), contacts, photos,
-browsing history, identifiers for advertising. No third-party analytics or ads.
+browsing history. No ads are shown in the app.
+
+Because of Meta's SDK, Apple's App Tracking Transparency prompt is shown on
+first launch (text in `app/app.config.js`), and the app must be listed as
+tracking. On Google Play, declare the advertising ID under "Device or other
+IDs", shared with Meta for advertising, and answer "Yes" to the advertising-ID
+question in the Play Console. **[ADMIN: Meta app ID and client token, set as
+META_APP_ID and META_CLIENT_TOKEN for the EAS build; without them the app
+builds with no Meta SDK running.]**
 
 ---
 
