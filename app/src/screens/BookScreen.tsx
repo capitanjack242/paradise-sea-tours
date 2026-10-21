@@ -16,6 +16,7 @@ import ContactSheet from "../components/ContactSheet";
 import { prettyPhone } from "../lib/auth";
 import { logBoatRequested } from "../lib/ads";
 import {
+  checkPromo,
   createBooking,
   fetchDocks,
   fetchRoutes,
@@ -72,6 +73,11 @@ export default function BookScreen({ onBooked }: { onBooked?: () => void }) {
   const [backTime, setBackTime] = React.useState<string>("4:00 PM");
   const [passengers, setPassengers] = React.useState(2);
   const [notes, setNotes] = React.useState("");
+  // A ship code, and what the database says it's worth. `promoChecked` is the
+  // code that answer was for, so a stale answer never shows against new typing.
+  const [promoCode, setPromoCode] = React.useState("");
+  const [promoCents, setPromoCents] = React.useState<number | null>(null);
+  const [promoChecked, setPromoChecked] = React.useState("");
   // Who they are, remembered from last time. No account: the number is the
   // record, exactly as it is on the website.
   const [myName, setMyName] = React.useState<string | null>(null);
@@ -140,8 +146,26 @@ export default function BookScreen({ onBooked }: { onBooked?: () => void }) {
     if (!got) setLocBlocked((await checkPermission()) === "denied");
   }
 
+  React.useEffect(() => {
+    const code = promoCode.trim().toUpperCase();
+    setPromoCents(null);
+    setPromoChecked("");
+    if (!code) return;
+    const timer = setTimeout(() => {
+      checkPromo(code)
+        .then((cents) => setPromoCents(cents), () => setPromoCents(null))
+        .finally(() => setPromoChecked(code));
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [promoCode]);
+
   const route = matchRoute(routes, pickup, destination);
-  const fare = quoteCents(route, passengers, tripType);
+  const code = promoCode.trim().toUpperCase();
+  const fullFare = quoteCents(route, passengers, tripType);
+  // The same as the database: a fixed amount off the fare, never below zero,
+  // then the tax on what's left.
+  const off = fullFare != null && promoCents ? Math.min(promoCents, fullFare) : 0;
+  const fare = fullFare != null ? fullFare - off : null;
   const { vat, total } = withVat(fare, vatPct);
   const perPerson = fare != null && route ? perPersonCents(route, tripType) : null;
 
@@ -191,6 +215,7 @@ export default function BookScreen({ onBooked }: { onBooked?: () => void }) {
         contactPhone,
         notes: notes.trim() || undefined,
         location: where,
+        promoCode: code || undefined,
       });
       logBoatRequested({ pickup, destination, passengers });
       // The key to the trip, kept on the phone alongside any earlier ones.
@@ -223,6 +248,13 @@ export default function BookScreen({ onBooked }: { onBooked?: () => void }) {
      them. Booking is one tap for a regular and never a mystery for anyone —
      nobody is asked to make an account to get on a boat. */
   function onRequest() {
+    if (code && promoCents == null) {
+      Alert.alert(
+        "Check your promo code",
+        "That code isn't valid or has expired. Clear it to book without it."
+      );
+      return;
+    }
     if (!validateTrip()) return;
     setShowContact(true);
   }
@@ -279,6 +311,27 @@ export default function BookScreen({ onBooked }: { onBooked?: () => void }) {
           />
         </View>
 
+        <View>
+          <Label>Promo code (optional)</Label>
+          <TextInput
+            style={s.input}
+            value={promoCode}
+            onChangeText={setPromoCode}
+            placeholder="From your ship's group or our ad"
+            placeholderTextColor={colors.muted}
+            autoCapitalize="characters"
+            autoCorrect={false}
+            maxLength={20}
+          />
+          {code && promoChecked === code ? (
+            <Text style={[s.promoHint, promoCents == null && s.promoBad]}>
+              {promoCents != null
+                ? `${formatMoney(promoCents)} off this booking.`
+                : "That code isn't valid or has expired."}
+            </Text>
+          ) : null}
+        </View>
+
         {/* The dock is the plan; this is where they're actually standing.
             Worth its own row so nobody is surprised by the permission box. */}
         <Pressable
@@ -324,7 +377,13 @@ export default function BookScreen({ onBooked }: { onBooked?: () => void }) {
               </View>
               {total != null && (
                 <View style={s.fareSplit}>
-                  <Text style={s.fareSplitItem}>Fare {formatMoney(fare)}</Text>
+                  {/* The fare before the code, then the code off it, then the tax on the rest. */}
+                  <Text style={s.fareSplitItem}>Fare {formatMoney(fullFare)}</Text>
+                  {off > 0 && (
+                    <Text style={s.fareSplitItem}>
+                      Code {code} −{formatMoney(off)}
+                    </Text>
+                  )}
                   <Text style={s.fareSplitItem}>
                     VAT ({vatLabel(vatPct)}%) {formatMoney(vat)}
                   </Text>
@@ -425,6 +484,8 @@ const s = StyleSheet.create({
   locTitle: { fontSize: 14, fontWeight: "700", color: colors.ink },
   locTitleOn: { color: colors.green },
   locSub: { fontSize: 11.5, color: colors.muted, marginTop: 1, lineHeight: 15 },
+  promoHint: { fontSize: 12.5, fontWeight: "600", color: colors.green, marginTop: 5 },
+  promoBad: { color: colors.danger },
   notesInput: { minHeight: 58, textAlignVertical: "top", fontWeight: "500" },
   fare: { borderRadius: radius.md, padding: 14, backgroundColor: colors.deep, marginTop: 4 },
   fareRow: { flexDirection: "row", alignItems: "baseline", justifyContent: "space-between" },

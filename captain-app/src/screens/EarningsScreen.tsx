@@ -7,6 +7,7 @@ import {
   money,
   owedIn,
   payWeek,
+  boatFare,
   splitFare,
   splitTrips,
   tripPct,
@@ -148,13 +149,13 @@ export default function EarningsScreen({
               <View style={s.rowRight}>
                 <Text style={[s.rowMoney, t.paid_out_at && !owed.carried && s.rowMoneyPaid]}>
                   {money(
-                    (owed.fare ? splitFare(t.quoted_price_cents ?? 0, tripPct(t, boat)).net : 0) + tip
+                    (owed.fare ? splitFare(boatFare(t), tripPct(t, boat)).net : 0) + tip
                   )}
                 </Text>
                 {tip > 0 ? (
                   <Text style={s.rowTip}>{owed.fare ? `incl. ${money(tip)} tip` : "tip"}</Text>
                 ) : owed.fare && tripPct(t, boat) > 0 ? (
-                  <Text style={s.rowGross}>of {money(t.quoted_price_cents)}</Text>
+                  <Text style={s.rowGross}>of {money(boatFare(t))}</Text>
                 ) : null}
               </View>
             </View>

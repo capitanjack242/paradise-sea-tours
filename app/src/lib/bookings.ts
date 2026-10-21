@@ -175,6 +175,8 @@ export type NewBooking = {
   notes?: string;
   /** Where they're actually standing, if they chose to share it. */
   location?: Fix | null;
+  /** A ship code from a roll-call group or an ad, already checked. */
+  promoCode?: string;
 };
 
 /**
@@ -209,8 +211,21 @@ export async function createBooking(b: NewBooking): Promise<string> {
     p_pickup_lat: b.location?.lat ?? null,
     p_pickup_lng: b.location?.lng ?? null,
     p_located_at: b.location ? b.location.at.toISOString() : null,
+    // Only when there is one, so a booking without a code never depends on it.
+    ...(b.promoCode ? { p_promo_code: b.promoCode } : {}),
   });
   if (error) throw error;
   if (!data) throw new Error("The booking went through but we didn't get the trip back.");
   return data as string;
+}
+
+/**
+ * What a ship code takes off a booking today (cents, before VAT), or null if it
+ * doesn't work. The database applies it again when the booking comes in, so
+ * this is for showing the price, not for trusting.
+ */
+export async function checkPromo(code: string): Promise<number | null> {
+  const { data, error } = await supabase.rpc("check_promo", { p_code: code });
+  if (error) throw error;
+  return data == null ? null : Number(data);
 }
