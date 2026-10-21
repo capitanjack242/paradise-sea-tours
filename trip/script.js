@@ -8,6 +8,11 @@ const SUPABASE_URL = "https://fjdoaonnoezbbitbawzs.supabase.co";
 const SUPABASE_KEY = "sb_publishable_RjTM-t2isu1Teq9P5z37PQ_h_Oy3EpP";
 const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+/* Where a finished trip is asked for a public review: Google, because that is
+   where cruise passengers search and compare. One ask, one site. Blank = no
+   review card. Google Business Profile → "Ask for reviews" gives a g.page/r/… link. */
+const GOOGLE_REVIEW_URL = "";
+
 const params = new URLSearchParams(location.search);
 const token = params.get("t");
 
@@ -164,6 +169,7 @@ function render(t) {
   renderPayment(t);
   renderRating(t);
   renderTip(t);
+  renderReviews(t);
 
   // Only the channel being looked at. The office one is always available; the
   // captain's opens on payment, and until then the tab says why rather than
@@ -494,6 +500,16 @@ document.getElementById("rateSend").addEventListener("click", async () => {
   err.hidden = true;
   await load(); // the tip card is waiting on this
 });
+
+/* Public review.
+
+   Shown whenever the trip is over (the same window as the rating), never
+   depending on the stars given: picking who to ask is "review gating", and
+   Google bans it. */
+function renderReviews(t) {
+  document.getElementById("reviewSection").hidden = !t.can_rate || !GOOGLE_REVIEW_URL;
+  document.getElementById("reviewLink").href = GOOGLE_REVIEW_URL;
+}
 
 /* Tips.
 
