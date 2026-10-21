@@ -179,12 +179,10 @@ body{margin:0;background:var(--foam);color:var(--ink);
 .review-title{margin:0 0 .35rem;font-size:.72rem;font-weight:800;letter-spacing:.09em;
   text-transform:uppercase;color:var(--muted)}
 .review-note{margin:0;font-size:.85rem;color:var(--muted);line-height:1.45}
-.review-links{display:flex;gap:.5rem;margin-top:.7rem;flex-wrap:wrap}
-.review-link{flex:1;min-width:9rem;text-align:center;font-size:.95rem;font-weight:800;
+.review-link{display:block;margin-top:.7rem;text-align:center;font-size:.95rem;font-weight:800;
   padding:.65em .6em;border-radius:10px;border:1.5px solid var(--deep);
   color:var(--deep);text-decoration:none}
 .review-link:hover{background:var(--deep);color:#fff}
-.review-link[hidden]{display:none}
 
 /* ── the boat, on its way ─────────────────────────────────────────────────
    Only ever on screen while the captain is sharing and the fix is fresh. */
