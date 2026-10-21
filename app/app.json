@@ -17,7 +17,7 @@
     "android": {
       "package": "com.paradiseseaexpress.app",
       "adaptiveIcon": {
-        "backgroundColor": "#002457",
+        "backgroundColor": "#06243B",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
