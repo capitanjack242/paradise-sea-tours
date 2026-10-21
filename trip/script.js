@@ -8,6 +8,15 @@ const SUPABASE_URL = "https://fjdoaonnoezbbitbawzs.supabase.co";
 const SUPABASE_KEY = "sb_publishable_RjTM-t2isu1Teq9P5z37PQ_h_Oy3EpP";
 const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+/* Where a finished trip is asked for a public review. Blank = that button is
+   not shown; both blank = no review card at all.
+   google: Google Business Profile → "Ask for reviews" gives a g.page/r/… link.
+   trustpilot: the business's own review page; works before the account is claimed. */
+const REVIEW_LINKS = {
+  google: "",
+  trustpilot: "https://www.trustpilot.com/evaluate/paradiseseaexpress.com",
+};
+
 const params = new URLSearchParams(location.search);
 const token = params.get("t");
 
@@ -164,6 +173,7 @@ function render(t) {
   renderPayment(t);
   renderRating(t);
   renderTip(t);
+  renderReviews(t);
 
   // Only the channel being looked at. The office one is always available; the
   // captain's opens on payment, and until then the tab says why rather than
@@ -494,6 +504,25 @@ document.getElementById("rateSend").addEventListener("click", async () => {
   err.hidden = true;
   await load(); // the tip card is waiting on this
 });
+
+/* Public reviews.
+
+   Shown whenever the trip is over (the same window as the rating), never
+   depending on the stars given: picking who to ask is "review gating", and both
+   Google and Trustpilot ban it. */
+function renderReviews(t) {
+  const links = [
+    ["reviewGoogle", REVIEW_LINKS.google],
+    ["reviewTrustpilot", REVIEW_LINKS.trustpilot],
+  ];
+  for (const [id, url] of links) {
+    const a = document.getElementById(id);
+    a.hidden = !url;
+    if (url) a.href = url;
+  }
+  document.getElementById("reviewSection").hidden =
+    !t.can_rate || !links.some(([, url]) => url);
+}
 
 /* Tips.
 
