@@ -412,6 +412,12 @@ document.getElementById("weekNext").addEventListener("click", () => {
 });
 
 /** What a fare splits into. Integer cents throughout so nothing rounds away. */
+/**
+ * The fare a boat is paid on: before any promo code. Paradise pays for ship
+ * codes (0050), so a captain's share never shrinks because of one.
+ */
+const boatFare = (b) => (b.quoted_price_cents || 0) + (b.discount_cents || 0);
+
 function splitFare(grossCents, pct) {
   const rate = Number(pct) > 0 ? Number(pct) : 0;
   const commission = Math.round((grossCents * rate) / 100);
@@ -473,7 +479,8 @@ function buildPayout() {
         grossCents: 0,     // fares before tax — the base commission is taken on
         vatCents: 0,       // the government's share, never anyone's to split
         tipCents: 0,       // tips still to hand over — no commission comes off these
-        commissionCents: 0 // what Paradise keeps
+        commissionCents: 0, // what Paradise's rate comes to, on the full fares
+        discountCents: 0    // promo codes, which Paradise pays out of that
       };
       byBoat.set(key, row);
     }
@@ -482,10 +489,11 @@ function buildPayout() {
       const pct = tripPct(b, row.boat);
       row.rates.add(pct);
       // The fare, not the total: commission on VAT would be a cut of a tax bill.
-      const split = splitFare(b.quoted_price_cents || 0, pct);
+      const split = splitFare(boatFare(b), pct);
       row.grossCents += split.gross;
       row.vatCents += b.vat_cents || 0;
       row.commissionCents += split.commission;
+      row.discountCents += b.discount_cents || 0;
       if (fareDue) {
         row.owedCents += split.net;
         row.fareDue.push(b);
@@ -531,7 +539,9 @@ function renderPayout() {
   const owed = rows.reduce((n, r) => n + r.owedCents, 0);
   const paid = rows.reduce((n, r) => n + r.paidCents, 0);
   const trips = rows.reduce((n, r) => n + r.trips.length, 0);
-  const commission = rows.reduce((n, r) => n + r.commissionCents, 0);
+  // What Paradise actually keeps: its rate, less the promo codes it paid for.
+  const discounts = rows.reduce((n, r) => n + r.discountCents, 0);
+  const commission = rows.reduce((n, r) => n + r.commissionCents, 0) - discounts;
   const vat = rows.reduce((n, r) => n + r.vatCents, 0);
   const tips = rows.reduce((n, r) => n + r.tipCents, 0);
 
@@ -548,6 +558,7 @@ function renderPayout() {
          ? `<div class="tot tot-keep">
               <span class="tot-lab">Your commission</span>
               <span class="tot-val money">${dollars(commission)}</span>
+              ${discounts ? `<span class="tot-hint">after ${dollars(discounts)} in promo codes</span>` : ""}
             </div>`
          : ""}
        ${vat
@@ -615,7 +626,7 @@ function payoutHtml(r) {
           <td>${t.passengers ?? "?"}</td>
           <td>${t.paid_out_at && !tipDue ? `<span class="pill pill-completed">Paid</span>` : ""}</td>
           <td class="num${fareDue || tipDue ? "" : " unpaid"}">${dollars(
-            (fareDue ? splitFare(t.quoted_price_cents || 0, tripPct(t, r.boat)).net : 0) +
+            (fareDue ? splitFare(boatFare(t), tripPct(t, r.boat)).net : 0) +
             (tipDue ? t.tip_cents : 0)
           )}${tipDue ? ` <span class="tip-flag">+tip</span>` : ""}</td>
         </tr>`;
@@ -1812,6 +1823,12 @@ function cardHtml(b) {
         ${b.source
           ? `<div class="trip-source">Came from ${esc(
               [b.source, b.source_medium, b.source_campaign].filter(Boolean).join(" · "))}</div>`
+          : ""}
+        ${b.promo_code
+          ? `<div class="trip-source">Code ${esc(b.promo_code)}${
+              b.discount_cents
+                ? ` · ${dollars(b.discount_cents)} off, paid by Paradise`
+                : " · not yet taken off — charter, take it off the quote"}</div>`
           : ""}
         ${b.return_at
           ? `<div class="return-leg">↩ Collect again ${esc(new Date(b.return_at).toLocaleString(undefined, {

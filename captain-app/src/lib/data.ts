@@ -18,6 +18,8 @@ export type Trip = {
   contact_name: string | null;
   notes: string | null;
   quoted_price_cents: number | null;
+  /** Taken off by a promo code. Paradise pays it: the boat is paid on the fare before it. */
+  discount_cents: number | null;
   paid_out_at: string | null;
   /** When the passenger paid. Null means he can't message them yet. */
   paid_at: string | null;
@@ -66,6 +68,9 @@ export type Split = { gross: number; commission: number; net: number };
 /** A week's money: the fares split up, plus tips, which are split with nobody. */
 export type WeekTotal = Split & { tips: number; take: number };
 
+/** The fare a boat is paid on: before any promo code, which Paradise pays for. */
+export const boatFare = (t: Trip): number => (t.quoted_price_cents ?? 0) + (t.discount_cents ?? 0);
+
 export function splitFare(grossCents: number, commissionPct: number): Split {
   const pct = Number.isFinite(commissionPct) ? Math.max(0, commissionPct) : 0;
   const commission = Math.round((grossCents * pct) / 100);
@@ -88,7 +93,7 @@ export async function fetchTrips(): Promise<Trip[]> {
     .from("bookings")
     .select(
       "id, status, pickup, destination, scheduled_at, return_at, passengers, trip_type, " +
-        "contact_name, notes, quoted_price_cents, paid_out_at, paid_at, offered_at, captain_response, " +
+        "contact_name, notes, quoted_price_cents, discount_cents, paid_out_at, paid_at, offered_at, captain_response, " +
         "decline_reason, assigned_boat_id, commission_pct, tip_cents, tip_paid_out_at, " +
         "pickup_lat, pickup_lng, located_at, boats(name)"
     )
@@ -360,7 +365,7 @@ export function tripsInWeek(trips: Trip[], offset = 0): Trip[] {
 }
 
 export const sumCents = (trips: Trip[]): number =>
-  trips.reduce((n, t) => n + (t.quoted_price_cents ?? 0), 0);
+  trips.reduce((n, t) => n + boatFare(t), 0);
 
 /**
  * A week's money.
@@ -374,7 +379,7 @@ export function splitTrips(trips: Trip[], boat: Boat | null, weekStart?: Date): 
     (acc, t) => {
       const owed = weekStart ? owedIn(t, weekStart) : { fare: true, tip: true };
       const s = owed.fare
-        ? splitFare(t.quoted_price_cents ?? 0, tripPct(t, boat))
+        ? splitFare(boatFare(t), tripPct(t, boat))
         : { gross: 0, commission: 0, net: 0 };
       const tip = owed.tip ? t.tip_cents ?? 0 : 0;
       return {

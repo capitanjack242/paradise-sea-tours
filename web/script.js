@@ -28,6 +28,8 @@ const db = window.supabase.createClient(CONFIG.supabaseUrl, CONFIG.supabaseKey);
       ? { source: from, medium: null, campaign: null }
       : null;
     if (seen) localStorage.setItem("pse-source", JSON.stringify({ ...seen, at: Date.now() }));
+    // A ship code on the link (?code=CELEB14NOV) fills the promo box later.
+    if (tag("code")) localStorage.setItem("pse-code", JSON.stringify({ code: tag("code"), at: Date.now() }));
   } catch {
     /* storage blocked (private window): the booking goes without it */
   }
@@ -173,6 +175,8 @@ const stopSlug = (name) =>
 
 // ── Live fare, from the same published routes the app reads ──────────────
 let routes = [];
+// The ship code typed into the form. `cents` null = not (yet) a working code.
+const promo = { code: "", cents: null, checked: "" };
 
 /* Bahamas VAT, read from the database rather than typed into the page, so the
    website, both apps and dispatch cannot end up quoting three different taxes.
@@ -281,14 +285,18 @@ function currentFare() {
   if (d.triptype === "Private charter (whole boat)") return none;
   const route = matchRoute(d.pickup, d.destination);
   if (!route?.price_cents) return { ...none, route };
-  const fare = perPersonCents(route, d.triptype) * (Number(d.guests) || 1);
+  const full = perPersonCents(route, d.triptype) * (Number(d.guests) || 1);
+  // The same as the database: a fixed amount off the fare, never below zero,
+  // then the tax on what's left.
+  const off = promo.cents ? Math.min(promo.cents, full) : 0;
+  const fare = full - off;
   const vat = Math.round((fare * vatPct) / 100);
-  return { fare, vat, total: fare + vat, route };
+  return { fare, off, vat, total: fare + vat, route };
 }
 
 function renderFare() {
   const d = Object.fromEntries(new FormData(form).entries());
-  const { fare, vat, total: totalCents, route } = currentFare();
+  const { fare, off, vat, total: totalCents, route } = currentFare();
   const total = document.getElementById("fareTotal");
   const math = document.getElementById("fareMath");
   const note = document.getElementById("fareNote");
@@ -298,8 +306,14 @@ function renderFare() {
   total.textContent = money(totalCents);
   split.hidden = totalCents == null;
   if (totalCents != null) {
-    document.getElementById("fareSub").textContent = money(fare);
+    // The fare before the code, then the code off it, then the tax on the rest.
+    document.getElementById("fareSub").textContent = money(fare + off);
     document.getElementById("fareVat").textContent = money(vat);
+    document.getElementById("fareOffWrap").hidden = !off;
+    if (off) {
+      document.getElementById("fareOffCode").textContent = promo.code;
+      document.getElementById("fareOff").textContent = `−${money(off)}`;
+    }
   }
 
   if (totalCents != null && route) {
@@ -318,6 +332,54 @@ function renderFare() {
 
 form.addEventListener("input", renderFare);
 form.addEventListener("change", renderFare);
+
+/* Ship codes. Checked with the database as it's typed, so the price shows the
+   discount before anyone commits; the database applies it again on the way in,
+   so a code that stops working between now and then is caught there too. */
+const promoInput = form.querySelector('[name="promo"]');
+const promoNote = document.getElementById("promoNote");
+let promoTimer = null;
+
+function showPromo() {
+  const typed = promo.code;
+  promoNote.hidden = !typed || promo.checked !== typed;
+  promoNote.classList.toggle("err", promo.cents == null);
+  promoNote.textContent = promo.cents != null
+    ? `${money(promo.cents)} off this booking.`
+    : "That code isn't valid or has expired.";
+  renderFare();
+}
+
+async function checkPromo() {
+  const code = promo.code;
+  if (!code) return showPromo();
+  const { data, error } = await db.rpc("check_promo", { p_code: code });
+  if (promo.code !== code) return; // they kept typing
+  promo.cents = error ? null : data;
+  promo.checked = code;
+  showPromo();
+}
+
+promoInput.addEventListener("input", () => {
+  promo.code = promoInput.value.trim().toUpperCase();
+  promo.cents = null;
+  promo.checked = "";
+  showPromo();
+  clearTimeout(promoTimer);
+  promoTimer = setTimeout(checkPromo, 400);
+});
+
+// A code that came in on the link: filled in and checked straight away.
+try {
+  const saved = JSON.parse(localStorage.getItem("pse-code") || "null");
+  if (saved && Date.now() - saved.at < 30 * 864e5 && !promoInput.value) {
+    promoInput.value = saved.code.toUpperCase();
+    promo.code = promoInput.value;
+    checkPromo();
+  }
+} catch {
+  /* nothing remembered */
+}
 
 // ── Step 1 → 2: validate the trip, then ask who's taking it ──────────────
 function validateTrip() {
@@ -340,6 +402,13 @@ function validateTrip() {
 
 document.getElementById("requestBtn").addEventListener("click", () => {
   status.className = "form-status";
+  // A code they typed that doesn't work: say so before asking who they are,
+  // rather than book at a price they didn't expect.
+  if (promo.code && promo.cents == null) {
+    status.textContent = "That promo code isn't valid or has expired. Clear it to book without it.";
+    status.classList.add("err");
+    return;
+  }
   const problem = validateTrip();
   if (problem) {
     status.textContent = problem;
@@ -513,6 +582,8 @@ form.addEventListener("submit", async (e) => {
     p_source: src.source || null,
     p_source_medium: src.medium || null,
     p_source_campaign: src.campaign || null,
+    // Only when there is one, so a booking without a code never depends on it.
+    ...(promo.code ? { p_promo_code: promo.code } : {}),
   });
 
   if (error || !tripToken) {

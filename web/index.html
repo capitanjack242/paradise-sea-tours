@@ -318,6 +318,11 @@
 
         <label>Anything else?<textarea name="notes" rows="2" placeholder="Coolers, bags, special stops, cruise ship name…"></textarea></label>
 
+        <label>Promo code <small class="tz-hint">optional</small><input name="promo" type="text" maxlength="20"
+          autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="From your ship's group or our ad">
+          <small class="field-hint" id="promoNote" hidden></small>
+        </label>
+
         <div class="fare-box" id="fareBox">
           <div class="fare-row">
             <span class="fare-total" id="fareTotal">—</span>
@@ -327,6 +332,7 @@
                underneath so nothing about it is a surprise at the dock. -->
           <div class="fare-split" id="fareSplit" hidden>
             <span>Fare <b id="fareSub">—</b></span>
+            <span id="fareOffWrap" hidden>Code <span id="fareOffCode"></span> <b id="fareOff">—</b></span>
             <span>VAT (<span data-vat-rate>10</span>%) <b id="fareVat">—</b></span>
           </div>
           <p class="fare-note" id="fareNote">Pick your route and we'll show the price.</p>

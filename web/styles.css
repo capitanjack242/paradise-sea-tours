@@ -193,6 +193,7 @@ img{max-width:100%}
 /* Mobile number confirmation — everything (payment link included) is sent
    to this number, so a typo has to be caught before a captain is committed. */
 .field-hint{font-weight:500;font-size:.75rem;color:var(--muted);line-height:1.35}
+.field-hint.err{color:#d6453a}
 .phone-confirm{
   border:2px solid var(--teal);border-radius:var(--radius);
   background:#f1fbfd;padding:1.1rem 1.2rem;text-align:center;

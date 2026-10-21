@@ -243,7 +243,7 @@ async function loadTrips() {
     .from("bookings")
     .select(
       "id, status, pickup, destination, scheduled_at, return_at, passengers, trip_type, " +
-        "contact_name, notes, quoted_price_cents, paid_at, offered_at, captain_response, " +
+        "contact_name, notes, quoted_price_cents, discount_cents, paid_at, offered_at, captain_response, " +
         "decline_reason, pickup_lat, pickup_lng, located_at, boats(name)"
     )
     .order("scheduled_at", { ascending: true });
@@ -508,7 +508,9 @@ function tripHtml(b) {
         weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit",
       })
     : "No time given";
-  const fare = b.quoted_price_cents != null ? `$${(b.quoted_price_cents / 100).toFixed(2).replace(/\.00$/, "")}` : "—";
+  // The fare before any promo code: Paradise pays for those, not the boat.
+  const fareCents = b.quoted_price_cents != null ? b.quoted_price_cents + (b.discount_cents || 0) : null;
+  const fare = fareCents != null ? `$${(fareCents / 100).toFixed(2).replace(/\.00$/, "")}` : "—";
   const done = b.status === "completed";
   const aboard = b.status === "in_progress";
   // Being asked comes before everything else: until he answers, there is no
