@@ -1809,6 +1809,10 @@ function cardHtml(b) {
       <div class="card-trip">
         <div class="trip-route">${esc(b.pickup || "—")} <span class="arrow">→</span> ${esc(b.destination || "—")}</div>
         <div class="trip-meta">${when} · ${b.passengers ?? "?"} pax · ${esc(b.trip_type || "")}</div>
+        ${b.source
+          ? `<div class="trip-source">Came from ${esc(
+              [b.source, b.source_medium, b.source_campaign].filter(Boolean).join(" · "))}</div>`
+          : ""}
         ${b.return_at
           ? `<div class="return-leg">↩ Collect again ${esc(new Date(b.return_at).toLocaleString(undefined, {
         ...NASSAU,
