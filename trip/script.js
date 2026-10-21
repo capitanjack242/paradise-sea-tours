@@ -8,14 +8,10 @@ const SUPABASE_URL = "https://fjdoaonnoezbbitbawzs.supabase.co";
 const SUPABASE_KEY = "sb_publishable_RjTM-t2isu1Teq9P5z37PQ_h_Oy3EpP";
 const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-/* Where a finished trip is asked for a public review. One ask, not two: the
-   first site here with a link is the one offered; all blank = no review card.
-   Google: Business Profile → "Ask for reviews" gives a g.page/r/… link.
-   Trustpilot: the business's own review page; works before the account is claimed. */
-const REVIEW_SITES = [
-  { name: "Google", url: "" },
-  { name: "Trustpilot", url: "https://www.trustpilot.com/evaluate/paradiseseaexpress.com" },
-];
+/* Where a finished trip is asked for a public review: Google, because that is
+   where cruise passengers search and compare. One ask, one site. Blank = no
+   review card. Google Business Profile → "Ask for reviews" gives a g.page/r/… link. */
+const GOOGLE_REVIEW_URL = "";
 
 const params = new URLSearchParams(location.search);
 const token = params.get("t");
@@ -505,18 +501,14 @@ document.getElementById("rateSend").addEventListener("click", async () => {
   await load(); // the tip card is waiting on this
 });
 
-/* Public reviews.
+/* Public review.
 
    Shown whenever the trip is over (the same window as the rating), never
-   depending on the stars given: picking who to ask is "review gating", and both
-   Google and Trustpilot ban it. */
+   depending on the stars given: picking who to ask is "review gating", and
+   Google bans it. */
 function renderReviews(t) {
-  const site = REVIEW_SITES.find((s) => s.url);
-  document.getElementById("reviewSection").hidden = !t.can_rate || !site;
-  if (!site) return;
-  const a = document.getElementById("reviewLink");
-  a.href = site.url;
-  a.textContent = `Review us on ${site.name}`;
+  document.getElementById("reviewSection").hidden = !t.can_rate || !GOOGLE_REVIEW_URL;
+  document.getElementById("reviewLink").href = GOOGLE_REVIEW_URL;
 }
 
 /* Tips.
