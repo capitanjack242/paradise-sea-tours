@@ -13,7 +13,7 @@ import {
 import { colors, radius } from "../lib/theme";
 import { formatMoney, vatLabel } from "../lib/bookings";
 import { IN_NASSAU } from "../lib/nassau";
-import type { TripView } from "../lib/trip";
+import { fetchGoogleReviewUrl, type TripView } from "../lib/trip";
 
 /* What's owed, and what paying unlocks.
 
@@ -112,6 +112,17 @@ export default function PaymentScreen({
     setStarsRide((v) => v ?? trip?.rating_ride ?? null);
     setRateNote((v) => (v ? v : trip?.rating_note ?? ""));
   }, [ratedAt]);
+
+  /* A public review on Google, asked of everyone whose trip is over, whatever
+     stars they gave: picking who to ask is "review gating", and Google bans it.
+     The link is read from the database once the trip can be rated; until it's
+     set there, there's no card. */
+  const canReview = !!trip?.can_rate;
+  const [reviewUrl, setReviewUrl] = React.useState<string | null>(null);
+  React.useEffect(() => {
+    if (!canReview || reviewUrl) return;
+    fetchGoogleReviewUrl().then(setReviewUrl, () => {}); // no card is the fallback
+  }, [canReview, reviewUrl]);
 
   if (loading) {
     return (
@@ -431,6 +442,23 @@ export default function PaymentScreen({
         </View>
       ) : null}
 
+      {canReview && reviewUrl ? (
+        <View style={s.card}>
+          <Text style={s.cardTitle}>Tell other visitors</Text>
+          <Text style={s.tipNote}>
+            A public review helps the next visitor find a fair, honest boat ride in Nassau. It
+            takes a minute.
+          </Text>
+          <Pressable
+            style={({ pressed }) => [s.reviewBtn, pressed && s.reviewBtnDown]}
+            onPress={() => Linking.openURL(reviewUrl)}
+            accessibilityRole="link"
+          >
+            <Text style={s.reviewBtnText}>Review us on Google</Text>
+          </Pressable>
+        </View>
+      ) : null}
+
       <Text style={s.note}>
         Fixed fares, agreed before you pay. Bahamas VAT is added on top and shown
         as its own line. Tips are extra and go to your captain in full.
@@ -596,6 +624,17 @@ const s = StyleSheet.create({
   refunded: { color: colors.muted, fontSize: 13, marginTop: 8 },
   receiptLink: { color: colors.deep, fontSize: 14, fontWeight: "700", textDecorationLine: "underline", marginTop: 10 },
   payBtnText: { color: colors.white, fontSize: 17, fontWeight: "800" },
+
+  reviewBtn: {
+    marginTop: 12,
+    alignItems: "center",
+    paddingVertical: 12,
+    borderRadius: radius.md,
+    borderWidth: 1.5,
+    borderColor: colors.deep,
+  },
+  reviewBtnDown: { backgroundColor: colors.foam },
+  reviewBtnText: { fontSize: 15.5, fontWeight: "800", color: colors.deep },
 
   note: { marginTop: 16, fontSize: 12.5, color: colors.muted, textAlign: "center", lineHeight: 18 },
 });
