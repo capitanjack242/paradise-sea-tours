@@ -196,3 +196,16 @@ export async function rateTrip(
   });
   if (error) throw error;
 }
+
+/**
+ * Where a finished trip is sent to review us on Google, or null if it isn't set.
+ *
+ * A row in app_settings rather than a constant in the build, like the VAT rate:
+ * the link can be set or changed without shipping to the app stores. Shared
+ * with the trip web page.
+ */
+export async function fetchGoogleReviewUrl(): Promise<string | null> {
+  const { data, error } = await supabase.from("app_settings").select("google_review_url").limit(1);
+  if (error) throw error;
+  return data?.[0]?.google_review_url || null;
+}
