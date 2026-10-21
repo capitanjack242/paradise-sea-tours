@@ -1,3 +1,22 @@
+/* Where this visitor came from, remembered for the booking form on the home
+   page. Same code as web/script.js — see there. */
+(() => {
+  try {
+    const q = new URLSearchParams(location.search);
+    const tag = (k) => (q.get(k) || "").trim().slice(0, 100) || null;
+    const here = location.hostname.replace(/^www\./, "");
+    const from = document.referrer ? new URL(document.referrer).hostname.replace(/^www\./, "") : "";
+    const seen = tag("utm_source")
+      ? { source: tag("utm_source"), medium: tag("utm_medium"), campaign: tag("utm_campaign") }
+      : from && from !== here
+      ? { source: from, medium: null, campaign: null }
+      : null;
+    if (seen) localStorage.setItem("pse-source", JSON.stringify({ ...seen, at: Date.now() }));
+  } catch {
+    /* storage blocked (private window): the booking goes without it */
+  }
+})();
+
 /* Stop pages (/boat-to/…/): refresh the printed fares from the live price
    list. The numbers in the HTML are the price list as it stood when the site
    was built; this swaps in today's, so a fare changed in the database shows

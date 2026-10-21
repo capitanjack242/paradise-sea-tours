@@ -11,6 +11,39 @@ const CONFIG = {
 
 const db = window.supabase.createClient(CONFIG.supabaseUrl, CONFIG.supabaseKey);
 
+// Where this visitor came from, so the booking can say which marketing brought
+// it. A tagged link (?utm_source=cruise-port&utm_medium=qr&utm_campaign=launch)
+// says it outright; otherwise the site that sent them (google.com). Newest
+// wins; a visit with neither (typed in, or one page to the next here) leaves
+// the last one alone. Same code in routes.js — people land on the stop pages too.
+(() => {
+  try {
+    const q = new URLSearchParams(location.search);
+    const tag = (k) => (q.get(k) || "").trim().slice(0, 100) || null;
+    const here = location.hostname.replace(/^www\./, "");
+    const from = document.referrer ? new URL(document.referrer).hostname.replace(/^www\./, "") : "";
+    const seen = tag("utm_source")
+      ? { source: tag("utm_source"), medium: tag("utm_medium"), campaign: tag("utm_campaign") }
+      : from && from !== here
+      ? { source: from, medium: null, campaign: null }
+      : null;
+    if (seen) localStorage.setItem("pse-source", JSON.stringify({ ...seen, at: Date.now() }));
+  } catch {
+    /* storage blocked (private window): the booking goes without it */
+  }
+})();
+
+/** The source remembered above, if it's from the last 30 days. */
+function visitSource() {
+  try {
+    const s = JSON.parse(localStorage.getItem("pse-source") || "null");
+    if (s && Date.now() - s.at < 30 * 864e5) return s;
+  } catch {
+    /* nothing remembered */
+  }
+  return {};
+}
+
 // year
 document.getElementById("year").textContent = new Date().getFullYear();
 
@@ -466,6 +499,7 @@ form.addEventListener("submit", async (e) => {
   // The same door the app uses. It creates the booking and hands back the key
   // to it, so the customer lands on their own trip page — messages, paying,
   // their captain — instead of a thank-you with no way back to the trip.
+  const src = visitSource();
   const { data: tripToken, error } = await db.rpc("request_boat", {
     p_contact_name: d.name.trim(),
     p_contact_phone: parsedPhone.number, // E.164
@@ -476,6 +510,9 @@ form.addEventListener("submit", async (e) => {
     p_passengers: Number(d.guests) || 1,
     p_trip_type: d.triptype,
     p_notes: d.notes?.trim() || null,
+    p_source: src.source || null,
+    p_source_medium: src.medium || null,
+    p_source_campaign: src.campaign || null,
   });
 
   if (error || !tripToken) {
