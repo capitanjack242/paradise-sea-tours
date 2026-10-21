@@ -109,7 +109,7 @@ function page(stop, docks, routes) {
 <body>
 <header class="nav">
   <div class="container nav-inner">
-    <a href="/" class="brand"><picture><source srcset="/images/logo-mark-96.webp" type="image/webp"><img class="brand-mark" src="/images/logo-mark-96.png" width="38" height="38" alt=""></picture><span class="brand-text">Paradise<strong>Sea Express</strong></span></a>
+    <a href="/" class="brand"><picture><source srcset="/images/logo-light-120.webp" type="image/webp"><img class="brand-logo" src="/images/logo-light-120.png" width="249" height="120" alt="Paradise Sea Express"></picture></a>
     <nav class="nav-links"><a href="/#pricing">All fares</a><a href="${book}" class="btn btn-sm btn-primary">Book a ride</a></nav>
   </div>
 </header>
