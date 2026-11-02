@@ -37,6 +37,10 @@ find _site -name '*.bak' -delete
 # sitemap that lists them. Falls back to the last snapshot if the API is down.
 node scripts/build-routes.mjs _site "$V"
 
+# The captain recruitment deck, from its slide files in decks/captains/, at an
+# unlisted address (see the script). Not a top-level page, so no Analytics.
+node scripts/build-deck-page.mjs decks/captains _site/captains-7a25beb7/index.html
+
 # Google Analytics, on the public pages only. Never on /control, /captain or
 # /trip: a trip page's address carries the passenger's private link (?t=…), and
 # Analytics records every address it sees. The ID is public (it is in every
