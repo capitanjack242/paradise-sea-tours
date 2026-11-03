@@ -1,0 +1,4 @@
+# Old addresses, sent on to where the page lives now (Cloudflare reads this
+# file from the root of _site).
+/boat-to/pigs-beach/ /boat-to/pigs-beach-athol-island/ 301
+/boat-to/pigs-beach /boat-to/pigs-beach-athol-island/ 301
