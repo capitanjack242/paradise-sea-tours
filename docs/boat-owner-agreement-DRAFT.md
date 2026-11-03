@@ -201,7 +201,7 @@ long as this Agreement lasts:
 
 ## Signatures
 
-| | Paradise Sea Express | Owner |
+| | Paradise Sea Express Ltd. | Owner |
 | --- | --- | --- |
 | Signature | | |
 | Name | Shavane Turnquest | [ ] |
