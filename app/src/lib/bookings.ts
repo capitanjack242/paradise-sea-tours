@@ -38,7 +38,7 @@ export const LOCATIONS: readonly string[] = [
   "Green Parrot",
   "Poop Deck",
   "Fort Montagu",
-  "Pigs Beach",
+  "Pigs Beach (Athol Island)",
   "Rose Island – Goodies",
   "Junkanoo Beach",
   "Arawak Cay / Fish Fry",
@@ -53,7 +53,7 @@ export const DROPOFF_ONLY: readonly string[] = [
   "Pearl Island",
   "Floating Bar",
   "Blue Lagoon",
-  "Pigs Beach",
+  "Pigs Beach (Athol Island)",
   "Rose Island – Goodies",
 ];
 
