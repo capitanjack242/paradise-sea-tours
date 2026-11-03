@@ -12,6 +12,9 @@ This Boat Owner Agreement (the "Agreement") is made on [ADMIN: date] between:
   [ADMIN: registered address] ("Paradise"); and
 - **[Owner full legal name or company]**, of [address] (the "Owner").
 
+This Agreement is made according to the laws of the Commonwealth of The
+Bahamas.
+
 ## 1. What this agreement is for
 
 1. Paradise finds passengers for boat rides and charters in Nassau and its
