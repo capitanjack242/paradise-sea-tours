@@ -98,7 +98,10 @@ function page(stop, docks, routes) {
 <meta property="og:title" content="${esc(h1)} — Paradise Sea Express">
 <meta property="og:description" content="${esc(description)}">
 <meta property="og:url" content="${ORIGIN}/boat-to/${slug(name)}/">
-<meta property="og:image" content="${ORIGIN}/images/conch-pearl.jpg">
+<meta property="og:image" content="${ORIGIN}/images/share-card.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Paradise Sea Express logo">
 <link rel="icon" type="image/png" href="/favicon.png">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
