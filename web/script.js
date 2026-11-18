@@ -379,25 +379,25 @@ form.addEventListener("change", renderFare);
    longitude. HARBOUR_VIEW must match the edges in that script. The names are
    the dock names, so fares and stop pages line up. Each stop also gives its
    short map label and where the label sits: [dx, dy, anchor] from the pin. */
-const HARBOUR_VIEW = { w0: -77.425, e0: -77.185, s0: 25.05, n0: 25.118, w: 1000, h: 313 };
+const HARBOUR_VIEW = { w0: -77.425, e0: -77.185, s0: 25.009, n0: 25.13, w: 1000, h: 557 };
 const HARBOUR_STOPS = [
-  ["Breezes", 25.0789, -77.4095, "Breezes", [0, 17, "middle"]],
-  ["Baha Mar", 25.0751, -77.3986, "Baha Mar", [0, 17, "middle"]],
-  ["Goodman's Bay", 25.0794, -77.3798, "Goodman's Bay", [0, 17, "middle"]],
-  ["Arawak Cay / Fish Fry", 25.0805, -77.3604, "Arawak Cay", [-4, -17, "middle"]],
-  ["Junkanoo Beach", 25.0795, -77.3513, "Junkanoo Beach", [-2, 17, "end"]],
-  ["Señor Frog's", 25.0794, -77.3455, "Señor Frog's", [-6, 31, "middle"]],
-  ["Nassau Cruise Port", 25.0800, -77.3420, "Cruise Port", [3, 17, "start"]],
-  ["Green Parrot", 25.0781, -77.3310, "Green Parrot", [6, 31, "middle"]],
-  ["Poop Deck", 25.0761, -77.3258, "Poop Deck", [8, 14, "start"]],
-  ["Fort Montagu", 25.0704, -77.3044, "Fort Montagu", [7, 4, "start"]],
-  ["Paradise Island – Margaritaville", 25.0801, -77.3248, "Margaritaville", [4, -19, "start"]],
-  ["Paradise Island – Carnival", 25.0823, -77.3340, "Carnival", [-2, -19, "end"]],
-  ["Pearl Island", 25.0915, -77.4070, "Pearl Island", [0, -19, "middle"]],
-  ["Blue Lagoon", 25.0967, -77.2802, "Blue Lagoon", [0, -19, "middle"]],
-  ["Floating Bar", 25.0980, -77.2320, "Floating Bar", [0, -19, "middle"]],
-  ["Pigs Beach (Athol Island)", 25.0776, -77.2668, "Pigs Beach", [0, 17, "middle"]],
-  ["Rose Island – Goodies", 25.0888, -77.2033, "Goodies", [0, 17, "middle"]],
+  ["Breezes", 25.0789, -77.4095, "Breezes", [0, 21, "middle"]],
+  ["Baha Mar", 25.0751, -77.3986, "Baha Mar", [0, 21, "middle"]],
+  ["Goodman's Bay", 25.0794, -77.3798, "Goodman's Bay", [3, 21, "end"]],
+  ["Arawak Cay / Fish Fry", 25.0805, -77.3604, "Arawak Cay", [-5, -21, "middle"]],
+  ["Junkanoo Beach", 25.0795, -77.3513, "Junkanoo Beach", [-3, 21, "end"]],
+  ["Señor Frog's", 25.0794, -77.3455, "Señor Frog's", [-8, 39, "middle"]],
+  ["Nassau Cruise Port", 25.0800, -77.3420, "Cruise Port", [0, 21, "middle"]],
+  ["Green Parrot", 25.0781, -77.3310, "Green Parrot", [14, 39, "middle"]],
+  ["Poop Deck", 25.0761, -77.3258, "Poop Deck", [12, 6, "start"]],
+  ["Fort Montagu", 25.0704, -77.3044, "Fort Montagu", [9, 5, "start"]],
+  ["Paradise Island – Margaritaville", 25.0801, -77.3248, "Margaritaville", [5, -24, "start"]],
+  ["Paradise Island – Carnival", 25.0823, -77.3340, "Carnival", [-2, -24, "end"]],
+  ["Pearl Island", 25.0915, -77.4070, "Pearl Island", [0, -24, "middle"]],
+  ["Blue Lagoon", 25.0967, -77.2802, "Blue Lagoon", [0, -24, "middle"]],
+  ["Floating Bar", 25.0980, -77.2320, "Floating Bar", [0, -24, "middle"]],
+  ["Pigs Beach (Athol Island)", 25.0776, -77.2668, "Pigs Beach", [0, 21, "middle"]],
+  ["Rose Island – Goodies", 25.0888, -77.2033, "Goodies", [0, 21, "middle"]],
 ];
 const PORT_NAME = "Nassau Cruise Port";
 const harbourXY = (lat, lon) => {
@@ -415,33 +415,35 @@ function drawHarbour() {
     const home = name === PORT_NAME;
     return `<g class="pin${home ? " pin-home" : ""}" data-stop="${escHtml(name)}" transform="translate(${x.toFixed(1)} ${y.toFixed(1)})"
       tabindex="0" role="button" aria-label="${escHtml(name)}">
-      <circle class="pin-hit" r="14"/>
-      <g class="pin-mark"><path d="M0 0C-3.4-5.6-7.5-8.4-7.5-13.5A7.5 7.5 0 1 1 7.5-13.5C7.5-8.4 3.4-5.6 0 0Z"/>
-      <circle cy="-13.5" r="2.9"/></g>
+      <circle class="pin-hit" cy="-9" r="16"/>
+      <g class="pin-mark"><g transform="scale(1.25)"><path d="M0 0C-3.4-5.6-7.5-8.4-7.5-13.5A7.5 7.5 0 1 1 7.5-13.5C7.5-8.4 3.4-5.6 0 0Z"/>
+      <circle cy="-13.5" r="2.9"/></g></g>
       <text class="pin-label" x="${dx}" y="${dy}" text-anchor="${anchor}">${escHtml(label)}</text></g>`;
   };
   box.innerHTML = `<div class="harbour-canvas">
     <img src="/images/harbour-map.svg" width="${w}" height="${h}" alt="">
     <svg viewBox="0 0 ${w} ${h}" role="group" aria-label="Our stops">
-      <text class="map-name" x="455" y="278">NEW PROVIDENCE</text>
-      <text class="map-name small pi" x="505" y="170" text-anchor="middle">PARADISE ISLAND</text>
-      <text class="map-name small" x="830" y="152" text-anchor="middle">ROSE ISLAND</text>
-      <text class="map-water" x="190" y="70" text-anchor="middle">Atlantic Ocean</text>
-      <text class="map-water small" x="190" y="142" text-anchor="middle">Nassau Harbour approach</text>
+      <text class="map-name" x="540" y="400" text-anchor="middle">NEW PROVIDENCE</text>
+      <text class="map-name small pi" x="505" y="226" text-anchor="middle">PARADISE ISLAND</text>
+      <text class="map-name small" x="830" y="208" text-anchor="middle">ROSE ISLAND</text>
+      <text class="map-water" x="300" y="70" text-anchor="middle">Atlantic Ocean</text>
       <path class="route" id="harbourRoute" d=""/>
       <g class="map-key" transform="translate(${w - 24} 26)">
         <path d="M0-12L5 4L0 1L-5 4Z"/><text y="18" text-anchor="middle">N</text></g>
-      <g class="map-key" transform="translate(${w - 24 - 2 * kmPx} ${h - 18})">
+      <g class="map-key" transform="translate(${w - 24 - 2 * kmPx} ${h - 40})">
         <path d="M0 0H${(2 * kmPx).toFixed(1)}" class="scale-bar"/><text x="${kmPx.toFixed(1)}" y="-6" text-anchor="middle">2 km</text></g>
       ${HARBOUR_STOPS.map(pin).join("")}
     </svg><p class="harbour-credit">Coastline: geoBoundaries (CC BY 4.0)</p></div>`;
   box.addEventListener("click", (e) => {
     const g = e.target.closest(".pin");
-    if (g) pickStop(g.dataset.stop);
+    if (g) pickStop(g.classList.contains("is-picked") ? null : g.dataset.stop);
   });
   box.addEventListener("keydown", (e) => {
     const g = e.target.closest(".pin");
-    if (g && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); pickStop(g.dataset.stop); }
+    if (g && (e.key === "Enter" || e.key === " ")) {
+      e.preventDefault();
+      pickStop(g.classList.contains("is-picked") ? null : g.dataset.stop);
+    }
   });
   // A phone shows part of the map and scrolls sideways: start on the port.
   const [px] = harbourXY(HARBOUR_STOPS.find((s) => s[0] === PORT_NAME)[1], HARBOUR_STOPS.find((s) => s[0] === PORT_NAME)[2]);
@@ -460,10 +462,12 @@ function drawHarbourRoute(name) {
   if (!to || name === PORT_NAME) { line.setAttribute("d", ""); return; }
   const [x0, y0] = harbourXY(find(PORT_NAME)[1], find(PORT_NAME)[2]);
   const [x1, y1] = harbourXY(to[1], to[2]);
-  const mx = (x0 + x1) / 2, my = Math.min(y0, y1) - 18 - Math.abs(x1 - x0) * 0.12;
-  line.setAttribute("d", `M${x0.toFixed(1)} ${(y0 - 4).toFixed(1)}Q${mx.toFixed(1)} ${my.toFixed(1)} ${x1.toFixed(1)} ${(y1 - 4).toFixed(1)}`);
+  const mx = (x0 + x1) / 2, my = Math.min(y0, y1) - 24 - Math.abs(x1 - x0) * 0.12;
+  line.setAttribute("d", `M${x0.toFixed(1)} ${(y0 - 6).toFixed(1)}Q${mx.toFixed(1)} ${my.toFixed(1)} ${x1.toFixed(1)} ${(y1 - 6).toFixed(1)}`);
 }
 
+/* Show a stop's fare card, or with no name (the picked pin tapped again, or
+   the card's close button) close it. */
 function pickStop(name) {
   document.querySelectorAll("#harbourMap .pin").forEach((g) => {
     g.classList.toggle("is-picked", g.dataset.stop === name);
@@ -471,9 +475,13 @@ function pickStop(name) {
   });
   drawHarbourRoute(name);
   const card = document.getElementById("harbourCard");
+  card.hidden = !name;
+  if (!name) return;
+  const close = `<button type="button" class="harbour-close" aria-label="Close">×</button>`;
   if (name === PORT_NAME) {
-    card.innerHTML = `<h3>Nassau Cruise Port</h3>
+    card.innerHTML = `${close}<h3>Nassau Cruise Port</h3>
       <p>You start here, at Prince George Wharf. Tap any other pin to see its fare.</p>`;
+    card.querySelector(".harbour-close").onclick = () => pickStop(null);
     return;
   }
   const route = matchRoute(PORT_NAME, name);
@@ -482,11 +490,12 @@ function pickStop(name) {
          <strong>${money(perPersonCents(route, "Round trip"))}</strong> round trip</p>
        <p class="harbour-sub">per person from the Cruise Port, before VAT</p>`
     : `<p class="harbour-sub">${routes.length ? "Price on request — we'll quote it when you book." : "Loading the fare…"}</p>`;
-  card.innerHTML = `<h3>${escHtml(name)}</h3>${fares}
+  card.innerHTML = `${close}<h3>${escHtml(name)}</h3>${fares}
     <div class="harbour-actions">
       <button type="button" class="btn btn-primary" id="harbourBook">Book this</button>
       <a class="harbour-more" href="/boat-to/${stopSlug(name)}/">About this stop →</a>
     </div>`;
+  card.querySelector(".harbour-close").onclick = () => pickStop(null);
   document.getElementById("harbourBook").addEventListener("click", () => {
     qFrom.value = PORT_NAME; qTo.value = name;
     qFrom.dataset.touched = qTo.dataset.touched = "1";

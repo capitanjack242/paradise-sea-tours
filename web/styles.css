@@ -315,7 +315,7 @@ img{max-width:100%}
 .tz-hint{font-weight:500;font-size:.78em;color:var(--muted,#5b7688);margin-left:.3em}
 
 /* Fares: one row per destination from the Cruise Port, filled from the price list. */
-.fares-wrap{max-width:640px;margin:0 auto;text-align:center}
+.fares-wrap{max-width:880px;margin:0 auto;text-align:center}
 .fares-table{width:100%;border-collapse:collapse;background:#fff;border:1px solid var(--line);
   border-radius:var(--radius);overflow:hidden;margin-bottom:1.4rem;text-align:left}
 .fares-table caption{caption-side:top;padding:.2rem 0 .7rem;color:var(--deep);font-weight:600}
@@ -341,20 +341,20 @@ img{max-width:100%}
 .fares-table td a:hover{text-decoration-color:currentColor}
 
 /* Harbour map (fares section) */
-.harbour{display:grid;grid-template-columns:1fr 300px;gap:1.2rem;align-items:start;margin:0 auto 2.2rem;max-width:1100px}
+.harbour{position:relative;margin:0 auto 2.2rem;max-width:880px}
 .harbour-map{border-radius:20px;overflow:hidden;box-shadow:var(--shadow);background:#cdeef5;position:relative;border:1px solid var(--line)}
 .harbour-canvas{position:relative}
 .harbour-canvas img,.harbour-canvas svg{display:block;width:100%;height:auto}
 .harbour-canvas svg{position:absolute;inset:0}
-.harbour-map .map-name{font:600 11px 'Outfit',sans-serif;fill:#a8925c;letter-spacing:.32em}
-.harbour-map .map-name.small{font-size:8.5px;letter-spacing:.26em}
+.harbour-map .map-name{font:600 14px 'Outfit',sans-serif;fill:#a8925c;letter-spacing:.32em}
+.harbour-map .map-name.small{font-size:10.5px;letter-spacing:.26em}
 .harbour-map .map-name.pi{letter-spacing:.16em}
-.harbour-map .map-water{font:italic 500 12px 'Inter',sans-serif;fill:#5f98aa;letter-spacing:.12em}
+.harbour-map .map-water{font:italic 500 15px 'Inter',sans-serif;fill:#5f98aa;letter-spacing:.12em}
 .harbour-map .map-water.small{font-size:9px}
 .harbour-map .map-key path{fill:var(--navy);opacity:.7}
 .harbour-map .map-key .scale-bar{fill:none;stroke:var(--navy);stroke-width:3;opacity:.55}
-.harbour-map .map-key text{font:600 9px 'Inter',sans-serif;fill:var(--navy);opacity:.7}
-.harbour-map .route{fill:none;stroke:var(--coral);stroke-width:2;stroke-dasharray:1 5;stroke-linecap:round}
+.harbour-map .map-key text{font:600 11px 'Inter',sans-serif;fill:var(--navy);opacity:.7}
+.harbour-map .route{fill:none;stroke:var(--coral);stroke-width:2.5;stroke-dasharray:1 5;stroke-linecap:round}
 .harbour-map .pin{cursor:pointer;outline:none}
 .harbour-map .pin-hit{fill:transparent}
 .harbour-map .pin-mark{transition:transform .15s ease}
@@ -363,21 +363,23 @@ img{max-width:100%}
 .harbour-map .pin-home .pin-mark path{fill:var(--navy)}
 .harbour-map .pin:hover .pin-mark,.harbour-map .pin:focus-visible .pin-mark,.harbour-map .pin.is-picked .pin-mark{transform:scale(1.3)}
 .harbour-map .pin.is-picked .pin-mark path{fill:var(--coral)}
-.harbour-map .pin-label{font:600 9.5px 'Inter',sans-serif;fill:var(--navy);paint-order:stroke;stroke:rgba(255,255,255,.9);stroke-width:3px;stroke-linejoin:round;pointer-events:none}
+.harbour-map .pin-label{font:600 12px 'Inter',sans-serif;fill:var(--navy);paint-order:stroke;stroke:rgba(255,255,255,.9);stroke-width:3px;stroke-linejoin:round;pointer-events:none}
 .harbour-map .pin-home .pin-label,.harbour-map .pin.is-picked .pin-label{font-weight:700}
-.harbour-credit{position:absolute;left:12px;bottom:6px;margin:0;font-size:.62rem;color:#7c8f99}
-.harbour-card{background:#fff;border:1px solid var(--line);border-radius:20px;padding:1.3rem;box-shadow:var(--shadow);min-height:180px}
-.harbour-card h3{font-size:1.35rem;color:var(--navy);margin:0 0 .5rem}
+.harbour-credit{position:absolute;right:24px;bottom:8px;margin:0;font-size:.62rem;color:#7c8f99}
+.harbour-hint{position:absolute;left:16px;top:14px;margin:0;padding:.35rem .75rem;border-radius:999px;background:rgba(255,255,255,.85);font-size:.82rem;color:var(--muted);pointer-events:none}
+.harbour-card{position:absolute;left:16px;bottom:16px;width:290px;background:#fff;border:1px solid var(--line);border-radius:18px;padding:1.1rem 1.2rem;box-shadow:0 12px 32px rgba(12,36,62,.18)}
+.harbour-card[hidden]{display:none}
+.harbour-close{position:absolute;top:.45rem;right:.55rem;width:2rem;height:2rem;border:0;background:none;font-size:1.4rem;line-height:1;color:var(--muted);cursor:pointer;border-radius:50%}
+.harbour-close:hover{background:var(--foam);color:var(--navy)}
+.harbour-card h3{font-size:1.25rem;color:var(--navy);margin:0 1.6rem .5rem 0}
 .harbour-card p{margin:.2rem 0}
-.harbour-hint{color:#4a6276}
 .harbour-fare{font-size:1.05rem}
 .harbour-fare strong{font-family:'Outfit','Inter',sans-serif;font-size:1.5rem;color:var(--navy)}
 .harbour-sub{font-size:.85rem;color:#4a6276}
 .harbour-actions{display:flex;align-items:center;gap:1rem;flex-wrap:wrap;margin-top:1rem}
 .harbour-more{color:var(--deep);font-weight:600}
-@media(max-width:900px){
-  .harbour{grid-template-columns:1fr}
-  .harbour-card{min-height:0}
+@media(max-width:700px){
+  .harbour-card{position:relative;left:auto;bottom:auto;width:auto;margin-top:.9rem;box-shadow:var(--shadow)}
 }
 /* On a phone the whole harbour would be too small to tap, so it is shown
    larger and swipes sideways (it opens on the Cruise Port). */

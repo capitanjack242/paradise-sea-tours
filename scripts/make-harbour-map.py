@@ -25,7 +25,7 @@ SOURCE = ("https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main
 OUT = pathlib.Path(__file__).resolve().parent.parent / "web" / "images" / "harbour-map.svg"
 
 # West, east, south and north edges, in degrees, and the drawing's width.
-W0, E0, S0, N0 = -77.425, -77.185, 25.050, 25.118
+W0, E0, S0, N0 = -77.425, -77.185, 25.009, 25.130
 W = 1000
 K = math.cos(math.radians((S0 + N0) / 2))
 H = round(W * (N0 - S0) / ((E0 - W0) * K))
