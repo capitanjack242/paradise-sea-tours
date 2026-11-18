@@ -1,8 +1,9 @@
 /* The passenger's trip page — opened on a phone, probably standing on a dock,
    probably one-handed. Big type, one column, nothing to hunt for. */
 :root{
-  --navy:#06243b; --deep:#0a3b5c; --teal:#0bbcd6; --aqua:#5fe1e8; --foam:#f4fbfd;
-  --ink:#0f2733; --muted:#5b7688; --line:#dbe8ef; --ok:#12a05a; --danger:#d6453a;
+  /* Brand colours from the logo, the same as the public site (web/styles.css). */
+  --navy:#0c243e; --deep:#0b6f8a; --teal:#1294b4; --aqua:#8fe3ee; --foam:#f2fafc;
+  --ink:#0c243e; --muted:#4f6577; --line:#dbe9ef; --ok:#12a05a; --danger:#d6453a;
 }
 *{box-sizing:border-box}
 [hidden]{display:none!important}
@@ -12,9 +13,9 @@ body{margin:0;background:var(--foam);color:var(--ink);
 .wrap{max-width:560px;margin:0 auto;padding:0 .9rem 2.5rem}
 
 .topbar{padding:1.1rem 0 .8rem}
-.brand{font-family:'Baloo 2',system-ui,sans-serif;font-weight:800;font-size:1.2rem;
+.brand{font-family:'Outfit',system-ui,sans-serif;font-weight:700;font-size:1.2rem;
   color:var(--navy);margin:0;letter-spacing:-.02em}
-.brand strong{color:var(--teal);font-weight:800}
+.brand strong{color:var(--teal);font-weight:700}
 
 .notice{background:#fff;border:1px solid var(--line);border-radius:14px;padding:1.4rem;
   text-align:center;color:var(--muted)}
@@ -28,7 +29,7 @@ body{margin:0;background:var(--foam);color:var(--ink);
   font-weight:600;color:#8a6d00;background:#fff8e1;border:1px solid #f0dca8;line-height:1.45}
 
 .trip-card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:1.1rem;
-  box-shadow:0 2px 10px rgba(6,36,59,.05)}
+  box-shadow:0 2px 10px rgba(12,36,62,.05)}
 .save-page{background:#e8f6ee;border:1px solid #9fd8b5;color:#1d5b36;border-radius:10px;
   padding:.7em .85em;margin:0 0 .8rem;font-size:.92rem;line-height:1.45}
 .status{display:flex;flex-direction:column;gap:.15rem;border-radius:10px;padding:.7em .85em;
@@ -51,7 +52,7 @@ body{margin:0;background:var(--foam);color:var(--ink);
   color:var(--muted);margin-bottom:.1rem}
 
 .chat{margin-top:1rem;background:#fff;border:1px solid var(--line);border-radius:14px;
-  padding:1rem;box-shadow:0 2px 10px rgba(6,36,59,.05)}
+  padding:1rem;box-shadow:0 2px 10px rgba(12,36,62,.05)}
 .chat-title{margin:0 0 .7rem;font-size:.72rem;font-weight:800;letter-spacing:.1em;
   text-transform:uppercase;color:var(--muted)}
 .thread{display:flex;flex-direction:column;gap:.5rem;max-height:44vh;overflow-y:auto;
@@ -62,15 +63,15 @@ body{margin:0;background:var(--foam);color:var(--ink);
 .bub .body{white-space:pre-wrap;overflow-wrap:anywhere}
 .bub.theirs{background:var(--foam);border:1px solid var(--line);align-self:flex-start;
   border-bottom-left-radius:4px}
-.bub.mine{background:var(--teal);color:#fff;align-self:flex-end;border-bottom-right-radius:4px}
+.bub.mine{background:var(--deep);color:#fff;align-self:flex-end;border-bottom-right-radius:4px}
 
 .composer{display:flex;gap:.45rem;margin-top:.8rem}
 .composer input{flex:1;min-width:0;font:inherit;font-size:1rem;padding:.65em .8em;
   border:1px solid var(--line);border-radius:999px;background:var(--foam)}
 .composer input:focus{outline:2px solid var(--aqua);border-color:var(--teal);background:#fff}
-.composer button{font:inherit;font-weight:800;font-size:.95rem;background:var(--teal);color:#fff;
+.composer button{font:inherit;font-weight:800;font-size:.95rem;background:var(--deep);color:#fff;
   border:none;border-radius:999px;padding:.65em 1.3em;cursor:pointer}
-.composer button:hover{background:var(--deep)}
+.composer button:hover{background:var(--navy)}
 
 .closed-note{margin:.8rem 0 0;font-size:.9rem;color:var(--muted);line-height:1.5}
 .closed-note a{color:var(--deep);font-weight:600}
@@ -112,7 +113,7 @@ body{margin:0;background:var(--foam);color:var(--ink);
 /* The pay button exists before the payment provider does. It's a real control
    with a real destination — the office thread — rather than a dead one. */
 .pay-btn{display:block;width:100%;margin-top:.9rem;padding:.85em 1em;border:0;
-  border-radius:12px;background:var(--teal,#0bbcd6);color:#fff;font-size:1.05rem;
+  border-radius:12px;background:var(--navy,#0c243e);color:#fff;font-size:1.05rem;
   font-weight:800;cursor:pointer}
 .pay-btn:hover{filter:brightness(1.06)}
 .pay-btn:active{transform:translateY(1px)}

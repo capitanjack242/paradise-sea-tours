@@ -1,6 +1,7 @@
 :root{
-  --navy:#06243b; --deep:#0a3b5c; --teal:#0bbcd6; --aqua:#5fe1e8;
-  --foam:#f4fbfd; --ink:#0c2231; --muted:#5a7184; --line:#e2edf2;
+  /* Brand colours from the logo, the same as the public site (web/styles.css). */
+  --navy:#0c243e; --deep:#0b6f8a; --teal:#1294b4; --aqua:#8fe3ee;
+  --foam:#f2fafc; --ink:#0c243e; --muted:#4f6577; --line:#dbe9ef;
   --danger:#d6453a; --ok:#1a9d63; --warn:#b8860b;
 }
 *{box-sizing:border-box}
@@ -9,7 +10,7 @@
 [hidden]{display:none!important}
 body{margin:0;font-family:'Inter',system-ui,sans-serif;color:var(--ink);
   background:var(--foam);-webkit-font-smoothing:antialiased}
-h1{font-family:'Baloo 2','Inter',sans-serif;margin:0}
+h1{font-family:'Outfit','Inter',sans-serif;margin:0}
 .brand{font-size:1.3rem;color:var(--navy)}
 .brand strong{color:var(--teal)}
 .muted{color:var(--muted)}
@@ -19,7 +20,7 @@ h1{font-family:'Baloo 2','Inter',sans-serif;margin:0}
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:.5em;
   font-weight:600;border:0;border-radius:8px;padding:.6em 1.1em;cursor:pointer;
   font-size:.92rem;font-family:inherit}
-.btn-primary{background:linear-gradient(135deg,var(--teal),var(--deep));color:#fff}
+.btn-primary{background:var(--navy);color:#fff}
 .btn-ghost{background:#fff;color:var(--ink);border:1px solid var(--line)}
 .btn-ghost:hover{background:var(--foam)}
 .btn-sm{padding:.4em .8em;font-size:.85rem}
@@ -27,9 +28,9 @@ h1{font-family:'Baloo 2','Inter',sans-serif;margin:0}
 
 /* login */
 .login-wrap{min-height:100vh;display:grid;place-items:center;
-  background:linear-gradient(160deg,#0a3b5c,#0bbcd6)}
+  background:var(--navy)}
 .login-card{background:#fff;border-radius:16px;padding:2rem 2.2rem;width:320px;
-  box-shadow:0 20px 50px rgba(6,36,59,.35);display:grid;gap:.9rem}
+  box-shadow:0 20px 50px rgba(12,36,62,.35);display:grid;gap:.9rem}
 .login-card .brand{margin-bottom:.1rem}
 .login-card label{display:grid;gap:.3rem;font-size:.85rem;font-weight:600}
 .login-card input{font:inherit;padding:.6em .7em;border:1px solid var(--line);
@@ -64,7 +65,7 @@ h1{font-family:'Baloo 2','Inter',sans-serif;margin:0}
 .client-search:focus{outline:2px solid var(--aqua);border-color:var(--teal)}
 
 .client-card{background:#fff;border:1px solid var(--line);border-radius:12px;
-  padding:.9rem 1.1rem;box-shadow:0 1px 3px rgba(6,36,59,.06)}
+  padding:.9rem 1.1rem;box-shadow:0 1px 3px rgba(12,36,62,.06)}
 .client-top{display:flex;justify-content:space-between;align-items:flex-start;gap:.8rem;flex-wrap:wrap}
 .client-name{font-weight:700;font-size:1.02rem}
 .client-phone{display:inline-block;margin-top:.15rem;color:var(--deep);font-weight:600;
@@ -134,7 +135,7 @@ h1{font-family:'Baloo 2','Inter',sans-serif;margin:0}
 .bub-who{font-size:.68rem;font-weight:700;opacity:.75;margin-bottom:.1rem}
 .bub-customer{background:#fff;border:1px solid var(--line);align-self:flex-start;
   border-bottom-left-radius:4px}
-.bub-dispatch{background:var(--teal);color:#fff;align-self:flex-end;border-bottom-right-radius:4px}
+.bub-dispatch{background:var(--navy);color:#fff;align-self:flex-end;border-bottom-right-radius:4px}
 .bub-captain{background:var(--deep);color:#fff;align-self:flex-end;border-bottom-right-radius:4px}
 .bub-body{white-space:pre-wrap;overflow-wrap:anywhere}
 
@@ -142,9 +143,9 @@ h1{font-family:'Baloo 2','Inter',sans-serif;margin:0}
 .thread-input{flex:1;min-width:0;font:inherit;font-size:.88rem;padding:.45em .6em;
   border:1px solid var(--line);border-radius:8px;background:#fff}
 .thread-input:focus{outline:2px solid var(--aqua);border-color:var(--teal)}
-.thread-send{font:inherit;font-weight:700;font-size:.85rem;background:var(--teal);color:#fff;
+.thread-send{font:inherit;font-weight:700;font-size:.85rem;background:var(--deep);color:#fff;
   border:none;border-radius:8px;padding:.45em 1em;cursor:pointer}
-.thread-send:hover{background:var(--deep)}
+.thread-send:hover{background:var(--navy)}
 
 .thread-link{display:flex;align-items:center;gap:.4rem;flex-wrap:wrap;margin:.55rem 0 0;
   font-size:.72rem;color:var(--muted)}
@@ -171,7 +172,7 @@ h1{font-family:'Baloo 2','Inter',sans-serif;margin:0}
 .tot-val.muted-val{color:#9dc3d6}
 
 .payout-card{background:#fff;border:1px solid var(--line);border-radius:12px;
-  padding:.9rem 1.1rem;box-shadow:0 1px 3px rgba(6,36,59,.06)}
+  padding:.9rem 1.1rem;box-shadow:0 1px 3px rgba(12,36,62,.06)}
 .payout-card.is-settled{opacity:.72}
 .payout-top{display:flex;justify-content:space-between;align-items:flex-start;gap:.8rem;flex-wrap:wrap}
 .payout-boat{font-weight:700;font-size:1.02rem}
@@ -197,7 +198,7 @@ h1{font-family:'Baloo 2','Inter',sans-serif;margin:0}
 
 /* Boats — who is working, read at a glance before assigning anything. */
 .boat-card{background:#fff;border:1px solid var(--line);border-radius:12px;
-  padding:.85rem 1.1rem;box-shadow:0 1px 3px rgba(6,36,59,.06)}
+  padding:.85rem 1.1rem;box-shadow:0 1px 3px rgba(12,36,62,.06)}
 .boat-card.is-out{border-left:3px solid var(--ok)}
 .boat-top{display:flex;justify-content:space-between;align-items:flex-start;gap:.8rem;flex-wrap:wrap}
 .boat-name{font-weight:700;font-size:1.02rem}
@@ -217,7 +218,7 @@ h1{font-family:'Baloo 2','Inter',sans-serif;margin:0}
 .cards-list{display:flex;flex-direction:column;gap:1rem}
 
 .booking-card{background:#fff;border:1px solid var(--line);border-radius:12px;
-  padding:1rem 1.1rem;box-shadow:0 1px 3px rgba(6,36,59,.06)}
+  padding:1rem 1.1rem;box-shadow:0 1px 3px rgba(12,36,62,.06)}
 .row-saving{opacity:.5}
 
 .card-header{display:flex;justify-content:space-between;align-items:baseline;
@@ -354,13 +355,13 @@ h1{font-family:'Baloo 2','Inter',sans-serif;margin:0}
 .btn-cancel-row:hover{background:#fdecea}
 .btn-complete-row{background:#fff;color:var(--ok);border:1px solid var(--ok)}
 .btn-complete-row:hover{background:#eafaf1}
-.btn-confirm-row{background:var(--teal);color:#fff;border:1px solid var(--teal);font-weight:700}
+.btn-confirm-row{background:var(--deep);color:#fff;border:1px solid var(--deep);font-weight:700}
 .awaiting-captain{font-size:.85rem;font-weight:600;color:var(--muted);font-style:italic}
 /* Settled facts on a closed-out trip — shown, not editable. */
 .ro-value{font-weight:600;padding:.4em 0;color:var(--ink)}
 .no-login-warn{font-size:.8rem;font-weight:600;color:#8a6d00;
   background:#fff8e1;border-radius:6px;padding:.4em .6em;margin:.5rem 0 0}
-.btn-confirm-row:hover{background:var(--deep);border-color:var(--deep)}
+.btn-confirm-row:hover{background:var(--navy);border-color:var(--navy)}
 
 /* Says what's missing before an action can go through. */
 .card-msg{font-size:.85rem;font-weight:600;color:var(--danger);background:#fdecea;
@@ -387,7 +388,7 @@ h1{font-family:'Baloo 2','Inter',sans-serif;margin:0}
 .pin-wrap{background:none;border:none}
 .pin{position:relative;display:inline-block;white-space:nowrap;transform:translate(-50%,-140%);
   padding:.22em .55em;border-radius:999px;font-size:.78rem;font-weight:700;
-  color:#fff;box-shadow:0 1px 4px rgba(6,36,59,.35)}
+  color:#fff;box-shadow:0 1px 4px rgba(12,36,62,.35)}
 .pin b{font-weight:800}
 /* The tail is coloured per variant rather than inherited — `inherit` on a
    border colour picks up the text colour, which is white here. */
