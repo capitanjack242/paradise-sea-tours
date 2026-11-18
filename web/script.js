@@ -224,6 +224,8 @@ function showVatRate() {
   showPriceList(data ?? []);
   renderFare();
   renderQuick();
+  const picked = document.querySelector("#harbourMap .pin.is-picked");
+  if (picked) pickStop(picked.dataset.stop);
 })();
 
 /* Every price printed on the page, from the same price list the booking form
@@ -371,6 +373,92 @@ form.addEventListener("change", renderFare);
   }, { threshold: 0 });
   watch.forEach((el) => obs.observe(el));
 })();
+
+// ── Harbour map ─────────────────────────────────────────────────────────────
+/* A drawn map of Nassau Harbour with a pin per stop. Positions are placed by
+   hand on a 1000 x 520 drawing (west on the left) and are not to scale; the
+   names are the dock names, so fares and stop pages line up. Label side:
+   "b" below the pin, "a" above. */
+const HARBOUR_STOPS = [
+  ["Breezes", 95, 402, "b"], ["Baha Mar", 172, 398, "b2"], ["Goodman's Bay", 252, 400, "b"],
+  ["Arawak Cay / Fish Fry", 345, 396, "b2"], ["Junkanoo Beach", 425, 395, "b"],
+  ["Señor Frog's", 478, 393, "b2"], ["Nassau Cruise Port", 535, 392, "b"],
+  ["Green Parrot", 640, 396, "b2"], ["Poop Deck", 702, 398, "b"], ["Fort Montagu", 795, 400, "b2"],
+  ["Paradise Island – Margaritaville", 500, 306, "a"], ["Paradise Island – Carnival", 612, 312, "a2"],
+  ["Pearl Island", 372, 266, "a"], ["Blue Lagoon", 662, 190, "a"], ["Floating Bar", 812, 238, "a"],
+  ["Pigs Beach (Athol Island)", 880, 296, "a2"], ["Rose Island – Goodies", 948, 196, "a"],
+];
+const PORT_NAME = "Nassau Cruise Port";
+
+function drawHarbour() {
+  const box = document.getElementById("harbourMap");
+  if (!box) return;
+  const pin = (name, x, y, side) => {
+    const home = name === PORT_NAME;
+    const ly = side.startsWith("a") ? (side === "a2" ? -50 : -36) : (side === "b2" ? 40 : 24);
+    const short = name.replace("Paradise Island – ", "PI – ").replace(" (Athol Island)", "");
+    return `<g class="pin${home ? " pin-home" : ""}" data-stop="${escHtml(name)}" transform="translate(${x} ${y})"
+      tabindex="0" role="button" aria-label="${escHtml(name)}">
+      <path d="M0 0 C-5 -9 -11 -13 -11 -21 A11 11 0 1 1 11 -21 C11 -13 5 -9 0 0Z"/>
+      <circle cy="-21" r="4.2"/>
+      <text class="pin-label" y="${ly}" text-anchor="${x > 900 ? "end" : x < 60 ? "start" : "middle"}" x="${x > 900 ? 12 : 0}">${escHtml(home ? "Cruise Port" : short)}</text></g>`;
+  };
+  box.innerHTML = `<svg viewBox="0 0 1000 520" role="group">
+    <defs><linearGradient id="hSea" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#8fe3ee"/><stop offset="1" stop-color="#2ec4d6"/></linearGradient></defs>
+    <rect width="1000" height="520" fill="url(#hSea)"/>
+    <g class="land">
+      <path d="M0 404 C90 396 170 410 260 402 S420 388 520 396 S700 404 800 400 S930 404 1000 400 L1000 520 L0 520Z"/>
+      <path d="M445 300 C520 286 640 284 760 292 C806 295 826 302 808 315 C700 322 560 322 452 318 C428 314 424 305 445 300Z"/>
+      <ellipse cx="372" cy="268" rx="26" ry="9"/>
+      <ellipse cx="662" cy="192" rx="54" ry="12"/>
+      <ellipse cx="880" cy="298" rx="40" ry="12"/>
+      <path d="M902 200 C930 190 972 187 1000 191 L1000 211 C968 214 930 216 906 211Z"/>
+    </g>
+    <text class="map-name" x="500" y="482" text-anchor="middle">New Providence</text>
+    <text class="map-name small" x="626" y="335" text-anchor="middle">Paradise Island</text>
+    <text class="map-water" x="250" y="345" text-anchor="middle">Nassau Harbour</text>
+    <text class="map-water" x="150" y="120">Atlantic Ocean</text>
+    ${HARBOUR_STOPS.map((s) => pin(...s)).join("")}
+  </svg><p class="harbour-scale">Not to scale.</p>`;
+  box.addEventListener("click", (e) => {
+    const g = e.target.closest(".pin");
+    if (g) pickStop(g.dataset.stop);
+  });
+  box.addEventListener("keydown", (e) => {
+    const g = e.target.closest(".pin");
+    if (g && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); pickStop(g.dataset.stop); }
+  });
+}
+
+function pickStop(name) {
+  document.querySelectorAll("#harbourMap .pin").forEach((g) =>
+    g.classList.toggle("is-picked", g.dataset.stop === name));
+  const card = document.getElementById("harbourCard");
+  if (name === PORT_NAME) {
+    card.innerHTML = `<h3>Nassau Cruise Port</h3>
+      <p>You start here, at Prince George Wharf. Tap any other pin to see its fare.</p>`;
+    return;
+  }
+  const route = matchRoute(PORT_NAME, name);
+  const fares = route?.price_cents
+    ? `<p class="harbour-fare"><strong>${money(route.price_cents)}</strong> one way ·
+         <strong>${money(perPersonCents(route, "Round trip"))}</strong> round trip</p>
+       <p class="harbour-sub">per person from the Cruise Port, before VAT</p>`
+    : `<p class="harbour-sub">${routes.length ? "Price on request — we'll quote it when you book." : "Loading the fare…"}</p>`;
+  card.innerHTML = `<h3>${escHtml(name)}</h3>${fares}
+    <div class="harbour-actions">
+      <button type="button" class="btn btn-primary" id="harbourBook">Book this</button>
+      <a class="harbour-more" href="/boat-to/${stopSlug(name)}/">About this stop →</a>
+    </div>`;
+  document.getElementById("harbourBook").addEventListener("click", () => {
+    qFrom.value = PORT_NAME; qTo.value = name;
+    qFrom.dataset.touched = qTo.dataset.touched = "1";
+    renderQuick();
+    quick.requestSubmit();
+  });
+}
+drawHarbour();
 
 // ── Quick booking in the hero ─────────────────────────────────────────────
 /* From, To and People at the top of the page, with the fare straight away.
