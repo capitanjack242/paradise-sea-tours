@@ -402,7 +402,7 @@ const HARBOUR_STOPS = [
   ["Blue Lagoon", 25.0967, -77.2802, "Blue Lagoon", [0, -24, "middle"]],
   ["Floating Bar", 25.0980, -77.2320, "Floating Bar", [0, -24, "middle"]],
   ["Pigs Beach (Athol Island)", 25.0776, -77.2668, "Pigs Beach", [0, 21, "middle"]],
-  ["Rose Island – Goodies", 25.0888, -77.2033, "Goodies", [0, 21, "middle"]],
+  ["Rose Island – Goodies", 25.0897, -77.2330, "Goodies", [0, 21, "middle"]],
 ];
 const PORT_NAME = "Nassau Cruise Port";
 const harbourXY = ([name, lat, lon]) => {
@@ -432,7 +432,7 @@ function drawHarbour() {
     <svg viewBox="0 0 ${w} ${h}" role="group" aria-label="Our stops">
       <text class="map-name" x="540" y="430" text-anchor="middle">NEW PROVIDENCE</text>
       <text class="map-name small pi" x="505" y="226" text-anchor="middle">PARADISE ISLAND</text>
-      <text class="map-name small" x="830" y="208" text-anchor="middle">ROSE ISLAND</text>
+      <text class="map-name small" x="905" y="196" text-anchor="middle">ROSE ISLAND</text>
       <text class="map-water" x="300" y="70" text-anchor="middle">Atlantic Ocean</text>
       <path class="route" id="harbourRoute" d=""/>
       <g class="map-key" transform="translate(${w - 24} 26)">
