@@ -435,8 +435,9 @@ function drawHarbour() {
       ${HARBOUR_STOPS.map(pin).join("")}
     </svg><p class="harbour-credit">Coastline: geoBoundaries (CC BY 4.0)</p></div>`;
   box.addEventListener("click", (e) => {
+    // A pin opens its card; the open pin again, or anywhere else on the map, closes it.
     const g = e.target.closest(".pin");
-    if (g) pickStop(g.classList.contains("is-picked") ? null : g.dataset.stop);
+    pickStop(g && !g.classList.contains("is-picked") ? g.dataset.stop : null);
   });
   box.addEventListener("keydown", (e) => {
     const g = e.target.closest(".pin");
