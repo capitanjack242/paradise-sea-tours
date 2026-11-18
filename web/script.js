@@ -120,6 +120,24 @@ const today = () => new Intl.DateTimeFormat("en-CA", { timeZone: NASSAU_TZ }).fo
 dateInput.min = today();
 dateInput.value = today();
 
+/* The form opens on today at 10:30. Later in the day that time has gone, and
+   the visitor would only find out when the form refuses it, so start at the
+   next half hour instead (and tomorrow morning once the day's runs are over). */
+(() => {
+  const now = new Intl.DateTimeFormat("en-GB", { timeZone: NASSAU_TZ, hour: "2-digit", minute: "2-digit", hourCycle: "h23" })
+    .format(new Date()).split(":").map(Number);
+  const mins = now[0] * 60 + now[1];
+  const next = Math.ceil((mins + 20) / 30) * 30;          // at least 20 minutes away
+  if (next <= 10 * 60 + 30) return;                        // 10:30 is still ahead
+  const time = form.querySelector('[name="time"]');
+  if (next <= 21 * 60 + 30) {
+    time.value = `${String(Math.floor(next / 60)).padStart(2, "0")}:${String(next % 60).padStart(2, "0")}`;
+  } else {
+    const t = new Date(nassauInstant(today(), "12:00").getTime() + 86400000);
+    dateInput.value = new Intl.DateTimeFormat("en-CA", { timeZone: NASSAU_TZ }).format(t);
+  }
+})();
+
 // ── Trip type ────────────────────────────────────────────────────────────
 document.getElementById("tripSeg").addEventListener("click", (e) => {
   const btn = e.target.closest(".seg-item");
@@ -306,7 +324,12 @@ function renderFare() {
   const split = document.getElementById("fareSplit");
 
   // The big number is what leaves their pocket, tax and all.
-  total.textContent = money(totalCents);
+  // Never a bare dash: say what the number will be, or why there isn't one yet.
+  total.textContent = totalCents != null ? money(totalCents)
+    : !routes.length ? "…"
+    : d.triptype === "Private charter (whole boat)" ? "Quoted for you"
+    : d.pickup && d.destination && d.pickup !== d.destination ? "Price on request"
+    : "Pick a route";
   split.hidden = totalCents == null;
   if (totalCents != null) {
     // The fare before the code, then the code off it, then the tax on the rest.
@@ -335,6 +358,19 @@ function renderFare() {
 
 form.addEventListener("input", renderFare);
 form.addEventListener("change", renderFare);
+
+// ── Floating call button: out of the way of the hero and the form ──────────
+(() => {
+  const fab = document.querySelector(".fab");
+  const watch = [document.querySelector(".hero"), document.getElementById("book")].filter(Boolean);
+  if (!fab || !watch.length || !("IntersectionObserver" in window)) return;
+  const seen = new Set();
+  const obs = new IntersectionObserver((entries) => {
+    for (const e of entries) e.isIntersecting ? seen.add(e.target) : seen.delete(e.target);
+    fab.classList.toggle("is-away", seen.size > 0);
+  }, { threshold: 0 });
+  watch.forEach((el) => obs.observe(el));
+})();
 
 // ── Quick booking in the hero ─────────────────────────────────────────────
 /* From, To and People at the top of the page, with the fare straight away.
