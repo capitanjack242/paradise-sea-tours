@@ -379,7 +379,12 @@ form.addEventListener("change", renderFare);
    longitude. HARBOUR_VIEW must match the edges in that script. The names are
    the dock names, so fares and stop pages line up. Each stop also gives its
    short map label and where the label sits: [dx, dy, anchor] from the pin. */
-const HARBOUR_VIEW = { w0: -77.425, e0: -77.185, s0: 25.009, n0: 25.13, w: 1000, h: 557 };
+const HARBOUR_VIEW = { w0: -77.425, e0: -77.185, s0: 25.009, n0: 25.13, w: 1000, h: 557, npShift: 0.006 };
+/* New Providence is drawn a little south of where it is (npShift degrees, as
+   in the script) so the harbour is wide enough to tell its pins apart. These
+   stops are on New Providence and move with it. */
+const ON_NEW_PROVIDENCE = new Set(["Breezes", "Baha Mar", "Goodman's Bay", "Arawak Cay / Fish Fry",
+  "Junkanoo Beach", "Señor Frog's", "Nassau Cruise Port", "Green Parrot", "Poop Deck", "Fort Montagu"]);
 const HARBOUR_STOPS = [
   ["Breezes", 25.0789, -77.4095, "Breezes", [0, 21, "middle"]],
   ["Baha Mar", 25.0751, -77.3986, "Baha Mar", [0, 21, "middle"]],
@@ -393,15 +398,16 @@ const HARBOUR_STOPS = [
   ["Fort Montagu", 25.0704, -77.3044, "Fort Montagu", [9, 5, "start"]],
   ["Paradise Island – Margaritaville", 25.0801, -77.3248, "Margaritaville", [5, -24, "start"]],
   ["Paradise Island – Carnival", 25.0823, -77.3340, "Carnival", [-2, -24, "end"]],
-  ["Pearl Island", 25.0915, -77.4070, "Pearl Island", [0, -24, "middle"]],
+  ["Pearl Island", 25.0826, -77.2712, "Pearl Island", [-4, -24, "end"]],
   ["Blue Lagoon", 25.0967, -77.2802, "Blue Lagoon", [0, -24, "middle"]],
-  ["Floating Bar", 25.0980, -77.2320, "Floating Bar", [0, -24, "middle"]],
+  ["Floating Bar", 25.0768, -77.2775, "Floating Bar", [-6, 18, "end"]],
   ["Pigs Beach (Athol Island)", 25.0776, -77.2668, "Pigs Beach", [0, 21, "middle"]],
-  ["Rose Island – Goodies", 25.0888, -77.2033, "Goodies", [0, 21, "middle"]],
+  ["Rose Island – Goodies", 25.0897, -77.2330, "Goodies", [0, 21, "middle"]],
 ];
 const PORT_NAME = "Nassau Cruise Port";
-const harbourXY = (lat, lon) => {
+const harbourXY = ([name, lat, lon]) => {
   const v = HARBOUR_VIEW;
+  if (ON_NEW_PROVIDENCE.has(name)) lat -= v.npShift;
   return [(lon - v.w0) / (v.e0 - v.w0) * v.w, (v.n0 - lat) / (v.n0 - v.s0) * v.h];
 };
 
@@ -410,8 +416,9 @@ function drawHarbour() {
   if (!box) return;
   const { w, h } = HARBOUR_VIEW;
   const kmPx = w / ((HARBOUR_VIEW.e0 - HARBOUR_VIEW.w0) * 111.32 * Math.cos((25.084 * Math.PI) / 180));
-  const pin = ([name, lat, lon, label, [dx, dy, anchor]]) => {
-    const [x, y] = harbourXY(lat, lon);
+  const pin = (stop) => {
+    const [name, , , label, [dx, dy, anchor]] = stop;
+    const [x, y] = harbourXY(stop);
     const home = name === PORT_NAME;
     return `<g class="pin${home ? " pin-home" : ""}" data-stop="${escHtml(name)}" transform="translate(${x.toFixed(1)} ${y.toFixed(1)})"
       tabindex="0" role="button" aria-label="${escHtml(name)}">
@@ -423,14 +430,14 @@ function drawHarbour() {
   box.innerHTML = `<div class="harbour-canvas">
     <img src="/images/harbour-map.svg" width="${w}" height="${h}" alt="">
     <svg viewBox="0 0 ${w} ${h}" role="group" aria-label="Our stops">
-      <text class="map-name" x="540" y="400" text-anchor="middle">NEW PROVIDENCE</text>
+      <text class="map-name" x="540" y="430" text-anchor="middle">NEW PROVIDENCE</text>
       <text class="map-name small pi" x="505" y="226" text-anchor="middle">PARADISE ISLAND</text>
-      <text class="map-name small" x="830" y="208" text-anchor="middle">ROSE ISLAND</text>
+      <text class="map-name small" x="905" y="196" text-anchor="middle">ROSE ISLAND</text>
       <text class="map-water" x="300" y="70" text-anchor="middle">Atlantic Ocean</text>
       <path class="route" id="harbourRoute" d=""/>
       <g class="map-key" transform="translate(${w - 24} 26)">
         <path d="M0-12L5 4L0 1L-5 4Z"/><text y="18" text-anchor="middle">N</text></g>
-      <g class="map-key" transform="translate(${w - 24 - 2 * kmPx} ${h - 40})">
+      <g class="map-key" transform="translate(24 ${h - 40})">
         <path d="M0 0H${(2 * kmPx).toFixed(1)}" class="scale-bar"/><text x="${kmPx.toFixed(1)}" y="-6" text-anchor="middle">2 km</text></g>
       ${HARBOUR_STOPS.map(pin).join("")}
     </svg><p class="harbour-credit">Coastline: geoBoundaries (CC BY 4.0)</p></div>`;
@@ -447,7 +454,7 @@ function drawHarbour() {
     }
   });
   // A phone shows part of the map and scrolls sideways: start on the port.
-  const [px] = harbourXY(HARBOUR_STOPS.find((s) => s[0] === PORT_NAME)[1], HARBOUR_STOPS.find((s) => s[0] === PORT_NAME)[2]);
+  const [px] = harbourXY(HARBOUR_STOPS.find((s) => s[0] === PORT_NAME));
   requestAnimationFrame(() => {
     const c = box.querySelector(".harbour-canvas");
     box.scrollLeft = (px / w) * c.offsetWidth - box.clientWidth / 2;
@@ -461,8 +468,8 @@ function drawHarbourRoute(name) {
   const find = (n) => HARBOUR_STOPS.find((s) => s[0] === n);
   const to = find(name);
   if (!to || name === PORT_NAME) { line.setAttribute("d", ""); return; }
-  const [x0, y0] = harbourXY(find(PORT_NAME)[1], find(PORT_NAME)[2]);
-  const [x1, y1] = harbourXY(to[1], to[2]);
+  const [x0, y0] = harbourXY(find(PORT_NAME));
+  const [x1, y1] = harbourXY(to);
   const mx = (x0 + x1) / 2, my = Math.min(y0, y1) - 24 - Math.abs(x1 - x0) * 0.12;
   line.setAttribute("d", `M${x0.toFixed(1)} ${(y0 - 6).toFixed(1)}Q${mx.toFixed(1)} ${my.toFixed(1)} ${x1.toFixed(1)} ${(y1 - 6).toFixed(1)}`);
 }
