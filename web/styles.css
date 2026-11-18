@@ -327,3 +327,41 @@ img{max-width:100%}
 .route-others a{color:var(--deep)}
 .fares-table td a{color:inherit;text-decoration:underline;text-decoration-color:var(--line);text-underline-offset:3px}
 .fares-table td a:hover{text-decoration-color:currentColor}
+
+/* Harbour map (fares section) */
+.harbour{display:grid;grid-template-columns:1fr 300px;gap:1.2rem;align-items:start;margin:0 auto 2.2rem;max-width:1100px}
+.harbour-map{border-radius:20px;overflow:hidden;box-shadow:var(--shadow);background:#2ec4d6;position:relative}
+.harbour-map svg{display:block;width:100%;height:auto}
+.harbour-map .land path,.harbour-map .land ellipse{fill:#f3e6c4;stroke:#d8c592;stroke-width:2}
+.harbour-map .map-name{font:700 22px 'Baloo 2',sans-serif;fill:#8a7a4f;letter-spacing:.06em}
+.harbour-map .map-name.small{font-size:15px}
+.harbour-map .map-water{font:italic 600 16px 'Inter',sans-serif;fill:rgba(6,36,59,.45);letter-spacing:.08em}
+.harbour-map .pin{cursor:pointer;outline:none}
+.harbour-map .pin path{fill:var(--teal);stroke:#fff;stroke-width:2;transition:transform .15s ease}
+.harbour-map .pin circle{fill:#fff}
+.harbour-map .pin-home path{fill:var(--navy)}
+.harbour-map .pin:hover path,.harbour-map .pin:focus-visible path,.harbour-map .pin.is-picked path{fill:#ff6b4a;transform:scale(1.25)}
+.harbour-map .pin.is-picked circle{transform:translateY(-5px)}
+.harbour-map .pin-label{font:600 13px 'Inter',sans-serif;fill:var(--navy);paint-order:stroke;stroke:rgba(255,255,255,.85);stroke-width:4px;pointer-events:none}
+.harbour-scale{position:absolute;right:12px;bottom:8px;margin:0;font-size:.72rem;color:#6b5f3d}
+.harbour-card{background:#fff;border:1px solid var(--line);border-radius:20px;padding:1.3rem;box-shadow:var(--shadow);min-height:180px}
+.harbour-card h3{font-size:1.35rem;color:var(--navy);margin:0 0 .5rem}
+.harbour-card p{margin:.2rem 0}
+.harbour-hint{color:#4a6276}
+.harbour-fare{font-size:1.05rem}
+.harbour-fare strong{font-family:'Baloo 2';font-size:1.5rem;color:var(--navy)}
+.harbour-sub{font-size:.85rem;color:#4a6276}
+.harbour-actions{display:flex;align-items:center;gap:1rem;flex-wrap:wrap;margin-top:1rem}
+.harbour-more{color:var(--deep);font-weight:600}
+@media(max-width:900px){
+  .harbour{grid-template-columns:1fr}
+  .harbour-card{min-height:0}
+  .harbour-map .pin-label{display:none}
+  .harbour-map .pin-home .pin-label{display:block}
+  .harbour-map .map-water{font-size:22px}
+  /* Bigger pins to tap on a phone (scaled about the pin's tip). */
+  .harbour-map .pin path,.harbour-map .pin circle{transform:scale(1.6)}
+  .harbour-map .pin:hover path,.harbour-map .pin:focus-visible path,.harbour-map .pin.is-picked path{transform:scale(2)}
+  .harbour-map .pin.is-picked circle{transform:scale(2)}
+  .harbour-scale{font-size:.65rem}
+}
