@@ -59,7 +59,6 @@ navLinks.querySelectorAll("a").forEach((a) =>
 // wire up phone / call links
 document.querySelectorAll("[data-phone]").forEach((el) => {
   el.href = "tel:" + CONFIG.phone;
-  if (el.textContent.includes("000")) el.textContent = "📞 " + CONFIG.phoneDisplay;
 });
 document.querySelectorAll("[data-call]").forEach((el) => (el.href = "tel:" + CONFIG.phone));
 // Captains reaching out about joining the network — email keeps it out of the

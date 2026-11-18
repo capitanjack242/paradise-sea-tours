@@ -25,6 +25,23 @@
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+<!-- Line icons (24px grid, 2px stroke), used as <svg class="ico"><use href="#i-name"/></svg>.
+     Phone path from Feather Icons (MIT). -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-island" viewBox="0 0 24 24"><path d="M3 20c3-2.6 15-2.6 18 0"/><path d="M11.5 18c0-4 .6-7 2.5-10"/><path d="M14 8c-2-2-5-2-7 0"/><path d="M14 8c2-1.6 4.6-1.4 6.5.5"/><path d="M14 8c-.8-2.6-3.2-3.8-5.6-3.2"/><path d="M14 8c.8-2.4 2.8-3.6 5-3.4"/></symbol>
+  <symbol id="i-pig" viewBox="0 0 24 24"><circle cx="12" cy="13" r="7"/><path d="M6.6 8.6L5 4l4.2 2.4"/><path d="M17.4 8.6L19 4l-4.2 2.4"/><ellipse cx="12" cy="15.2" rx="3.2" ry="2.2"/><circle class="dot" cx="10.9" cy="15.2" r=".6"/><circle class="dot" cx="13.1" cy="15.2" r=".6"/><circle class="dot" cx="9.4" cy="11.4" r=".7"/><circle class="dot" cx="14.6" cy="11.4" r=".7"/></symbol>
+  <symbol id="i-umbrella" viewBox="0 0 24 24"><path d="M3 12a9 9 0 0 1 18 0z"/><path d="M12 12v9"/><path d="M12 3V2"/><path d="M7 21h10"/></symbol>
+  <symbol id="i-fin" viewBox="0 0 24 24"><path d="M7 15c1-5 4.5-9 10-10-2 3-2.4 6.5-.6 10"/><path d="M2 18c2-1.5 4-1.5 6 0s4 1.5 6 0 4-1.5 6 0"/><path d="M5 21.5c1.6-1 3.2-1 4.8 0s3.2 1 4.8 0 3.2-1 4.4-.3"/></symbol>
+  <symbol id="i-mask" viewBox="0 0 24 24"><rect x="2.5" y="8" width="14" height="8" rx="3"/><path d="M7.5 16v-1.5a2 2 0 0 1 4 0V16"/><path d="M20.5 4v10.5a4 4 0 0 1-4 4H14"/></symbol>
+  <symbol id="i-anchor" viewBox="0 0 24 24"><circle cx="12" cy="5" r="2"/><path d="M12 7v14"/><path d="M8 11h8"/><path d="M4 13c0 4.4 3.6 8 8 8s8-3.6 8-8"/></symbol>
+  <symbol id="i-hook" viewBox="0 0 24 24"><circle cx="13" cy="4" r="1.6"/><path d="M13 5.6V14a4.5 4.5 0 0 1-9 0v-3l2.6 2.6"/></symbol>
+  <symbol id="i-fish" viewBox="0 0 24 24"><path d="M6.5 12c2.5-4 8-5 11.5-2 1.3 1.1 2.5 2 2.5 2s-1.2.9-2.5 2c-3.5 3-9 2-11.5-2z"/><path d="M6.5 12L3 8.5v7z"/><circle class="dot" cx="16" cy="11.2" r=".7"/></symbol>
+  <symbol id="i-sunset" viewBox="0 0 24 24"><path d="M2 18h20"/><path d="M7 18a5 5 0 0 1 10 0"/><path d="M12 6v3"/><path d="M4.9 10.9l2.1 2.1"/><path d="M19.1 10.9L17 13"/><path d="M7 21.5h10"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8 12.4l2.8 2.8L16 9.6"/></symbol>
+  <symbol id="i-phone" viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></symbol>
+  <symbol id="i-mail" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7.5l9 6 9-6"/></symbol>
+  <symbol id="i-boat" viewBox="0 0 24 24"><path d="M2 15h20l-3 5H5z"/><path d="M7 15l2-5h6l3 5"/><path d="M12 10V6"/></symbol>
+</svg>
 
 <!-- NAV -->
 <header class="nav" id="top">
@@ -74,7 +91,7 @@
     </form>
 
     <p class="hero-trust">Fixed fares · Licensed Bahamian captains · 7am–10pm daily ·
-      <a href="#" data-call>📞 Call us</a></p>
+      <a href="#" data-call><svg class="ico" aria-hidden="true"><use href="#i-phone"/></svg> Call us</a></p>
   </div>
 </section>
 
@@ -87,37 +104,37 @@
          fares table; the numbers typed here only show if that read fails. -->
     <div class="cards cards-3">
       <article class="card route">
-        <div class="route-emoji">🏝️</div>
+        <div class="route-icon"><svg class="ico" aria-hidden="true"><use href="#i-island"/></svg></div>
         <h3>Paradise Island</h3>
         <p>Margaritaville or Carnival — straight across the harbour from the Cruise Port, no bridge traffic.</p>
         <span class="tag">$<span data-price="port-margaritaville">10</span> per person</span>
       </article>
       <article class="card route">
-        <div class="route-emoji">🐷</div>
+        <div class="route-icon"><svg class="ico" aria-hidden="true"><use href="#i-pig"/></svg></div>
         <h3>Pigs Beach (Athol Island)</h3>
         <p>Meet the famous swimming pigs, then back to town on your schedule.</p>
         <span class="tag">$<span data-price="port-pigs-beach">25</span> per person</span>
       </article>
       <article class="card route">
-        <div class="route-emoji">🌴</div>
+        <div class="route-icon"><svg class="ico" aria-hidden="true"><use href="#i-umbrella"/></svg></div>
         <h3>Pearl Island</h3>
         <p>A private-island beach day just off Nassau — white sand and clear water.</p>
         <span class="tag">$<span data-price="port-pearl-island">30</span> per person</span>
       </article>
       <article class="card route">
-        <div class="route-emoji">🐬</div>
+        <div class="route-icon"><svg class="ico" aria-hidden="true"><use href="#i-fin"/></svg></div>
         <h3>Blue Lagoon</h3>
         <p>Calm lagoon beaches and dolphin encounters, a short run across the water.</p>
         <span class="tag">$<span data-price="port-blue-lagoon">35</span> per person</span>
       </article>
       <article class="card route">
-        <div class="route-emoji">🐠</div>
+        <div class="route-icon"><svg class="ico" aria-hidden="true"><use href="#i-mask"/></svg></div>
         <h3>Rose Island – Goodies</h3>
         <p>Quiet beaches and snorkeling away from the crowds.</p>
         <span class="tag">$<span data-price="port-rose-goodies">35</span> per person</span>
       </article>
       <article class="card route">
-        <div class="route-emoji">⚓</div>
+        <div class="route-icon"><svg class="ico" aria-hidden="true"><use href="#i-anchor"/></svg></div>
         <h3>Private Charter</h3>
         <p>Book a whole boat for groups, events, or a custom day on the water.</p>
         <span class="tag">Quoted for you</span>
@@ -231,19 +248,19 @@
       Rods, bait and licenses included — just bring the cooler.</p>
     <div class="cards">
       <article class="card route">
-        <div class="route-emoji">🎣</div>
+        <div class="route-icon"><svg class="ico" aria-hidden="true"><use href="#i-hook"/></svg></div>
         <h3>Reef Fishing</h3>
         <p>Bottom fishing on the reefs for snapper, grouper and more. Great for families and first-timers.</p>
         <span class="tag">Half day · quoted for you</span>
       </article>
       <article class="card route">
-        <div class="route-emoji">🐟</div>
+        <div class="route-icon"><svg class="ico" aria-hidden="true"><use href="#i-fish"/></svg></div>
         <h3>Deep-Sea / Offshore</h3>
         <p>Troll the deep blue for mahi, tuna, wahoo and marlin. Big-game action offshore.</p>
         <span class="tag">Half day · quoted for you</span>
       </article>
       <article class="card route">
-        <div class="route-emoji">🌅</div>
+        <div class="route-icon"><svg class="ico" aria-hidden="true"><use href="#i-sunset"/></svg></div>
         <h3>Sunset &amp; Flats</h3>
         <p>Evening reef trips and bonefishing on the flats — calm water, big views, tight lines.</p>
         <span class="tag">Quoted for you</span>
@@ -273,10 +290,10 @@
       <p>Send us the trip and we'll confirm a nearby captain and your fixed per-person
         fare fast — usually within minutes during operating hours.</p>
       <ul class="booking-points">
-        <li>✅ Fixed per-person fares, VAT shown upfront</li>
-        <li>✅ Licensed, insured local Bahamian captains</li>
-        <li>✅ Cruise Port &amp; flexible pickups</li>
-        <li>✅ Groups &amp; events welcome</li>
+        <li><svg class="ico" aria-hidden="true"><use href="#i-check"/></svg> Fixed per-person fares, VAT shown upfront</li>
+        <li><svg class="ico" aria-hidden="true"><use href="#i-check"/></svg> Licensed, insured local Bahamian captains</li>
+        <li><svg class="ico" aria-hidden="true"><use href="#i-check"/></svg> Cruise Port &amp; flexible pickups</li>
+        <li><svg class="ico" aria-hidden="true"><use href="#i-check"/></svg> Groups &amp; events welcome</li>
       </ul>
       <p class="booking-call">Prefer to talk? <a href="#" data-call>Give us a call</a>.</p>
     </div>
@@ -415,8 +432,8 @@
     </div>
     <div>
       <h4>Contact</h4>
-      <p><a href="tel:+12425357430" data-phone>📞 +1 (242) 535-7430</a></p>
-      <p><a href="mailto:hello@paradiseseaexpress.com">✉️ hello@paradiseseaexpress.com</a></p>
+      <p><a href="tel:+12425357430" data-phone><svg class="ico" aria-hidden="true"><use href="#i-phone"/></svg> +1 (242) 535-7430</a></p>
+      <p><a href="mailto:hello@paradiseseaexpress.com"><svg class="ico" aria-hidden="true"><use href="#i-mail"/></svg> hello@paradiseseaexpress.com</a></p>
     </div>
     <div>
       <h4>Hours</h4>
@@ -430,7 +447,7 @@
 </footer>
 
 <!-- floating call button -->
-<a href="#" class="fab" data-call aria-label="Call us">📞</a>
+<a href="#" class="fab" data-call aria-label="Call us"><svg class="ico" aria-hidden="true"><use href="#i-phone"/></svg></a>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/libphonenumber-js@1/bundle/libphonenumber-js.min.js"></script>

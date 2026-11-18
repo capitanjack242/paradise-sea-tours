@@ -130,7 +130,13 @@ img{max-width:100%}
 .card{background:#fff;border:1px solid var(--line);border-radius:var(--radius);
   padding:1.6rem;box-shadow:var(--shadow);transition:transform .15s ease,box-shadow .15s ease}
 .card:hover{transform:translateY(-4px);box-shadow:0 18px 40px rgba(12,36,62,.14)}
-.route-emoji{font-size:2.2rem;margin-bottom:.5rem}
+/* Line icons: drawn in the text colour, sized by the font size. */
+.ico{width:1.15em;height:1.15em;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;
+  vertical-align:-.2em;flex:none}
+.ico .dot{fill:currentColor;stroke:none}
+.route-icon{display:grid;place-items:center;width:56px;height:56px;border-radius:16px;margin-bottom:.9rem;
+  background:var(--foam);color:var(--deep);font-size:1.75rem}
+.route-icon .ico{vertical-align:0}
 .card h3{font-size:1.3rem;color:var(--navy);margin-bottom:.4rem}
 .card p{color:var(--muted);margin:0 0 1rem}
 .tag{display:inline-block;background:var(--sand);color:#6a5320;font-weight:600;
@@ -159,7 +165,7 @@ img{max-width:100%}
 .price-note{color:var(--muted);font-size:.9rem;margin:.2rem 0 1rem}
 .price-card ul{list-style:none;padding:0;margin:0 0 1.4rem;text-align:left}
 .price-card li{padding:.4rem 0;border-bottom:1px dashed var(--line);color:var(--ink);font-size:.95rem}
-.price-card li:before{content:"⚓ ";color:var(--teal)}
+.price-card li:before{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--teal);margin-right:.6rem;vertical-align:.15em}
 .price-card .btn{margin-top:auto}
 .fineprint{text-align:center;color:var(--muted);font-size:.85rem;margin-top:1.6rem}
 
@@ -178,6 +184,7 @@ img{max-width:100%}
 .booking-copy .section-title{text-align:left}
 .booking-copy p{color:var(--muted)}
 .booking-points{list-style:none;padding:0;margin:1.4rem 0;display:grid;gap:.6rem;font-weight:500}
+.booking-points .ico{color:var(--deep);margin-right:.35rem}
 .booking-call a{color:var(--deep);font-weight:600;text-decoration:underline}
 .booking-form{background:#fff;border:1px solid var(--line);border-radius:var(--radius);
   padding:1.8rem;box-shadow:var(--shadow);display:grid;gap:1rem}
