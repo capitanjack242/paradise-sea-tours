@@ -76,4 +76,4 @@ These terms are governed by the laws of the Commonwealth of The Bahamas.
 
 ## 10. Contact
 
-hello@paradiseseaexpress.com · +507 6481-9290 · [ADMIN: registered address]
+hello@paradiseseaexpress.com · +1 (242) 535-7430 · [ADMIN: registered address]
