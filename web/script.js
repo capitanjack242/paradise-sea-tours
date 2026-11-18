@@ -400,7 +400,7 @@ const HARBOUR_STOPS = [
   ["Paradise Island – Carnival", 25.0823, -77.3340, "Carnival", [-2, -24, "end"]],
   ["Pearl Island", 25.0826, -77.2712, "Pearl Island", [-4, -24, "end"]],
   ["Blue Lagoon", 25.0967, -77.2802, "Blue Lagoon", [0, -24, "middle"]],
-  ["Floating Bar", 25.0980, -77.2320, "Floating Bar", [0, -24, "middle"]],
+  ["Floating Bar", 25.0768, -77.2775, "Floating Bar", [-6, 18, "end"]],
   ["Pigs Beach (Athol Island)", 25.0776, -77.2668, "Pigs Beach", [0, 21, "middle"]],
   ["Rose Island – Goodies", 25.0897, -77.2330, "Goodies", [0, 21, "middle"]],
 ];
