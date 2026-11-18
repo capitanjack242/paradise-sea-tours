@@ -386,8 +386,8 @@ const HARBOUR_VIEW = { w0: -77.425, e0: -77.185, s0: 25.009, n0: 25.13, w: 1000,
 const ON_NEW_PROVIDENCE = new Set(["Breezes", "Baha Mar", "Goodman's Bay", "Arawak Cay / Fish Fry",
   "Junkanoo Beach", "Señor Frog's", "Nassau Cruise Port", "Green Parrot", "Poop Deck", "Fort Montagu"]);
 const HARBOUR_STOPS = [
-  ["Breezes", 25.0789, -77.4095, "Breezes", [0, 21, "middle"]],
-  ["Baha Mar", 25.0751, -77.3986, "Baha Mar", [0, 21, "middle"]],
+  ["Baha Mar", 25.0789, -77.4095, "Baha Mar", [0, 21, "middle"]],
+  ["Breezes", 25.0751, -77.3986, "Breezes", [0, 21, "middle"]],
   ["Goodman's Bay", 25.0794, -77.3798, "Goodman's Bay", [3, 21, "end"]],
   ["Arawak Cay / Fish Fry", 25.0805, -77.3604, "Arawak Cay", [-5, -21, "middle"]],
   ["Junkanoo Beach", 25.0795, -77.3513, "Junkanoo Beach", [-3, 21, "end"]],
