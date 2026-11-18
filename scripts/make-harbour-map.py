@@ -18,11 +18,17 @@ import sys
 import urllib.request
 
 from shapely.geometry import MultiPolygon, box, shape
+from shapely.affinity import translate
 from shapely.ops import unary_union
 
 SOURCE = ("https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/"
           "releaseData/gbOpen/BHS/ADM1/geoBoundaries-BHS-ADM1.geojson")
 OUT = pathlib.Path(__file__).resolve().parent.parent / "web" / "images" / "harbour-map.svg"
+
+# New Providence is drawn this many degrees further south than it really is,
+# to open up the harbour between it and Paradise Island so the pins there can
+# be told apart. Same number as HARBOUR_VIEW.npShift in web/script.js.
+NP_SHIFT = 0.006
 
 # West, east, south and north edges, in degrees, and the drawing's width.
 W0, E0, S0, N0 = -77.425, -77.185, 25.009, 25.130
@@ -62,6 +68,9 @@ def main():
             data = json.loads(r.read())
     clip = box(W0 - .02, S0 - .02, E0 + .02, N0 + .02)
     land = unary_union([shape(f["geometry"]).buffer(0).intersection(clip) for f in data["features"]])
+    islands = sorted(land.geoms, key=lambda g: g.area)
+    mainland = translate(islands.pop(), yoff=-NP_SHIFT)  # the biggest is New Providence
+    land = unary_union([mainland, *islands])
     r = 0.0004  # round the raster steps off, then thin the points
     land = land.buffer(r, join_style=1).buffer(-2 * r, join_style=1).buffer(r, join_style=1)
     land = land.simplify(0.0001, preserve_topology=True)
