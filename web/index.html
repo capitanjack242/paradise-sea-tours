@@ -49,21 +49,32 @@
 <section class="hero">
   <div class="hero-overlay"></div>
   <div class="container hero-content">
-    <p class="eyebrow">On-demand water tours · Nassau, The Bahamas</p>
-    <span class="badge">📱 App coming soon — book online today</span>
+    <p class="eyebrow">Water taxi · Nassau, The Bahamas</p>
     <h1>The fastest way<br>across the water.</h1>
-    <p class="lede">Step off the cruise ship and onto a boat. Paradise Sea Express connects
-      you to a nearby captained boat for a quick, fixed-price ride to Paradise Island,
-      Pearl Island, the beaches and the cays.</p>
-    <div class="hero-cta">
-      <a href="#book" class="btn btn-primary btn-lg">Book a ride</a>
-      <a href="#" class="btn btn-ghost btn-lg" data-call>📞 Call us</a>
-    </div>
-    <div class="hero-stats">
-      <div><strong>~10&nbsp;min</strong><span>Cruise Port → Paradise Island</span></div>
-      <div><strong>from&nbsp;$<span data-price-from="route">10</span></strong><span>per person + VAT</span></div>
-      <div><strong>7am–10pm</strong><span>every day</span></div>
-    </div>
+    <p class="lede">Fixed-price boat rides from the Cruise Port to Paradise Island, Pearl Island,
+      the beaches and the cays.</p>
+
+    <!-- Quick booking: pick the trip here, see the fare, then finish below.
+         It fills the full form (#bookingForm) rather than booking on its own. -->
+    <form class="quick" id="quickBook" aria-label="Where to?">
+      <label class="quick-field">From
+        <select id="qFrom" aria-label="Pick you up at"><option>Nassau Cruise Port</option></select>
+      </label>
+      <label class="quick-field">To
+        <select id="qTo" aria-label="Going to"><option>Paradise Island – Margaritaville</option></select>
+      </label>
+      <label class="quick-field quick-guests">People
+        <select id="qGuests" aria-label="Passengers"></select>
+      </label>
+      <div class="quick-fare" aria-live="polite">
+        <strong id="qPrice">from $<span data-price-from="route">10</span></strong>
+        <span id="qNote">per person + VAT</span>
+      </div>
+      <button type="submit" class="btn btn-primary quick-go">Book this ride</button>
+    </form>
+
+    <p class="hero-trust">Fixed fares · Licensed Bahamian captains · 7am–10pm daily ·
+      <a href="#" data-call>📞 Call us</a></p>
   </div>
 </section>
 
