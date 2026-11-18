@@ -171,6 +171,8 @@ const stopSlug = (name) =>
   }
   applyWanted();
   renderFare();
+  syncQuickStops();
+  renderQuick();
 })();
 
 // ── Live fare, from the same published routes the app reads ──────────────
@@ -203,6 +205,7 @@ function showVatRate() {
   routes = (data ?? []).filter((s) => s.category === "route");
   showPriceList(data ?? []);
   renderFare();
+  renderQuick();
 })();
 
 /* Every price printed on the page, from the same price list the booking form
@@ -332,6 +335,64 @@ function renderFare() {
 
 form.addEventListener("input", renderFare);
 form.addEventListener("change", renderFare);
+
+// ── Quick booking in the hero ─────────────────────────────────────────────
+/* From, To and People at the top of the page, with the fare straight away.
+   It books nothing itself: "Book this ride" copies the choices into the full
+   form below and takes the visitor there to add the day, time and their name.
+   The stops are copied from the form's lists, so both always offer the same. */
+const quick = document.getElementById("quickBook");
+const qFrom = document.getElementById("qFrom");
+const qTo = document.getElementById("qTo");
+const qGuests = document.getElementById("qGuests");
+for (let n = 1; n <= 12; n++) qGuests.add(new Option(String(n), String(n), false, n === 2));
+
+function syncQuickStops() {
+  for (const [q, field] of [[qFrom, "pickup"], [qTo, "destination"]]) {
+    const src = form.querySelector(`select[name="${field}"]`);
+    const chosen = q.dataset.touched ? q.value : src.value;
+    q.replaceChildren(...[...src.options].map((o) => new Option(o.text, o.value)));
+    q.value = [...q.options].some((o) => o.value === chosen) ? chosen : src.value;
+  }
+}
+
+function renderQuick() {
+  const price = document.getElementById("qPrice");
+  const note = document.getElementById("qNote");
+  if (!routes.length) return; // keep the "from $10" until the price list is in
+  if (qFrom.value === qTo.value) {
+    price.textContent = "Pick two stops";
+    note.textContent = "where you are and where you're going";
+    return;
+  }
+  const route = matchRoute(qFrom.value, qTo.value);
+  if (!route?.price_cents) {
+    price.textContent = "Price on request";
+    note.textContent = "we'll quote it when you book";
+    return;
+  }
+  const n = Number(qGuests.value) || 1;
+  price.textContent = `${money(route.price_cents)} per person`;
+  note.textContent = n > 1
+    ? `${money(route.price_cents * n)} for ${n}, one way, + VAT`
+    : "one way, + VAT";
+}
+
+quick.addEventListener("change", (e) => {
+  if (e.target.tagName === "SELECT") e.target.dataset.touched = "1";
+  renderQuick();
+});
+quick.addEventListener("submit", (e) => {
+  e.preventDefault();
+  form.pickup.value = qFrom.value;
+  form.destination.value = qTo.value;
+  form.guests.value = qGuests.value;
+  renderFare();
+  document.getElementById("book").scrollIntoView({ behavior: "smooth", block: "start" });
+  setTimeout(() => form.date.focus({ preventScroll: true }), 450);
+});
+syncQuickStops();
+renderQuick();
 
 /* Ship codes. Checked with the database as it's typed, so the price shows the
    discount before anyone commits; the database applies it again on the way in,
