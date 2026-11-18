@@ -374,52 +374,67 @@ form.addEventListener("change", renderFare);
 })();
 
 // ── Harbour map ─────────────────────────────────────────────────────────────
-/* A drawn map of Nassau Harbour with a pin per stop. Positions are placed by
-   hand on a 1000 x 520 drawing (west on the left) and are not to scale; the
-   names are the dock names, so fares and stop pages line up. Label side:
-   "b" below the pin, "a" above. */
+/* Nassau Harbour from the real coastline (images/harbour-map.svg, drawn by
+   scripts/make-harbour-map.py) with a pin per stop at its latitude and
+   longitude. HARBOUR_VIEW must match the edges in that script. The names are
+   the dock names, so fares and stop pages line up. Each stop also gives its
+   short map label and where the label sits: [dx, dy, anchor] from the pin. */
+const HARBOUR_VIEW = { w0: -77.425, e0: -77.185, s0: 25.05, n0: 25.118, w: 1000, h: 313 };
 const HARBOUR_STOPS = [
-  ["Breezes", 95, 402, "b"], ["Baha Mar", 172, 398, "b2"], ["Goodman's Bay", 252, 400, "b"],
-  ["Arawak Cay / Fish Fry", 345, 396, "b2"], ["Junkanoo Beach", 425, 395, "b"],
-  ["Señor Frog's", 478, 393, "b2"], ["Nassau Cruise Port", 535, 392, "b"],
-  ["Green Parrot", 640, 396, "b2"], ["Poop Deck", 702, 398, "b"], ["Fort Montagu", 795, 400, "b2"],
-  ["Paradise Island – Margaritaville", 500, 306, "a"], ["Paradise Island – Carnival", 612, 312, "a2"],
-  ["Pearl Island", 372, 266, "a"], ["Blue Lagoon", 662, 190, "a"], ["Floating Bar", 812, 238, "a"],
-  ["Pigs Beach (Athol Island)", 880, 296, "a2"], ["Rose Island – Goodies", 948, 196, "a"],
+  ["Breezes", 25.0789, -77.4095, "Breezes", [0, 17, "middle"]],
+  ["Baha Mar", 25.0751, -77.3986, "Baha Mar", [0, 17, "middle"]],
+  ["Goodman's Bay", 25.0794, -77.3798, "Goodman's Bay", [0, 17, "middle"]],
+  ["Arawak Cay / Fish Fry", 25.0805, -77.3604, "Arawak Cay", [-4, -17, "middle"]],
+  ["Junkanoo Beach", 25.0795, -77.3513, "Junkanoo Beach", [-2, 17, "end"]],
+  ["Señor Frog's", 25.0794, -77.3455, "Señor Frog's", [-6, 31, "middle"]],
+  ["Nassau Cruise Port", 25.0800, -77.3420, "Cruise Port", [3, 17, "start"]],
+  ["Green Parrot", 25.0781, -77.3310, "Green Parrot", [6, 31, "middle"]],
+  ["Poop Deck", 25.0761, -77.3258, "Poop Deck", [8, 14, "start"]],
+  ["Fort Montagu", 25.0704, -77.3044, "Fort Montagu", [7, 4, "start"]],
+  ["Paradise Island – Margaritaville", 25.0801, -77.3248, "Margaritaville", [4, -19, "start"]],
+  ["Paradise Island – Carnival", 25.0823, -77.3340, "Carnival", [-2, -19, "end"]],
+  ["Pearl Island", 25.0915, -77.4070, "Pearl Island", [0, -19, "middle"]],
+  ["Blue Lagoon", 25.0967, -77.2802, "Blue Lagoon", [0, -19, "middle"]],
+  ["Floating Bar", 25.0980, -77.2320, "Floating Bar", [0, -19, "middle"]],
+  ["Pigs Beach (Athol Island)", 25.0776, -77.2668, "Pigs Beach", [0, 17, "middle"]],
+  ["Rose Island – Goodies", 25.0888, -77.2033, "Goodies", [0, 17, "middle"]],
 ];
 const PORT_NAME = "Nassau Cruise Port";
+const harbourXY = (lat, lon) => {
+  const v = HARBOUR_VIEW;
+  return [(lon - v.w0) / (v.e0 - v.w0) * v.w, (v.n0 - lat) / (v.n0 - v.s0) * v.h];
+};
 
 function drawHarbour() {
   const box = document.getElementById("harbourMap");
   if (!box) return;
-  const pin = (name, x, y, side) => {
+  const { w, h } = HARBOUR_VIEW;
+  const kmPx = w / ((HARBOUR_VIEW.e0 - HARBOUR_VIEW.w0) * 111.32 * Math.cos((25.084 * Math.PI) / 180));
+  const pin = ([name, lat, lon, label, [dx, dy, anchor]]) => {
+    const [x, y] = harbourXY(lat, lon);
     const home = name === PORT_NAME;
-    const ly = side.startsWith("a") ? (side === "a2" ? -50 : -36) : (side === "b2" ? 40 : 24);
-    const short = name.replace("Paradise Island – ", "PI – ").replace(" (Athol Island)", "");
-    return `<g class="pin${home ? " pin-home" : ""}" data-stop="${escHtml(name)}" transform="translate(${x} ${y})"
+    return `<g class="pin${home ? " pin-home" : ""}" data-stop="${escHtml(name)}" transform="translate(${x.toFixed(1)} ${y.toFixed(1)})"
       tabindex="0" role="button" aria-label="${escHtml(name)}">
-      <path d="M0 0 C-5 -9 -11 -13 -11 -21 A11 11 0 1 1 11 -21 C11 -13 5 -9 0 0Z"/>
-      <circle cy="-21" r="4.2"/>
-      <text class="pin-label" y="${ly}" text-anchor="${x > 900 ? "end" : x < 60 ? "start" : "middle"}" x="${x > 900 ? 12 : 0}">${escHtml(home ? "Cruise Port" : short)}</text></g>`;
+      <circle class="pin-hit" r="14"/>
+      <g class="pin-mark"><path d="M0 0C-3.4-5.6-7.5-8.4-7.5-13.5A7.5 7.5 0 1 1 7.5-13.5C7.5-8.4 3.4-5.6 0 0Z"/>
+      <circle cy="-13.5" r="2.9"/></g>
+      <text class="pin-label" x="${dx}" y="${dy}" text-anchor="${anchor}">${escHtml(label)}</text></g>`;
   };
-  box.innerHTML = `<svg viewBox="0 0 1000 520" role="group">
-    <defs><linearGradient id="hSea" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#8fe3ee"/><stop offset="1" stop-color="#2ec4d6"/></linearGradient></defs>
-    <rect width="1000" height="520" fill="url(#hSea)"/>
-    <g class="land">
-      <path d="M0 404 C90 396 170 410 260 402 S420 388 520 396 S700 404 800 400 S930 404 1000 400 L1000 520 L0 520Z"/>
-      <path d="M445 300 C520 286 640 284 760 292 C806 295 826 302 808 315 C700 322 560 322 452 318 C428 314 424 305 445 300Z"/>
-      <ellipse cx="372" cy="268" rx="26" ry="9"/>
-      <ellipse cx="662" cy="192" rx="54" ry="12"/>
-      <ellipse cx="880" cy="298" rx="40" ry="12"/>
-      <path d="M902 200 C930 190 972 187 1000 191 L1000 211 C968 214 930 216 906 211Z"/>
-    </g>
-    <text class="map-name" x="500" y="482" text-anchor="middle">New Providence</text>
-    <text class="map-name small" x="626" y="335" text-anchor="middle">Paradise Island</text>
-    <text class="map-water" x="250" y="345" text-anchor="middle">Nassau Harbour</text>
-    <text class="map-water" x="150" y="120">Atlantic Ocean</text>
-    ${HARBOUR_STOPS.map((s) => pin(...s)).join("")}
-  </svg><p class="harbour-scale">Not to scale.</p>`;
+  box.innerHTML = `<div class="harbour-canvas">
+    <img src="/images/harbour-map.svg" width="${w}" height="${h}" alt="">
+    <svg viewBox="0 0 ${w} ${h}" role="group" aria-label="Our stops">
+      <text class="map-name" x="455" y="278">NEW PROVIDENCE</text>
+      <text class="map-name small pi" x="505" y="170" text-anchor="middle">PARADISE ISLAND</text>
+      <text class="map-name small" x="830" y="152" text-anchor="middle">ROSE ISLAND</text>
+      <text class="map-water" x="190" y="70" text-anchor="middle">Atlantic Ocean</text>
+      <text class="map-water small" x="190" y="142" text-anchor="middle">Nassau Harbour approach</text>
+      <path class="route" id="harbourRoute" d=""/>
+      <g class="map-key" transform="translate(${w - 24} 26)">
+        <path d="M0-12L5 4L0 1L-5 4Z"/><text y="18" text-anchor="middle">N</text></g>
+      <g class="map-key" transform="translate(${w - 24 - 2 * kmPx} ${h - 18})">
+        <path d="M0 0H${(2 * kmPx).toFixed(1)}" class="scale-bar"/><text x="${kmPx.toFixed(1)}" y="-6" text-anchor="middle">2 km</text></g>
+      ${HARBOUR_STOPS.map(pin).join("")}
+    </svg><p class="harbour-credit">Coastline: geoBoundaries (CC BY 4.0)</p></div>`;
   box.addEventListener("click", (e) => {
     const g = e.target.closest(".pin");
     if (g) pickStop(g.dataset.stop);
@@ -428,11 +443,33 @@ function drawHarbour() {
     const g = e.target.closest(".pin");
     if (g && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); pickStop(g.dataset.stop); }
   });
+  // A phone shows part of the map and scrolls sideways: start on the port.
+  const [px] = harbourXY(HARBOUR_STOPS.find((s) => s[0] === PORT_NAME)[1], HARBOUR_STOPS.find((s) => s[0] === PORT_NAME)[2]);
+  requestAnimationFrame(() => {
+    const c = box.querySelector(".harbour-canvas");
+    box.scrollLeft = (px / w) * c.offsetWidth - box.clientWidth / 2;
+  });
+}
+
+/* A dotted line from the port to the picked stop, bowed out to sea. */
+function drawHarbourRoute(name) {
+  const line = document.getElementById("harbourRoute");
+  if (!line) return;
+  const find = (n) => HARBOUR_STOPS.find((s) => s[0] === n);
+  const to = find(name);
+  if (!to || name === PORT_NAME) { line.setAttribute("d", ""); return; }
+  const [x0, y0] = harbourXY(find(PORT_NAME)[1], find(PORT_NAME)[2]);
+  const [x1, y1] = harbourXY(to[1], to[2]);
+  const mx = (x0 + x1) / 2, my = Math.min(y0, y1) - 18 - Math.abs(x1 - x0) * 0.12;
+  line.setAttribute("d", `M${x0.toFixed(1)} ${(y0 - 4).toFixed(1)}Q${mx.toFixed(1)} ${my.toFixed(1)} ${x1.toFixed(1)} ${(y1 - 4).toFixed(1)}`);
 }
 
 function pickStop(name) {
-  document.querySelectorAll("#harbourMap .pin").forEach((g) =>
-    g.classList.toggle("is-picked", g.dataset.stop === name));
+  document.querySelectorAll("#harbourMap .pin").forEach((g) => {
+    g.classList.toggle("is-picked", g.dataset.stop === name);
+    if (g.dataset.stop === name) g.parentNode.appendChild(g); // draw it on top
+  });
+  drawHarbourRoute(name);
   const card = document.getElementById("harbourCard");
   if (name === PORT_NAME) {
     card.innerHTML = `<h3>Nassau Cruise Port</h3>
