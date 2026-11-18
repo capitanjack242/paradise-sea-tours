@@ -818,6 +818,7 @@ function escHtml(s) {
 
 async function loadFleet() {
   const wrap = document.getElementById("fleetCards");
+  if (wrap.closest("section").hidden) return; // section switched off in the page
   // public_boats is a view that deliberately omits captain_whatsapp — the
   // boats table itself is staff-only so captains' numbers can't be scraped.
   const { data, error } = await db

@@ -1,15 +1,17 @@
 :root{
-  --navy:#06243b; --deep:#0a3b5c; --teal:#0bbcd6; --aqua:#5fe1e8;
-  --sand:#f6e7c4; --coral:#ff7a59; --foam:#f4fbfd; --ink:#0c2231;
-  --muted:#5a7184; --line:#e2edf2; --white:#fff;
-  --radius:16px; --shadow:0 10px 30px rgba(6,36,59,.10);
+  /* Brand colours from the logo (see the Paradise Sea Express design system).
+     --teal is for graphics and large type; small teal text uses --deep. */
+  --navy:#0c243e; --deep:#0b6f8a; --teal:#1294b4; --aqua:#8fe3ee;
+  --sand:#f3e6c4; --coral:#ff6b4a; --foam:#f2fafc; --ink:#0c243e;
+  --muted:#4f6577; --line:#dbe9ef; --white:#fff;
+  --radius:16px; --shadow:0 10px 30px rgba(12,36,62,.10);
   --max:1140px;
 }
 *{box-sizing:border-box}
 html{scroll-behavior:smooth}
 body{margin:0;font-family:'Inter',system-ui,sans-serif;color:var(--ink);
   background:var(--white);line-height:1.6;-webkit-font-smoothing:antialiased}
-h1,h2,h3,h4,.brand{font-family:'Baloo 2','Inter',sans-serif;line-height:1.1;margin:0}
+h1,h2,h3,h4,.brand{font-family:'Outfit','Inter',sans-serif;line-height:1.1;margin:0}
 a{color:inherit;text-decoration:none}
 img{max-width:100%}
 .container{width:min(var(--max),92%);margin:0 auto}
@@ -20,9 +22,8 @@ img{max-width:100%}
   font-weight:600;border:0;border-radius:999px;padding:.7em 1.3em;cursor:pointer;
   font-size:1rem;transition:transform .12s ease,box-shadow .12s ease,background .12s}
 .btn:active{transform:translateY(1px)}
-.btn-primary{background:linear-gradient(135deg,var(--teal),var(--deep));color:#fff;
-  box-shadow:0 8px 20px rgba(11,188,214,.35)}
-.btn-primary:hover{box-shadow:0 12px 26px rgba(11,188,214,.45)}
+.btn-primary{background:var(--navy);color:#fff;box-shadow:0 8px 20px rgba(12,36,62,.22)}
+.btn-primary:hover{background:#163a5e;box-shadow:0 12px 26px rgba(12,36,62,.3)}
 .btn-ghost{background:rgba(255,255,255,.14);color:#fff;border:1.5px solid rgba(255,255,255,.6);
   backdrop-filter:blur(4px)}
 .btn-ghost:hover{background:rgba(255,255,255,.24)}
@@ -45,20 +46,20 @@ img{max-width:100%}
 
 /* hero */
 .hero{position:relative;color:#fff;overflow:hidden;
-  background:linear-gradient(160deg,#0a3b5c 0%,#0bbcd6 55%,#5fe1e8 100%)}
+  background:linear-gradient(160deg,#0c243e 0%,#1294b4 55%,#8fe3ee 100%)}
 /* The banner sits behind the words; the navy wash on the text side keeps
    white type readable over the bright sunset. */
 .hero::before{content:"";position:absolute;inset:0;
   background:
-    linear-gradient(90deg,rgba(6,36,59,.82) 0%,rgba(6,36,59,.6) 40%,rgba(6,36,59,.15) 75%,rgba(6,36,59,0) 100%),
+    linear-gradient(90deg,rgba(12,36,62,.82) 0%,rgba(12,36,62,.6) 40%,rgba(12,36,62,.15) 75%,rgba(12,36,62,0) 100%),
     url(images/hero-banner.jpg) 65% 70%/cover no-repeat;
   background:
-    linear-gradient(90deg,rgba(6,36,59,.82) 0%,rgba(6,36,59,.6) 40%,rgba(6,36,59,.15) 75%,rgba(6,36,59,0) 100%),
+    linear-gradient(90deg,rgba(12,36,62,.82) 0%,rgba(12,36,62,.6) 40%,rgba(12,36,62,.15) 75%,rgba(12,36,62,0) 100%),
     image-set(url(images/hero-banner.webp) type("image/webp"),url(images/hero-banner.jpg) type("image/jpeg")) 65% 70%/cover no-repeat}
 .hero-overlay{position:absolute;inset:0;opacity:.5;
   background:
     radial-gradient(900px 400px at 80% -10%,rgba(255,255,255,.35),transparent),
-    radial-gradient(700px 500px at 10% 120%,rgba(6,36,59,.5),transparent);
+    radial-gradient(700px 500px at 10% 120%,rgba(12,36,62,.5),transparent);
   pointer-events:none}
 .hero-content{position:relative;padding:5.5rem 0 4.5rem}
 .eyebrow{text-transform:uppercase;letter-spacing:.14em;font-size:.8rem;font-weight:600;
@@ -66,23 +67,23 @@ img{max-width:100%}
 .badge{display:inline-block;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.5);
   color:#fff;font-size:.82rem;font-weight:600;padding:.35em .9em;border-radius:999px;
   margin:0 0 1.2rem;backdrop-filter:blur(4px)}
-.hero h1{font-size:clamp(2.6rem,6vw,4.3rem);font-weight:800;text-shadow:0 3px 16px rgba(6,36,59,.25)}
+.hero h1{font-size:clamp(2.6rem,6vw,4.3rem);font-weight:800;text-shadow:0 3px 16px rgba(12,36,62,.25)}
 .lede{max-width:560px;font-size:1.15rem;margin:1.2rem 0 2rem;opacity:.96}
 .hero-cta{display:flex;gap:.9rem;flex-wrap:wrap}
 .hero-stats{display:flex;gap:2.4rem;margin-top:3rem;flex-wrap:wrap}
-.hero-stats strong{display:block;font-family:'Baloo 2';font-size:1.7rem}
+.hero-stats strong{display:block;font-family:'Outfit','Inter',sans-serif;font-size:1.7rem}
 .hero-stats > div > span{font-size:.9rem;opacity:.9}
 /* Quick booking box in the hero: From, To, People, the fare, one button. */
 .quick{display:grid;grid-template-columns:1.25fr 1.25fr .55fr;gap:.6rem .7rem;align-items:end;
   max-width:720px;margin:0 0 1rem;padding:1rem;border-radius:18px;
-  background:rgba(255,255,255,.97);color:var(--ink);box-shadow:0 18px 40px rgba(6,36,59,.28)}
+  background:rgba(255,255,255,.97);color:var(--ink);box-shadow:0 18px 40px rgba(12,36,62,.28)}
 .quick-field{display:flex;flex-direction:column;gap:.3rem;font-size:.78rem;font-weight:700;
   letter-spacing:.06em;text-transform:uppercase;color:var(--deep);margin:0}
 .quick-field select{font:inherit;font-size:1rem;font-weight:600;letter-spacing:0;text-transform:none;
   color:var(--navy);padding:.7rem .75rem;border:1px solid var(--line);border-radius:12px;background:#fff;
   width:100%;min-width:0}
 .quick-fare{grid-column:1 / 3;display:flex;align-items:baseline;gap:.6rem;flex-wrap:wrap;padding:.2rem .1rem}
-.quick-fare strong{font-family:'Baloo 2';font-size:1.6rem;color:var(--navy);line-height:1}
+.quick-fare strong{font-family:'Outfit','Inter',sans-serif;font-size:1.6rem;color:var(--navy);line-height:1}
 .quick-fare span{font-size:.9rem;color:#4a6276}
 .quick-go{grid-column:3 / 4;justify-content:center;white-space:nowrap;padding:.85rem 1rem}
 .hero-trust{font-size:.95rem;opacity:.92;margin:0}
@@ -102,14 +103,14 @@ img{max-width:100%}
    blurs it and hides the boat behind the buttons. So the words sit on navy and
    the banner runs full width along the bottom, its sky fading into the navy. */
 @media(max-width:860px){
-  .hero{background:#0a3b5c}
+  .hero{background:var(--navy)}
   .hero-overlay{display:none}
   .hero::before{
     background:
-      linear-gradient(180deg,#0a3b5c calc(100% - 36vw),rgba(10,59,92,0) calc(100% - 26vw)),
+      linear-gradient(180deg,#0c243e calc(100% - 36vw),rgba(12,36,62,0) calc(100% - 26vw)),
       url(images/hero-banner.jpg) 50% 100%/100% auto no-repeat;
     background:
-      linear-gradient(180deg,#0a3b5c calc(100% - 36vw),rgba(10,59,92,0) calc(100% - 26vw)),
+      linear-gradient(180deg,#0c243e calc(100% - 36vw),rgba(12,36,62,0) calc(100% - 26vw)),
       image-set(url(images/hero-banner.webp) type("image/webp"),url(images/hero-banner.jpg) type("image/jpeg")) 50% 100%/100% auto no-repeat}
   .hero-content{padding-bottom:calc(33.4vw + 1.5rem)}
 }
@@ -128,7 +129,7 @@ img{max-width:100%}
 @media(max-width:600px){.cards-3{grid-template-columns:1fr}}
 .card{background:#fff;border:1px solid var(--line);border-radius:var(--radius);
   padding:1.6rem;box-shadow:var(--shadow);transition:transform .15s ease,box-shadow .15s ease}
-.card:hover{transform:translateY(-4px);box-shadow:0 18px 40px rgba(6,36,59,.14)}
+.card:hover{transform:translateY(-4px);box-shadow:0 18px 40px rgba(12,36,62,.14)}
 .route-emoji{font-size:2.2rem;margin-bottom:.5rem}
 .card h3{font-size:1.3rem;color:var(--navy);margin-bottom:.4rem}
 .card p{color:var(--muted);margin:0 0 1rem}
@@ -139,8 +140,8 @@ img{max-width:100%}
 .steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:1.6rem}
 .step{text-align:center;padding:1rem}
 .step-num{display:inline-grid;place-items:center;width:54px;height:54px;border-radius:50%;
-  background:linear-gradient(135deg,var(--teal),var(--deep));color:#fff;font-family:'Baloo 2';
-  font-size:1.5rem;margin-bottom:1rem;box-shadow:0 8px 18px rgba(11,188,214,.35)}
+  background:var(--navy);color:#fff;font-family:'Outfit','Inter',sans-serif;
+  font-size:1.5rem;margin-bottom:1rem;box-shadow:0 8px 18px rgba(12,36,62,.35)}
 .step h3{color:var(--navy);margin-bottom:.4rem}
 .step p{color:var(--muted);margin:0}
 
@@ -150,9 +151,10 @@ img{max-width:100%}
   padding:2rem 1.6rem;box-shadow:var(--shadow);display:flex;flex-direction:column;text-align:center}
 .price-card.featured{border:2px solid var(--teal);transform:scale(1.03)}
 .ribbon{position:absolute;top:-12px;left:50%;transform:translateX(-50%);background:var(--coral);
-  color:#fff;font-size:.78rem;font-weight:700;padding:.3em 1em;border-radius:999px}
+  color:var(--navy);font-size:.78rem;font-weight:700;padding:.3em 1em;border-radius:999px}
 .price-card h3{color:var(--navy);font-size:1.4rem}
-.price{font-family:'Baloo 2';font-size:2.8rem;color:var(--deep);margin:.4rem 0 0}
+.price{font-family:'Outfit','Inter',sans-serif;font-size:2.8rem;color:var(--navy);margin:.4rem 0 0}
+.price.quoted{font-size:1.7rem;margin-top:.8rem}
 .price span{font-size:2.8rem}.price small{font-size:1rem;color:var(--muted)}
 .price-note{color:var(--muted);font-size:.9rem;margin:.2rem 0 1rem}
 .price-card ul{list-style:none;padding:0;margin:0 0 1.4rem;text-align:left}
@@ -201,15 +203,15 @@ img{max-width:100%}
   flex:1;border:0;background:transparent;font:inherit;font-weight:700;font-size:.92rem;
   padding:.7em .4em;cursor:pointer;color:var(--muted);transition:background .12s,color .12s;
 }
-.seg-item.is-on{background:var(--deep);color:#fff}
+.seg-item.is-on{background:var(--navy);color:#fff}
 .seg-item:not(.is-on):hover{background:#e8f4f8}
 
 .fare-box{
   border-radius:var(--radius);padding:1rem 1.1rem;color:#fff;
-  background:linear-gradient(135deg,var(--teal),var(--deep));
+  background:var(--navy);
 }
 .fare-row{display:flex;align-items:baseline;justify-content:space-between;gap:.75rem}
-.fare-total{font-family:'Baloo 2','Inter',sans-serif;font-size:2rem;font-weight:800;
+.fare-total{font-family:'Outfit','Inter',sans-serif;font-size:2rem;font-weight:800;
   letter-spacing:-.01em;font-variant-numeric:tabular-nums}
 .fare-math{font-size:.85rem;opacity:.92;font-variant-numeric:tabular-nums}
 .fare-note{margin:.35rem 0 0;font-size:.8rem;opacity:.9}
@@ -230,7 +232,7 @@ img{max-width:100%}
 }
 .pc-lead{margin:0;font-size:.85rem;color:var(--muted);font-weight:600}
 .pc-number{
-  margin:.25rem 0 .5rem;font-family:'Baloo 2','Inter',sans-serif;
+  margin:.25rem 0 .5rem;font-family:'Outfit','Inter',sans-serif;
   font-size:1.7rem;font-weight:800;color:var(--navy);letter-spacing:.01em;
   font-variant-numeric:tabular-nums;
 }
@@ -242,7 +244,10 @@ img{max-width:100%}
 .btn-ghost-line:hover{background:var(--foam);border-color:var(--teal)}
 
 /* captains band */
-.captains{background:linear-gradient(135deg,var(--navy),var(--deep));color:#fff}
+.captains{background:var(--navy);color:#fff}
+/* A navy button would vanish on the navy band. */
+.captains .btn-primary{background:#fff;color:var(--navy);box-shadow:none}
+.captains .btn-primary:hover{background:var(--sand)}
 .captains-inner{display:flex;align-items:center;justify-content:space-between;gap:2rem;flex-wrap:wrap}
 .captains .section-title{color:#fff;text-align:left}
 .captains p{color:#cfe2ee;max-width:560px;margin:.6rem 0 0}
@@ -250,7 +255,7 @@ img{max-width:100%}
 
 /* footer */
 .footer{background:var(--navy);color:#cfe2ee;padding:3.5rem 0 1.5rem}
-.footer-grid{display:grid;grid-template-columns:1.4fr 1fr 1fr 1fr;gap:2rem}
+.footer-grid{display:grid;grid-template-columns:1.6fr 1fr 1fr;gap:2rem}
 .brand-footer{color:#fff;margin-bottom:.6rem}
 /* The mark is a navy disc: a thin white ring keeps it from melting into the navy footer. */
 
@@ -263,7 +268,7 @@ img{max-width:100%}
 /* floating action button */
 .fab{position:fixed;right:18px;bottom:18px;width:56px;height:56px;border-radius:50%;
   display:grid;place-items:center;font-size:1.5rem;color:#fff;z-index:60;
-  background:linear-gradient(135deg,var(--teal),var(--deep));box-shadow:0 10px 24px rgba(11,188,214,.45)}
+  background:var(--navy);box-shadow:0 10px 24px rgba(12,36,62,.45);border:2px solid #fff}
 .fab:hover{transform:scale(1.06)}
 /* Hidden while the hero (which has its own "Call us") or the booking form is on
    screen, so it never sits on top of a field or the Book button. */
@@ -333,9 +338,9 @@ img{max-width:100%}
 .harbour-map{border-radius:20px;overflow:hidden;box-shadow:var(--shadow);background:#2ec4d6;position:relative}
 .harbour-map svg{display:block;width:100%;height:auto}
 .harbour-map .land path,.harbour-map .land ellipse{fill:#f3e6c4;stroke:#d8c592;stroke-width:2}
-.harbour-map .map-name{font:700 22px 'Baloo 2',sans-serif;fill:#8a7a4f;letter-spacing:.06em}
+.harbour-map .map-name{font:700 22px 'Outfit',sans-serif;fill:#8a7a4f;letter-spacing:.06em}
 .harbour-map .map-name.small{font-size:15px}
-.harbour-map .map-water{font:italic 600 16px 'Inter',sans-serif;fill:rgba(6,36,59,.45);letter-spacing:.08em}
+.harbour-map .map-water{font:italic 600 16px 'Inter',sans-serif;fill:rgba(12,36,62,.45);letter-spacing:.08em}
 .harbour-map .pin{cursor:pointer;outline:none}
 .harbour-map .pin path{fill:var(--teal);stroke:#fff;stroke-width:2;transition:transform .15s ease}
 .harbour-map .pin circle{fill:#fff}
@@ -349,7 +354,7 @@ img{max-width:100%}
 .harbour-card p{margin:.2rem 0}
 .harbour-hint{color:#4a6276}
 .harbour-fare{font-size:1.05rem}
-.harbour-fare strong{font-family:'Baloo 2';font-size:1.5rem;color:var(--navy)}
+.harbour-fare strong{font-family:'Outfit','Inter',sans-serif;font-size:1.5rem;color:var(--navy)}
 .harbour-sub{font-size:.85rem;color:#4a6276}
 .harbour-actions{display:flex;align-items:center;gap:1rem;flex-wrap:wrap;margin-top:1rem}
 .harbour-more{color:var(--deep);font-weight:600}
