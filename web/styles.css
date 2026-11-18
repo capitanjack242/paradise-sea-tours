@@ -61,7 +61,7 @@ img{max-width:100%}
     radial-gradient(900px 400px at 80% -10%,rgba(255,255,255,.35),transparent),
     radial-gradient(700px 500px at 10% 120%,rgba(12,36,62,.5),transparent);
   pointer-events:none}
-.hero-content{position:relative;padding:5.5rem 0 4.5rem}
+.hero-content{position:relative;z-index:1;padding:5.5rem 0 4.5rem}
 .eyebrow{text-transform:uppercase;letter-spacing:.14em;font-size:.8rem;font-weight:600;
   opacity:.9;margin:0 0 1rem}
 .badge{display:inline-block;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.5);
@@ -453,4 +453,25 @@ img{max-width:100%}
   .harbour-map{overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:none}
   .harbour-map::-webkit-scrollbar{display:none}
   .harbour-canvas{width:820px}
+}
+
+/* Motion. Scroll reveal (script.js adds .reveal only where it will animate),
+   the banner drifting slowly, light moving on the water, and the boat on the
+   harbour map. All of it stops for visitors who ask for less motion. */
+.reveal{opacity:0;transform:translateY(22px);transition:opacity .7s ease,transform .7s cubic-bezier(.2,.7,.2,1)}
+.reveal.is-in{opacity:1;transform:none}
+.card.reveal.is-in:hover{transform:translateY(-4px)}
+.hero::before{animation:hero-drift 26s ease-in-out infinite alternate;transform-origin:70% 80%}
+@keyframes hero-drift{from{transform:scale(1)}to{transform:scale(1.07) translateX(-1.2%)}}
+.hero::after{content:"";position:absolute;left:0;right:0;bottom:0;height:42%;pointer-events:none;opacity:.25;
+  background:repeating-linear-gradient(100deg,transparent 0 46px,rgba(255,255,255,.22) 50px,transparent 58px 120px);
+  background-size:240px 100%;mix-blend-mode:soft-light;
+  -webkit-mask:linear-gradient(180deg,transparent,#000 60%);mask:linear-gradient(180deg,transparent,#000 60%);
+  animation:hero-glint 9s linear infinite}
+@keyframes hero-glint{to{background-position:240px 0}}
+.map-boat{transition:opacity .4s ease;pointer-events:none}
+.map-boat-hull path{fill:#fff;stroke:var(--navy);stroke-width:1;stroke-linejoin:round}
+@media(prefers-reduced-motion:reduce){
+  .hero::before,.hero::after{animation:none}
+  .reveal{opacity:1;transform:none;transition:none}
 }
