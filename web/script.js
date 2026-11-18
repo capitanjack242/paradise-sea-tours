@@ -434,7 +434,11 @@ function drawHarbour() {
       <text class="map-name small pi" x="505" y="226" text-anchor="middle">PARADISE ISLAND</text>
       <text class="map-name small" x="905" y="196" text-anchor="middle">ROSE ISLAND</text>
       <text class="map-water" x="300" y="70" text-anchor="middle">Atlantic Ocean</text>
-      <path class="route" id="harbourRoute" d=""/>
+      <mask id="routeMask" maskUnits="userSpaceOnUse" x="0" y="0" width="${w}" height="${h}">
+        <path id="routeMaskPath" fill="none" stroke="#fff" stroke-width="10" stroke-linecap="round"/></mask>
+      <path class="route" id="harbourRoute" d="" mask="url(#routeMask)"/>
+      <g id="harbourBoat" class="map-boat" opacity="0"><g class="map-boat-hull" transform="scale(1.7)">
+        <path d="M-9-1H9L6 4H-6Z"/><path d="M-4-1L0-8V-1Z"/></g></g>
       <g class="map-key" transform="translate(${w - 24} 26)">
         <path d="M0-12L5 4L0 1L-5 4Z"/><text y="18" text-anchor="middle">N</text></g>
       <g class="map-key" transform="translate(24 ${h - 40})">
@@ -462,16 +466,45 @@ function drawHarbour() {
 }
 
 /* A dotted line from the port to the picked stop, bowed out to sea. */
+let harbourTrip = 0;
 function drawHarbourRoute(name) {
   const line = document.getElementById("harbourRoute");
+  const reveal = document.getElementById("routeMaskPath");
+  const boat = document.getElementById("harbourBoat");
   if (!line) return;
+  const trip = ++harbourTrip; // a newer pick stops this one's animation
   const find = (n) => HARBOUR_STOPS.find((s) => s[0] === n);
   const to = find(name);
-  if (!to || name === PORT_NAME) { line.setAttribute("d", ""); return; }
+  boat.setAttribute("opacity", "0");
+  if (!to || name === PORT_NAME) { line.setAttribute("d", ""); reveal.setAttribute("d", ""); return; }
   const [x0, y0] = harbourXY(find(PORT_NAME));
   const [x1, y1] = harbourXY(to);
   const mx = (x0 + x1) / 2, my = Math.min(y0, y1) - 24 - Math.abs(x1 - x0) * 0.12;
-  line.setAttribute("d", `M${x0.toFixed(1)} ${(y0 - 6).toFixed(1)}Q${mx.toFixed(1)} ${my.toFixed(1)} ${x1.toFixed(1)} ${(y1 - 6).toFixed(1)}`);
+  const d = `M${x0.toFixed(1)} ${(y0 - 6).toFixed(1)}Q${mx.toFixed(1)} ${my.toFixed(1)} ${x1.toFixed(1)} ${(y1 - 6).toFixed(1)}`;
+  line.setAttribute("d", d);
+  reveal.setAttribute("d", d);
+  const len = reveal.getTotalLength();
+  reveal.style.strokeDasharray = `${len} ${len}`;
+  if (matchMedia("(prefers-reduced-motion: reduce)").matches) { reveal.style.strokeDashoffset = "0"; return; }
+
+  /* A little boat runs the route from the port, drawing the line behind it. */
+  const ms = Math.min(2200, 700 + len * 2.2);
+  const start = performance.now();
+  boat.setAttribute("opacity", "1");
+  const step = (now) => {
+    if (trip !== harbourTrip) return;
+    const t = Math.min(1, (now - start) / ms);
+    const e = t < .5 ? 2 * t * t : 1 - (-2 * t + 2) ** 2 / 2; // ease in and out
+    const at = len * e;
+    const p = reveal.getPointAtLength(at), q = reveal.getPointAtLength(Math.min(len, at + 1));
+    const deg = Math.atan2(q.y - p.y, q.x - p.x) * 180 / Math.PI;
+    const flip = Math.abs(deg) > 90 ? " scale(1 -1)" : "";
+    boat.setAttribute("transform", `translate(${p.x.toFixed(1)} ${p.y.toFixed(1)}) rotate(${deg.toFixed(1)})${flip}`);
+    reveal.style.strokeDashoffset = String(len - at);
+    if (t < 1) requestAnimationFrame(step);
+    else setTimeout(() => { if (trip === harbourTrip) boat.setAttribute("opacity", "0"); }, 500);
+  };
+  requestAnimationFrame(step);
 }
 
 /* Show a stop's fare card, or with no name (the picked pin tapped again, or
@@ -905,3 +938,28 @@ async function loadFleet() {
     .join("");
 }
 loadFleet();
+
+// ── Fade in as you scroll ─────────────────────────────────────────────────
+/* Headings, cards and photos rise in gently the first time they come into
+   view, a card at a time along a row. Nothing moves for visitors who ask
+   their device for less motion, and without this script everything simply
+   shows. */
+(() => {
+  if (!("IntersectionObserver" in window) || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  const items = document.querySelectorAll(
+    ".section-title, .section-sub, .card, .price-card, .step, .feature-photo, .feature-copy, .split-photo, .harbour, .fares-wrap, .cta-inner, .booking-form");
+  const seen = new IntersectionObserver((entries) => {
+    entries.forEach((en) => {
+      if (!en.isIntersecting) return;
+      en.target.classList.add("is-in");
+      seen.unobserve(en.target);
+    });
+  }, { rootMargin: "0px 0px -8% 0px" });
+  items.forEach((el) => {
+    if (el.getBoundingClientRect().top < innerHeight) return; // already on screen: leave it be
+    const sibs = [...el.parentElement.children].filter((c) => c.matches(".card, .price-card, .step"));
+    el.style.transitionDelay = sibs.includes(el) ? `${(sibs.indexOf(el) % 3) * 90}ms` : "";
+    el.classList.add("reveal");
+    seen.observe(el);
+  });
+})();
