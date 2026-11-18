@@ -1,7 +1,7 @@
 /* ── Edit these with your real details ──────────────────────────── */
 const CONFIG = {
-  phone: "+50764819290",          // tel: dialable, no spaces
-  phoneDisplay: "+507 6481-9290",
+  phone: "+12425357430",          // tel: dialable, no spaces
+  phoneDisplay: "+1 (242) 535-7430",
   email: "hello@paradiseseaexpress.com",
   // Publishable (anon) key — safe to expose client-side, access is scoped by RLS.
   supabaseUrl: "https://fjdoaonnoezbbitbawzs.supabase.co",
