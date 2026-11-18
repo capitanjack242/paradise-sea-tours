@@ -138,6 +138,34 @@ img{max-width:100%}
 .tint-navy .step-num{background:var(--aqua);color:var(--navy);box-shadow:0 8px 22px rgba(143,227,238,.25)}
 .tint-deep .price-card.featured{border-color:var(--aqua)}
 
+.tint-teal{background:linear-gradient(160deg,var(--teal),var(--deep));--wave:var(--teal);color:#fff}
+.tint-teal .section-title{color:#fff}
+.tint-teal .section-sub{color:#e0f7fb}
+
+/* How it works, three steps joined by a dotted line on wide screens */
+.steps-band{list-style:none;padding:0;margin:0;position:relative}
+.steps-band::before{content:"";position:absolute;top:44px;left:18%;right:18%;border-top:3px dotted rgba(255,255,255,.45)}
+.steps-band .step{position:relative}
+.step-icon{position:relative;display:inline-grid;place-items:center;width:88px;height:88px;border-radius:50%;
+  background:#fff;color:var(--deep);font-size:2.4rem;margin-bottom:1.1rem;box-shadow:0 12px 28px rgba(12,36,62,.25)}
+.step-icon .ico{vertical-align:0}
+.step-icon b{position:absolute;top:-4px;right:-4px;display:grid;place-items:center;width:30px;height:30px;border-radius:50%;
+  background:var(--coral);color:#fff;font:700 .95rem 'Outfit','Inter',sans-serif;border:3px solid #fff}
+.tint-teal .step h3{color:#fff;font-size:1.3rem}
+.tint-teal .step p{color:#e0f7fb;max-width:300px;margin:0 auto}
+@media(max-width:760px){.steps-band::before{display:none}}
+
+/* Closing call to action, over the banner art */
+.cta-band{--wave:var(--navy);color:#fff;text-align:center;padding:5.5rem 0;
+  background:linear-gradient(180deg,rgba(12,36,62,1) 0%,rgba(12,36,62,.72) 45%,rgba(11,111,138,.55) 100%),url("/images/hero-banner.jpg") center/cover}
+.cta-inner h2{font-size:clamp(2rem,5vw,3.2rem);color:#fff;margin:0 0 .7rem}
+.cta-inner p{color:#dcedf5;font-size:1.1rem;margin:0 auto 2rem;max-width:560px}
+.cta-actions{display:flex;gap:1rem;justify-content:center;flex-wrap:wrap}
+.btn-light{background:#fff;color:var(--navy)}
+.btn-light:hover{background:var(--sand)}
+.btn-outline-light{background:transparent;color:#fff;border:2px solid rgba(255,255,255,.7)}
+.btn-outline-light:hover{background:rgba(255,255,255,.12)}
+
 /* Photo feature */
 .feature-grid{display:grid;grid-template-columns:.9fr 1.1fr;gap:3.5rem;align-items:center}
 .feature-photo{margin:0;position:relative;isolation:isolate}
@@ -297,8 +325,10 @@ img{max-width:100%}
 .captains .btn{flex:none}
 
 /* footer */
-.footer{background:var(--navy);color:#cfe2ee;padding:3.5rem 0 1.5rem}
-.footer-grid{display:grid;grid-template-columns:1.6fr 1fr 1fr;gap:2rem}
+.footer{background:var(--navy);color:#cfe2ee;padding:3.5rem 0 1.5rem;border-top:1px solid rgba(255,255,255,.08)}
+.footer-links{list-style:none;padding:0;margin:0;display:grid;gap:.45rem}
+.footer-links a{color:#cfe2ee}
+.footer-grid{display:grid;grid-template-columns:1.5fr 1.2fr 1fr 1fr;gap:2rem}
 .brand-footer{color:#fff;margin-bottom:.6rem}
 /* The mark is a navy disc: a thin white ring keeps it from melting into the navy footer. */
 
