@@ -98,8 +98,8 @@
   </div>
 </section>
 
-<!-- SHIPS IN PORT: filled by script.js from /api/ships (worker/index.js); stays hidden if
-     the schedule can't be read. -->
+<!-- SHIPS IN PORT: filled by script.js from data/ships.json (scripts/fetch-ships.py, refreshed
+     weekly by .github/workflows/ships.yml); stays hidden when there's nothing to show. -->
 <div class="ships-strip" id="shipsStrip" hidden>
   <div class="container ships-inner">
     <p class="ships-title"><svg class="ico" aria-hidden="true"><use href="#i-anchor"/></svg> <span id="shipsWhen">In port today</span></p>

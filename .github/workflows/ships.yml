@@ -1,0 +1,30 @@
+name: ships
+
+# Refreshes web/data/ships.json, the cruise ships at Nassau for the next 45 days, which the
+# home page's "In port today" strip reads. Weekly, or by hand (Actions → ships → Run
+# workflow). The commit to main is what redeploys the site.
+
+on:
+  schedule:
+    - cron: "17 9 * * 1" # Mondays, 4:17am Nassau
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Read the schedule
+        run: python3 scripts/fetch-ships.py
+      - name: Publish it
+        run: |
+          git diff --quiet web/data/ships.json && { echo "No change."; exit 0; }
+          git config user.name "ships-bot"
+          git config user.email "ships-bot@users.noreply.github.com"
+          git add web/data/ships.json
+          git commit -m "Ships in port: schedule for the next 45 days"
+          git push
