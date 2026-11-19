@@ -476,14 +476,16 @@ img{max-width:100%}
   .reveal{opacity:1;transform:none;transition:none}
 }
 
-/* "Ask us" chat (chat.js): a pill at the bottom left, opening a panel. */
-.chat-open{position:fixed;left:18px;bottom:18px;z-index:60;display:inline-flex;align-items:center;gap:.5rem;
+/* "Ask us" chat (chat.js): a pill at the bottom right, opening a panel. The call button
+   moves up to sit above it. */
+.has-chat .fab{bottom:84px}
+.chat-open{position:fixed;right:18px;bottom:18px;z-index:60;display:inline-flex;align-items:center;gap:.5rem;
   padding:.8rem 1.15rem;border:0;border-radius:999px;background:var(--navy);color:#fff;font:600 .98rem 'Inter',sans-serif;
   box-shadow:0 10px 26px rgba(12,36,62,.35),0 0 0 3px #fff;cursor:pointer;transition:transform .15s ease}
 .chat-open:hover{transform:translateY(-2px)}
 .chat-open .ico{width:1.3em;height:1.3em;stroke:var(--aqua)}
 .chat-open[hidden],.chat-panel[hidden]{display:none}
-.chat-panel{position:fixed;left:18px;bottom:18px;z-index:61;width:min(380px,calc(100vw - 36px));height:min(580px,calc(100vh - 36px));
+.chat-panel{position:fixed;right:18px;bottom:18px;z-index:61;width:min(380px,calc(100vw - 36px));height:min(580px,calc(100vh - 36px));
   display:flex;flex-direction:column;background:#fff;border-radius:22px;overflow:hidden;
   box-shadow:0 24px 60px rgba(12,36,62,.35);border:1px solid var(--line)}
 .chat-head{display:flex;align-items:center;gap:.7rem;padding:.9rem 1rem;background:linear-gradient(135deg,var(--navy),var(--deep));color:#fff}
@@ -512,6 +514,7 @@ img{max-width:100%}
 .chat-input:focus{outline:2px solid var(--teal);border-color:transparent}
 .chat-send{padding:.6rem 1rem}
 @media(max-width:600px){
-  .chat-open{left:14px;bottom:14px;padding:.7rem 1rem}
+  .chat-open{right:14px;bottom:14px;padding:.7rem 1rem}
+  .has-chat .fab{bottom:72px}
   .chat-panel{left:0;right:0;bottom:0;width:100%;height:min(85vh,640px);border-radius:22px 22px 0 0}
 }
