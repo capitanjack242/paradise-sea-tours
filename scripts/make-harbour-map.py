@@ -23,7 +23,10 @@ from shapely.ops import unary_union
 
 SOURCE = ("https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/main/"
           "releaseData/gbOpen/BHS/ADM1/geoBoundaries-BHS-ADM1.geojson")
-OUT = pathlib.Path(__file__).resolve().parent.parent / "web" / "images" / "harbour-map.svg"
+ROOT = pathlib.Path(__file__).resolve().parent.parent
+OUT = ROOT / "web" / "images" / "harbour-map.svg"
+ROUTES = ROOT / "web" / "images" / "harbour-routes.json"  # the boat's way to each stop
+SCRIPT = ROOT / "web" / "script.js"  # where the stops' positions are
 
 # New Providence is drawn this many degrees further south than it really is,
 # to open up the harbour between it and Paradise Island so the pins there can
@@ -84,6 +87,112 @@ def main():
 </svg>
 ''')
     print(f"wrote {OUT} ({W} x {H}, {OUT.stat().st_size // 1024} KB)")
+    write_routes(land)
+
+
+# ── The boat's routes ────────────────────────────────────────────────────────
+# From the Cruise Port to each stop by water: the shortest way that keeps a little off every
+# shore, found on a grid over the drawing, then straightened and rounded. Written to
+# harbour-routes.json, which the map's boat follows (script.js, drawHarbourRoute).
+
+def stops_from_script():
+    import re
+    src = SCRIPT.read_text()
+    shift = float(re.search(r"npShift: ([\d.]+)", src).group(1))
+    on_np = set(re.findall(r'"([^"]+)"', src[src.index("ON_NEW_PROVIDENCE"):src.index("]);", src.index("ON_NEW_PROVIDENCE"))]))
+    block = src[src.index("const HARBOUR_STOPS"):]
+    block = block[:block.index("];")]
+    stops = {}
+    for name, lat, lon in re.findall(r'\["([^"]+)", ([\d.]+), (-[\d.]+),', block):
+        lat = float(lat) - (shift if name in on_np else 0)
+        stops[name] = xy(float(lon), lat)
+    return stops
+
+
+def write_routes(land, port="Nassau Cruise Port"):
+    import heapq
+    from PIL import Image, ImageDraw
+    from shapely.geometry import LineString, Point, Polygon as P
+
+    G = 2  # drawing units per grid cell
+    cols, rows = W // G + 1, H // G + 1
+    keep_off = land.buffer(0.0009, join_style=1)  # how far the route keeps from the shore
+    img = Image.new("L", (cols, rows), 0)
+    draw = ImageDraw.Draw(img)
+    polys = keep_off.geoms if isinstance(keep_off, MultiPolygon) else [keep_off]
+    for poly in polys:
+        draw.polygon([(x / G, y / G) for x, y in (xy(*c) for c in poly.exterior.coords)], fill=255)
+        for hole in poly.interiors:
+            draw.polygon([(x / G, y / G) for x, y in (xy(*c) for c in hole.coords)], fill=0)
+    blocked = img.load()
+    free = lambda c, r: 0 <= c < cols and 0 <= r < rows and blocked[c, r] == 0
+
+    def nearest_free(x, y):
+        c0, r0 = round(x / G), round(y / G)
+        for d in range(0, 40):
+            best = None
+            for c in range(c0 - d, c0 + d + 1):
+                for r in (r0 - d, r0 + d) if d else (r0,):
+                    if free(c, r):
+                        best = best or (c, r)
+            for r in range(r0 - d + 1, r0 + d):
+                for c in (c0 - d, c0 + d):
+                    if free(c, r):
+                        best = best or (c, r)
+            if best:
+                return best
+        raise SystemExit(f"no water near {x:.0f},{y:.0f}")
+
+    def a_star(a, b):
+        steps = [(1, 0, 1), (-1, 0, 1), (0, 1, 1), (0, -1, 1), (1, 1, 1.414), (1, -1, 1.414), (-1, 1, 1.414), (-1, -1, 1.414)]
+        h = lambda c: ((c[0] - b[0]) ** 2 + (c[1] - b[1]) ** 2) ** 0.5
+        came, cost, todo = {a: None}, {a: 0}, [(h(a), a)]
+        while todo:
+            _, cur = heapq.heappop(todo)
+            if cur == b:
+                break
+            for dc, dr, k in steps:
+                nxt = (cur[0] + dc, cur[1] + dr)
+                if not free(*nxt):
+                    continue
+                new = cost[cur] + k
+                if new < cost.get(nxt, 1e18):
+                    cost[nxt], came[nxt] = new, cur
+                    heapq.heappush(todo, (new + h(nxt), nxt))
+        if b not in came:
+            raise SystemExit("no way by water")
+        cells, cur = [], b
+        while cur:
+            cells.append(cur)
+            cur = came[cur]
+        return [(c * G, r * G) for c, r in reversed(cells)]
+
+    # The shore in drawing units, to check a straightened route still keeps off it.
+    shore = unary_union([P([xy(*c) for c in p.exterior.coords]) for p in (land.geoms if isinstance(land, MultiPolygon) else [land]) if p.area > 1.5e-7]).buffer(1.5)
+
+    stops = stops_from_script()
+    px, py = stops[port]
+    start = nearest_free(px, py - 6)
+    routes = {}
+    for name, (x, y) in stops.items():
+        if name == port:
+            continue
+        cells = a_star(start, nearest_free(x, y - 6))
+        line = LineString([(px, py - 6), *cells, (x, y - 6)])
+        # Straightened as far as it stays off the shore (except right by the two pins,
+        # which sit on it).
+        ends = Point(px, py - 6).buffer(9).union(Point(x, y - 6).buffer(9))
+        for tol in (6, 4, 2.5, 1.5, 0.8, 0):
+            short = line.simplify(tol)
+            if tol == 0 or not short.difference(ends).intersects(shore):
+                break
+        pts = list(short.coords)
+        if len(pts) > 2:  # round the corners
+            for _ in range(2):
+                pts = [pts[0]] + [q for a, b in zip(pts, pts[1:]) for q in ((.75 * a[0] + .25 * b[0], .75 * a[1] + .25 * b[1]), (.25 * a[0] + .75 * b[0], .25 * a[1] + .75 * b[1]))][1:-1] + [pts[-1]]
+        routes[name] = "M" + "L".join(f"{a:.1f} {b:.1f}" for a, b in pts)
+    ROUTES.write_text(json.dumps(routes, ensure_ascii=False, indent=0) + "\n")
+    print(f"wrote {ROUTES} ({len(routes)} routes)")
 
 
 if __name__ == "__main__":
