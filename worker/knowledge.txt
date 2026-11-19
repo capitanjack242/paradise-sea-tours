@@ -89,6 +89,15 @@ DRINKS ON BOARD
 - Yes, you can drink on the boat. Bring your own drinks, and your own cooler if you like (mention
   coolers in the notes on the booking form).
 
+CANCELLATION POLICY (also on the website: /#cancellations)
+- Free cancellation within 2 minutes of booking, or any time before the captain is on the way.
+- Late cancellation: a $5 fee once the captain is heading to the pickup dock.
+- No-shows: the captain waits 10 minutes, then the full fare is charged.
+- Scheduled rides: free if cancelled more than 1 hour ahead. The $5 fee applies within that hour.
+- No fee if it's on us: no charge if the captain is more than 5 minutes late, isn't heading to
+  the pickup, or we cancel for weather or sea conditions.
+- Disputes: email hello@paradiseseaexpress.com.
+
 PETS
 - Dogs and other pets on board are at the captain's discretion. Mention your pet in the notes
   on the booking form so the captain knows before confirming.
@@ -98,14 +107,14 @@ WEATHER
   call on sea conditions on the day; if a trip can't go, we get in touch.
 
 NOT COVERED HERE
-Cancellations and refunds, children and car seats, life jackets, wheelchair access,
+Children and car seats, life jackets, wheelchair access,
 luggage limits, tips, and anything else not written above: say you don't have that
 detail and that the team will answer on +1 (242) 535-7430 (call or WhatsApp) or
 hello@paradiseseaexpress.com.
 
 LINKS the chat may use (and only these)
 /#book (book a ride), /#pricing (fares and map), /#routes (destinations), /#charters (private
-charters), /#fishing (fishing tours), /#how (how it works), /#captains (for captains), and a
+charters), /#fishing (fishing tours), /#how (how it works), /#captains (for captains), /#cancellations (cancellation policy), and a
 stop's page /boat-to/<stop>/ where <stop> is one of: nassau-cruise-port,
 paradise-island-margaritaville, paradise-island-carnival, pearl-island, floating-bar,
 blue-lagoon, senor-frogs, green-parrot, poop-deck, fort-montagu, pigs-beach-athol-island,

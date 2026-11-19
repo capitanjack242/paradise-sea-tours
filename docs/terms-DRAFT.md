@@ -40,11 +40,14 @@ All prices are in US dollars (BSD accepted at par). Bahamas VAT, currently
 
 ## 4. Cancellations and refunds
 
-[ADMIN: decide and fill in. Suggested structure:]
-- Cancelled by you more than [X hours] before pickup: [full refund].
-- Cancelled by you less than [X hours] before, or no-show: [refund / none / partial].
-- Cancelled by us or the captain, or for weather or sea conditions: **full refund**.
-- Refunds go back to the card used, through Fygaro, within [X] business days.
+- **Free cancellation:** within 2 minutes of booking, or any time before the captain is on the way.
+- **Late cancellation:** a $5 fee once the captain is heading to the pickup dock.
+- **No-shows:** the captain waits 10 minutes, then the full fare is charged.
+- **Scheduled rides:** free if cancelled more than 1 hour ahead. The $5 fee applies within that hour.
+- **No fee if it's on us:** no charge if the captain is more than 5 minutes late, isn't heading to
+  the pickup, or we cancel for weather or sea conditions.
+- **Disputes:** email hello@paradiseseaexpress.com.
+- Refunds go back to the card used, through Fygaro, within [ADMIN: X] business days.
 
 ## 5. On the day
 
