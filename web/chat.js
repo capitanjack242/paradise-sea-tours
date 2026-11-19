@@ -166,6 +166,7 @@
     }
 
     document.body.append(opener, panel);
+    document.body.classList.add("has-chat");
     show(state.open, false);
   }
 
