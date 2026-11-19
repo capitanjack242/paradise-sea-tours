@@ -109,14 +109,21 @@ def stops_from_script():
     return stops
 
 
+# Stops the boat reaches by leaving the harbour at its east end, as the captains run them,
+# though going out of the west end would be shorter: for these the west mouth (between
+# Paradise Island's west tip and Arawak Cay, in drawing units) is closed off.
+EAST_ONLY = {"Blue Lagoon"}
+WEST_MOUTH = (270, 175, 325, 245)  # left, top, right, bottom
+
+
 def write_routes(land, port="Nassau Cruise Port"):
     import heapq
     from PIL import Image, ImageDraw
     from shapely.geometry import LineString, Point, Polygon as P
 
-    G = 2  # drawing units per grid cell
+    G = 1  # drawing units per grid cell
     cols, rows = W // G + 1, H // G + 1
-    keep_off = land.buffer(0.0009, join_style=1)  # how far the route keeps from the shore
+    keep_off = land.buffer(0.0004, join_style=1)  # how far the route keeps from the shore
     img = Image.new("L", (cols, rows), 0)
     draw = ImageDraw.Draw(img)
     polys = keep_off.geoms if isinstance(keep_off, MultiPolygon) else [keep_off]
@@ -124,20 +131,36 @@ def write_routes(land, port="Nassau Cruise Port"):
         draw.polygon([(x / G, y / G) for x, y in (xy(*c) for c in poly.exterior.coords)], fill=255)
         for hole in poly.interiors:
             draw.polygon([(x / G, y / G) for x, y in (xy(*c) for c in hole.coords)], fill=0)
-    blocked = img.load()
+    east = img.copy()
+    l, t, r_, b = WEST_MOUTH
+    ImageDraw.Draw(east).rectangle([l / G, t / G, r_ / G, b / G], fill=255)
+    grids = {False: img.load(), True: east.load()}
+    blocked = grids[False]
     free = lambda c, r: 0 <= c < cols and 0 <= r < rows and blocked[c, r] == 0
+    sea = set()  # water joined to the open sea (not a pond or a closed-off cove)
+
+    def open_sea(seed):
+        from collections import deque
+        todo, seen = deque([seed]), {seed}
+        while todo:
+            c, r = todo.popleft()
+            for n in ((c + 1, r), (c - 1, r), (c, r + 1), (c, r - 1)):
+                if n not in seen and free(*n):
+                    seen.add(n)
+                    todo.append(n)
+        return seen
 
     def nearest_free(x, y):
         c0, r0 = round(x / G), round(y / G)
-        for d in range(0, 40):
+        for d in range(0, 80):
             best = None
             for c in range(c0 - d, c0 + d + 1):
                 for r in (r0 - d, r0 + d) if d else (r0,):
-                    if free(c, r):
+                    if (c, r) in sea:
                         best = best or (c, r)
             for r in range(r0 - d + 1, r0 + d):
                 for c in (c0 - d, c0 + d):
-                    if free(c, r):
+                    if (c, r) in sea:
                         best = best or (c, r)
             if best:
                 return best
@@ -172,11 +195,15 @@ def write_routes(land, port="Nassau Cruise Port"):
 
     stops = stops_from_script()
     px, py = stops[port]
+    seed = next((c, r) for c in range(cols) for r in range(rows) if free(c, r))  # the top-left corner is open sea
+    sea = open_sea(seed)
     start = nearest_free(px, py - 6)
     routes = {}
     for name, (x, y) in stops.items():
         if name == port:
             continue
+        blocked = grids[name in EAST_ONLY]
+        print(f"  {name}")
         cells = a_star(start, nearest_free(x, y - 6))
         line = LineString([(px, py - 6), *cells, (x, y - 6)])
         # Straightened as far as it stays off the shore (except right by the two pins,
