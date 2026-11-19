@@ -52,6 +52,14 @@ const json = (body, status = 200) =>
 export default {
   async fetch(request, env, ctx) {
     const { pathname } = new URL(request.url);
+    if (pathname === "/api/ships") {
+      try {
+        return await shipsInPort();
+      } catch (err) {
+        console.error(`Ships: ${err.message}`);
+        return json({ ships: [] });
+      }
+    }
     if (pathname === "/api/ask") {
       try {
         return await ask(request, env, ctx);
@@ -64,6 +72,65 @@ export default {
     return env.ASSETS.fetch(request);
   },
 };
+
+// ── Ships in port ────────────────────────────────────────────────────────────
+// GET /api/ships → { when: "today" | "tomorrow", date, ships: [{ name, arrive, depart }] }
+// The cruise ships at Nassau today (or tomorrow, once today's have all sailed), read from
+// CruiseTimetables.com's public Nassau schedule and credited on the page. Read at most once
+// every three hours, so their site sees a handful of requests a day.
+const SHIPS_FOR = 3 * 3600e3;
+let ships = { at: 0, key: "", body: null };
+async function shipsInPort() {
+  const now = new Date();
+  const nassau = (d, opts) => d.toLocaleString("en-US", { timeZone: "America/Nassau", ...opts });
+  const hourNow = Number(nassau(now, { hour: "numeric", minute: "numeric", hour12: false }).replace(":", ""));
+  const dayOf = (d) => {
+    const [day, mon, year] = [nassau(d, { day: "2-digit" }), nassau(d, { month: "short" }).toLowerCase(), nassau(d, { year: "numeric" })];
+    return { slug: `${day}${mon}${year}`, label: nassau(d, { weekday: "short", day: "numeric", month: "short" }) };
+  };
+  const read = async (d) => {
+    const { slug, label } = dayOf(d);
+    const res = await fetch(`https://www.cruisetimetables.com/nassaubahamasschedule-${slug}.html`, {
+      headers: { "user-agent": "paradiseseaexpress.com (ships in port today; hello@paradiseseaexpress.com)" },
+      cf: { cacheTtl: 10800, cacheEverything: true },
+    });
+    if (!res.ok) throw new Error(`schedule ${res.status}`);
+    const text = (await res.text())
+      .replace(/<(script|style)[\s\S]*?<\/\1>/gi, "")
+      .replace(/<[^>]+>/g, "\n")
+      .replace(/&amp;/g, "&").replace(/&#39;|&rsquo;/g, "'").replace(/&nbsp;/g, " ");
+    const lines = text.split("\n").map((l) => l.trim()).filter(Boolean);
+    const list = [];
+    lines.forEach((line, i) => {
+      const m = /^(?:a (\d{4}))?\s*(?:d (\d{4}))?$/.exec(line);
+      if (!m || (!m[1] && !m[2]) || i === 0) return;
+      const name = lines[i - 1];
+      if (!/[a-z]/i.test(name) || name.length > 60) return;
+      const time = (hhmm) => {
+        if (!hhmm) return null;
+        const h = Number(hhmm.slice(0, 2)), min = hhmm.slice(2);
+        return `${h % 12 || 12}${min === "00" ? "" : `:${min}`}${h < 12 ? "am" : "pm"}`;
+      };
+      list.push({ name, arrive: time(m[1]), depart: time(m[2]), departs: m[2] ? Number(m[2]) : 2400 });
+    });
+    return { label, list };
+  };
+  const key = dayOf(now).slug + (hourNow >= 1500 ? "pm" : "am");
+  if (ships.body && ships.key === key && Date.now() - ships.at < SHIPS_FOR) return json(ships.body);
+  let today = await read(now);
+  let when = "today";
+  // Once every ship has sailed, show tomorrow's.
+  if (today.list.length && today.list.every((s) => s.departs <= hourNow)) {
+    today = await read(new Date(now.getTime() + 86400e3));
+    when = "tomorrow";
+  } else if (!today.list.length && hourNow >= 1500) {
+    today = await read(new Date(now.getTime() + 86400e3));
+    when = "tomorrow";
+  }
+  const body = { when, date: today.label, ships: today.list.map(({ departs, ...s }) => s), source: "https://www.cruisetimetables.com/nassau-bahamas-cruise-ship-schedule.html" };
+  ships = { at: Date.now(), key, body };
+  return json(body);
+}
 
 // The fare table, from the live price list (cached a few minutes), or the snapshot the site
 // was built with if the database can't be reached.
