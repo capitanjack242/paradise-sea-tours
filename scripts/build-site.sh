@@ -30,7 +30,8 @@ V="$(printf '%s' "$V" | cut -c1-8)"
 
 find _site -name '*.html' -print0 | xargs -0 sed -i.bak \
   -e "s|href=\"styles\.css\"|href=\"styles.css?v=$V\"|g" \
-  -e "s|src=\"script\.js\"|src=\"script.js?v=$V\"|g"
+  -e "s|src=\"script\.js\"|src=\"script.js?v=$V\"|g" \
+  -e "s|src=\"chat\.js\"|src=\"chat.js?v=$V\"|g"
 find _site -name '*.bak' -delete
 
 # One page per stop (/boat-to/<stop>/) from the live price list, plus the

@@ -146,6 +146,7 @@ function page(stop, docks, routes) {
   </div>
 </footer>
 <script src="/routes.js${V ? `?v=${V}` : ""}" defer></script>
+<script src="/chat.js${V ? `?v=${V}` : ""}" defer></script>
 </body>
 </html>
 `;
