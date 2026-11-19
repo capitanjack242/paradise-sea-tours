@@ -1,0 +1,9 @@
+{
+  "name": "paradise-sea-express-site",
+  "private": true,
+  "type": "module",
+  "description": "paradiseseaexpress.com: the static site (scripts/build-site.sh) and the chat's worker (worker/index.js).",
+  "dependencies": {
+    "@anthropic-ai/sdk": "^1.10.0"
+  }
+}

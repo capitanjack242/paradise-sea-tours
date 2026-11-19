@@ -10,3 +10,5 @@ __pycache__/
 .claude/
 supabase/.temp/
 _site/
+.dev.vars
+.wrangler/
