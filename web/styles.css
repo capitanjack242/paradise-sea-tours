@@ -138,7 +138,7 @@ img{max-width:100%}
 .tint-navy .step-num{background:var(--aqua);color:var(--navy);box-shadow:0 8px 22px rgba(143,227,238,.25)}
 .tint-deep .price-card.featured{border-color:var(--aqua)}
 
-.tint-teal{background:linear-gradient(160deg,var(--teal),var(--deep));--wave:var(--teal);color:#fff}
+.tint-teal{background:linear-gradient(180deg,var(--teal),var(--deep));--wave:var(--teal);color:#fff}
 .tint-teal .section-title{color:#fff}
 .tint-teal .section-sub{color:#e0f7fb}
 
