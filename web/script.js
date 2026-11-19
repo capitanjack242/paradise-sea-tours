@@ -553,6 +553,28 @@ function pickStop(name) {
 }
 drawHarbour();
 
+// ── Ships in port today ─────────────────────────────────────────────────────
+/* The strip under the banner: today's cruise ships and when they sail, from the worker
+   (/api/ships). Stays hidden when there are none or the schedule can't be read. */
+(async () => {
+  const strip = document.getElementById("shipsStrip");
+  if (!strip) return;
+  try {
+    const res = await fetch("/api/ships");
+    const data = res.ok ? await res.json() : null;
+    if (!data?.ships?.length) return;
+    document.getElementById("shipsWhen").textContent = `In port ${data.when === "tomorrow" ? "tomorrow" : "today"} · ${data.date}`;
+    document.getElementById("shipsList").replaceChildren(...data.ships.map((ship) => {
+      const li = document.createElement("li");
+      const b = document.createElement("b");
+      b.textContent = ship.name;
+      li.append(b, ship.depart ? ` · sails ${ship.depart}` : "");
+      return li;
+    }));
+    strip.hidden = false;
+  } catch {}
+})();
+
 // ── Quick booking in the hero ─────────────────────────────────────────────
 /* From, To and People at the top of the page, with the fare straight away.
    It books nothing itself: "Book this ride" copies the choices into the full

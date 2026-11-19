@@ -23,6 +23,9 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles.css">
+<!-- For Google: the business (hours, phone, place) and the questions below, as data. -->
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "LocalBusiness", "additionalType": "https://schema.org/BoatTrip", "name": "Paradise Sea Express", "url": "https://paradiseseaexpress.com/", "logo": "https://paradiseseaexpress.com/images/logo-mark-192.png", "image": "https://paradiseseaexpress.com/images/share-card.jpg", "description": "On-demand boat rides, private charters and fishing tours in Nassau, The Bahamas, with fixed per-person fares from the Cruise Port.", "telephone": "+1-242-535-7430", "email": "hello@paradiseseaexpress.com", "priceRange": "$10–$45 per person", "address": {"@type": "PostalAddress", "streetAddress": "Prince George Wharf", "addressLocality": "Nassau", "addressRegion": "New Providence", "addressCountry": "BS"}, "geo": {"@type": "GeoCoordinates", "latitude": 25.0797, "longitude": -77.342}, "openingHoursSpecification": [{"@type": "OpeningHoursSpecification", "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"], "opens": "07:00", "closes": "22:00"}], "areaServed": "Nassau, The Bahamas"}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "How does booking work?", "acceptedAnswer": {"@type": "Answer", "text": "Pick your pickup, your stop, the day, the time and how many are coming on the booking form. You see the fare straight away. A licensed Bahamian captain nearby takes your run, usually within minutes during operating hours, and you get a private link to your trip."}}, {"@type": "Question", "name": "When do I pay?", "acceptedAnswer": {"@type": "Answer", "text": "By card, on our payment provider's secure page, once your captain is confirmed and never before. Fares are per person; 10% Bahamas VAT is added at checkout."}}, {"@type": "Question", "name": "What is your cancellation policy?", "acceptedAnswer": {"@type": "Answer", "text": "Free within 2 minutes of booking, or any time before the captain is on the way. A $5 fee once the captain is heading to the pickup dock. No-shows are charged the full fare after a 10-minute wait. No charge if it's on us. Refunds go back to your card within 10 business days."}}, {"@type": "Question", "name": "What hours do the boats run?", "acceptedAnswer": {"@type": "Answer", "text": "7am to 10pm, every day. Private charters by appointment."}}, {"@type": "Question", "name": "Will I be back in time for my ship?", "acceptedAnswer": {"@type": "Answer", "text": "Tell us your ship and its all-aboard time in the notes when you book, and choose a return time that leaves room to spare. We plan your run around it."}}, {"@type": "Question", "name": "Can we drink on the boat?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. Bring your own drinks, and your own cooler if you like; mention coolers in the notes when you book."}}, {"@type": "Question", "name": "Can I bring my dog?", "acceptedAnswer": {"@type": "Answer", "text": "Pets are at the captain's discretion. Mention your pet in the notes when you book so the captain knows before confirming."}}, {"@type": "Question", "name": "What if the weather is bad?", "acceptedAnswer": {"@type": "Answer", "text": "The captain makes the final call on sea conditions on the day. If we cancel for weather or sea conditions, there's no charge."}}, {"@type": "Question", "name": "How many people can come?", "acceptedAnswer": {"@type": "Answer", "text": "Up to 12 on the booking form. For bigger groups, call or WhatsApp +1 (242) 535-7430."}}, {"@type": "Question", "name": "How much is a private charter?", "acceptedAnswer": {"@type": "Answer", "text": "Charters are priced for your day: tell us the day, the hours and your group size and we send a fixed price before you pay anything. 2-hour minimum, captain included."}}]}</script>
 </head>
 <body>
 <!-- Line icons (24px grid, 2px stroke), used as <svg class="ico"><use href="#i-name"/></svg>.
@@ -94,6 +97,17 @@
       <a href="#" data-call><svg class="ico" aria-hidden="true"><use href="#i-phone"/></svg> Call us</a></p>
   </div>
 </section>
+
+<!-- SHIPS IN PORT: filled by script.js from /api/ships (worker/index.js); stays hidden if
+     the schedule can't be read. -->
+<div class="ships-strip" id="shipsStrip" hidden>
+  <div class="container ships-inner">
+    <p class="ships-title"><svg class="ico" aria-hidden="true"><use href="#i-anchor"/></svg> <span id="shipsWhen">In port today</span></p>
+    <ul class="ships-list" id="shipsList"></ul>
+    <p class="ships-note">Tell us your ship when you book and we'll have you back with time to spare.
+      <a id="shipsSource" href="https://www.cruisetimetables.com/nassau-bahamas-cruise-ship-schedule.html" rel="noopener" target="_blank">Schedule: CruiseTimetables.com</a></p>
+  </div>
+</div>
 
 <!-- ROUTES -->
 <section id="routes" class="section tint-sand">
@@ -312,6 +326,27 @@
   </div>
 </section>
 
+<!-- QUESTIONS. The answers match worker/knowledge.txt (the chat) and the FAQ data in <head>;
+     change them together. -->
+<section id="faq" class="section wave">
+  <div class="container faq-wrap">
+    <h2 class="section-title">Questions</h2>
+    <p class="section-sub">Anything else? Ask us in the chat, or call +1 (242) 535-7430.</p>
+    <div class="faq">
+      <details class="faq-item"><summary>How does booking work?</summary><p>Pick your pickup, your stop, the day, the time and how many are coming on the booking form. You see the fare straight away. A licensed Bahamian captain nearby takes your run, usually within minutes during operating hours, and you get a private link to your trip.</p></details>
+      <details class="faq-item"><summary>When do I pay?</summary><p>By card, on our payment provider's secure page, once your captain is confirmed and never before. Fares are per person; 10% Bahamas VAT is added at checkout.</p></details>
+      <details class="faq-item"><summary>What is your cancellation policy?</summary><p>Free within 2 minutes of booking, or any time before the captain is on the way. A $5 fee once the captain is heading to the pickup dock. No-shows are charged the full fare after a 10-minute wait. No charge if it's on us. Refunds go back to your card within 10 business days.</p></details>
+      <details class="faq-item"><summary>What hours do the boats run?</summary><p>7am to 10pm, every day. Private charters by appointment.</p></details>
+      <details class="faq-item"><summary>Will I be back in time for my ship?</summary><p>Tell us your ship and its all-aboard time in the notes when you book, and choose a return time that leaves room to spare. We plan your run around it.</p></details>
+      <details class="faq-item"><summary>Can we drink on the boat?</summary><p>Yes. Bring your own drinks, and your own cooler if you like; mention coolers in the notes when you book.</p></details>
+      <details class="faq-item"><summary>Can I bring my dog?</summary><p>Pets are at the captain's discretion. Mention your pet in the notes when you book so the captain knows before confirming.</p></details>
+      <details class="faq-item"><summary>What if the weather is bad?</summary><p>The captain makes the final call on sea conditions on the day. If we cancel for weather or sea conditions, there's no charge.</p></details>
+      <details class="faq-item"><summary>How many people can come?</summary><p>Up to 12 on the booking form. For bigger groups, call or WhatsApp +1 (242) 535-7430.</p></details>
+      <details class="faq-item"><summary>How much is a private charter?</summary><p>Charters are priced for your day: tell us the day, the hours and your group size and we send a fixed price before you pay anything. 2-hour minimum, captain included.</p></details>
+    </div>
+  </div>
+</section>
+
 <!-- CLOSING CALL TO ACTION -->
 <section class="cta-band wave" aria-label="Book a ride">
   <div class="container cta-inner">
@@ -500,6 +535,7 @@
         <li><a href="#fishing">Fishing tours</a></li>
         <li><a href="#book">Book a ride</a></li>
         <li><a href="#cancellations">Cancellation policy</a></li>
+        <li><a href="#faq">Questions</a></li>
         <li><a href="#captains">For captains</a></li>
       </ul>
     </div>

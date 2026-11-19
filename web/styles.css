@@ -522,3 +522,26 @@ img{max-width:100%}
   .has-chat .fab{bottom:72px}
   .chat-panel{left:0;right:0;bottom:0;width:100%;height:min(85vh,640px);border-radius:22px 22px 0 0}
 }
+
+/* Ships in port today (script.js fills it from /api/ships) */
+.ships-strip{background:var(--navy);color:#dcedf5;border-top:1px solid rgba(255,255,255,.08)}
+.ships-strip[hidden]{display:none}
+.ships-inner{display:flex;flex-wrap:wrap;align-items:center;gap:.6rem 1.2rem;padding:.9rem 0}
+.ships-title{margin:0;font-weight:700;color:#fff;white-space:nowrap}
+.ships-title .ico{color:var(--aqua)}
+.ships-list{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:.45rem}
+.ships-list li{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);border-radius:999px;padding:.25rem .75rem;font-size:.85rem;white-space:nowrap}
+.ships-list li b{color:#fff;font-weight:600}
+.ships-note{margin:0;flex-basis:100%;font-size:.8rem;color:#a9c6d6}
+.ships-note a{color:var(--aqua);margin-left:.3rem}
+
+/* Questions */
+#faq{--wave:#fff;background:#fff}
+.faq-wrap{max-width:820px}
+.faq{display:grid;gap:.7rem}
+.faq-item{background:var(--foam);border:1px solid var(--line);border-radius:16px;padding:0 1.2rem}
+.faq-item summary{cursor:pointer;list-style:none;padding:1rem 2rem 1rem 0;font-weight:600;color:var(--navy);position:relative}
+.faq-item summary::-webkit-details-marker{display:none}
+.faq-item summary::after{content:"+";position:absolute;right:0;top:50%;transform:translateY(-50%);font-size:1.4rem;color:var(--teal);transition:transform .2s ease}
+.faq-item[open] summary::after{transform:translateY(-50%) rotate(45deg)}
+.faq-item p{margin:0 0 1rem;color:var(--muted)}
