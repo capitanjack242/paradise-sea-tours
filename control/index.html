@@ -54,6 +54,7 @@
       <button data-view="boats" class="vtab">Boats</button>
       <button data-view="map" class="vtab">Map</button>
       <button data-view="payout" class="vtab">Payout</button>
+      <button data-view="codes" class="vtab">Codes</button>
     </div>
     <span id="countInfo" class="muted"></span>
   </div>
@@ -105,6 +106,24 @@
     <div id="payoutTotals" class="payout-totals"></div>
     <div id="payoutBody" class="cards-list"></div>
     <div id="payoutEmpty" class="empty-state" style="display:none">No completed trips this week.</div>
+  </div>
+
+  <!-- Ship codes: one per ship, sailing, group or ad. Made here, checked by
+       the website and the app as passengers type them (0050). -->
+  <div id="codesWrap" style="display:none">
+    <form id="codeForm" class="code-form" autocomplete="off">
+      <label class="cf-code">Code<input name="code" required maxlength="20" placeholder="CELEB14NOV"
+        autocapitalize="characters" spellcheck="false"></label>
+      <label class="code-for-field">What it's for<input name="label" required maxlength="120"
+        placeholder="Carnival Celebration, 14 Nov sailing roll call"></label>
+      <label class="cf-off">$ off<input name="dollars" type="number" min="1" step="1" value="5" required></label>
+      <label class="cf-until"><span>Last day <small>optional</small></span><input name="until" type="date"></label>
+      <label class="cf-max"><span>Max uses <small>optional</small></span><input name="max" type="number" min="1" step="1"></label>
+      <button class="btn btn-primary btn-sm" type="submit">Add code</button>
+      <p id="codeFormStatus" class="code-status" role="status"></p>
+    </form>
+    <div id="codesBody" class="cards-list"></div>
+    <div id="codesEmpty" class="empty-state" style="display:none">No codes yet. Add one above for a ship, a sailing or an ad.</div>
   </div>
 </div>
 

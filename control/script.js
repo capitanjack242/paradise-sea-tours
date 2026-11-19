@@ -26,6 +26,11 @@ const boatsBody = document.getElementById("boatsBody");
 const boatsEmpty = document.getElementById("boatsEmpty");
 const payoutWrap = document.getElementById("payoutWrap");
 const mapWrap = document.getElementById("mapWrap");
+const codesWrap = document.getElementById("codesWrap");
+const codesBody = document.getElementById("codesBody");
+const codesEmpty = document.getElementById("codesEmpty");
+const codeForm = document.getElementById("codeForm");
+const codeFormStatus = document.getElementById("codeFormStatus");
 const payoutBody = document.getElementById("payoutBody");
 const payoutEmpty = document.getElementById("payoutEmpty");
 const payoutTotals = document.getElementById("payoutTotals");
@@ -302,6 +307,163 @@ async function loadBoats() {
   boatsList = data;
 }
 
+// ── ship codes ───────────────────────────────────────────────────────────
+/* A code per ship, sailing, group or ad (0050). Made and switched off here;
+   how many bookings each brought is counted from the bookings already loaded,
+   so the numbers match the board. Codes are never deleted: a booking keeps the
+   code it was made with, and switching one off is enough to stop it. */
+let codesList = [];
+
+async function loadCodes() {
+  const { data, error } = await db
+    .from("promo_codes")
+    .select("*")
+    .order("created_at", { ascending: false });
+  if (error) {
+    console.error("load codes failed:", error);
+    codeFormStatus.textContent = "Couldn't load the codes. Refresh and try again.";
+    return;
+  }
+  codesList = data;
+  renderCodes();
+}
+
+/** Today in Nassau as YYYY-MM-DD, the same day a code's last day is written in. */
+const nassauToday = () => new Date().toLocaleDateString("en-CA", NASSAU);
+
+/** Why a code isn't working, or null if it is. The same rules as the database. */
+function codeProblem(c, used) {
+  if (!c.is_active) return "Switched off";
+  if (c.valid_until && nassauToday() > c.valid_until) return "Past its last day";
+  if (c.max_uses != null && used >= c.max_uses) return "Used up";
+  return null;
+}
+
+function renderCodes() {
+  const stats = new Map();
+  for (const b of window.__allBookings || []) {
+    if (!b.promo_code || b.status === "cancelled") continue;
+    const s = stats.get(b.promo_code) || { used: 0, fares: 0, off: 0 };
+    s.used += 1;
+    s.fares += b.quoted_price_cents || 0;
+    s.off += b.discount_cents || 0;
+    stats.set(b.promo_code, s);
+  }
+  const working = codesList.filter((c) => !codeProblem(c, stats.get(c.code)?.used || 0)).length;
+  countInfo.textContent = `${working} of ${codesList.length} codes working`;
+  codesEmpty.style.display = codesList.length ? "none" : "block";
+  codesBody.innerHTML = codesList.map((c) => codeHtml(c, stats.get(c.code))).join("");
+}
+
+function codeHtml(c, s = { used: 0, fares: 0, off: 0 }) {
+  const problem = codeProblem(c, s.used);
+  const link = `${location.origin}/?code=${encodeURIComponent(c.code)}`;
+  const until = c.valid_until
+    ? new Date(`${c.valid_until}T12:00:00Z`).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" })
+    : null;
+  const terms = [
+    `${dollars(c.discount_cents)} off a booking`,
+    until ? `last day ${until}` : "no end date",
+    c.max_uses != null ? `${c.max_uses} uses (${Math.max(c.max_uses - s.used, 0)} left)` : "no use limit",
+  ].join(" · ");
+  return `
+    <article class="code-card${problem ? " is-off" : ""}">
+      <div class="code-top">
+        <div>
+          <div class="code-name">${esc(c.code)}</div>
+          <div class="code-for">${esc(c.label)}</div>
+        </div>
+        <div class="code-actions">
+          <span class="boat-state ${problem ? "st-off" : "st-on"}">${problem ? esc(problem) : "● Working"}</span>
+          <button type="button" class="btn btn-ghost btn-sm code-toggle" data-code="${esc(c.code)}"
+            data-on="${c.is_active}">${c.is_active ? "Switch off" : "Switch on"}</button>
+        </div>
+      </div>
+      <div class="code-terms">${terms}</div>
+      <div class="code-stats">${s.used
+        ? `<strong>${s.used} booking${s.used === 1 ? "" : "s"}</strong> · ${dollars(s.fares)} in fares · ${dollars(s.off)} off, paid by Paradise`
+        : "No bookings with it yet"}</div>
+      <div class="code-link">
+        <input type="text" readonly value="${esc(link)}" aria-label="Link that fills in ${esc(c.code)}">
+        <button type="button" class="btn btn-ghost btn-sm code-copy" data-link="${esc(link)}">Copy link</button>
+      </div>
+    </article>`;
+}
+
+codeForm.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const f = Object.fromEntries(new FormData(codeForm).entries());
+  const code = (f.code || "").trim().toUpperCase();
+  const label = (f.label || "").trim();
+  const cents = Math.round(Number(f.dollars) * 100);
+  const max = f.max ? Number(f.max) : null;
+  codeFormStatus.className = "code-status err";
+  if (!/^[A-Z0-9-]{3,20}$/.test(code)) {
+    codeFormStatus.textContent = "A code is 3 to 20 letters, numbers or dashes, like CELEB14NOV.";
+    return;
+  }
+  if (!label) {
+    codeFormStatus.textContent = "Say what it's for, so you can tell the codes apart later.";
+    return;
+  }
+  if (!(cents > 0)) {
+    codeFormStatus.textContent = "The amount off has to be more than $0.";
+    return;
+  }
+  if (max != null && !(Number.isInteger(max) && max > 0)) {
+    codeFormStatus.textContent = "Max uses is a whole number, or leave it empty for no limit.";
+    return;
+  }
+  codeFormStatus.className = "code-status";
+  codeFormStatus.textContent = "Adding…";
+  const { error } = await db.from("promo_codes").insert({
+    code,
+    label,
+    discount_cents: cents,
+    valid_until: f.until || null,
+    max_uses: max,
+  });
+  if (error) {
+    console.error("add code failed:", error);
+    codeFormStatus.className = "code-status err";
+    codeFormStatus.textContent = error.code === "23505"
+      ? `${code} already exists. Pick another code.`
+      : "Couldn't add that code. Try again.";
+    return;
+  }
+  codeForm.reset();
+  codeFormStatus.className = "code-status ok";
+  codeFormStatus.textContent = `${code} is live. Copy its link below.`;
+  await loadCodes();
+});
+
+codesBody.addEventListener("click", async (e) => {
+  const copy = e.target.closest(".code-copy");
+  if (copy) {
+    try {
+      await navigator.clipboard.writeText(copy.dataset.link);
+      copy.textContent = "Copied";
+    } catch {
+      copy.previousElementSibling.select(); // the field, for a manual copy
+    }
+    setTimeout(() => (copy.textContent = "Copy link"), 1500);
+    return;
+  }
+  const toggle = e.target.closest(".code-toggle");
+  if (!toggle) return;
+  toggle.disabled = true;
+  const { error } = await db
+    .from("promo_codes")
+    .update({ is_active: toggle.dataset.on !== "true" })
+    .eq("code", toggle.dataset.code);
+  if (error) {
+    console.error("switch code failed:", error);
+    codeFormStatus.className = "code-status err";
+    codeFormStatus.textContent = "Couldn't change that code. Try again.";
+  }
+  await loadCodes();
+});
+
 // ── views and filters ────────────────────────────────────────────────────
 document.getElementById("viewTabs").addEventListener("click", (e) => {
   const btn = e.target.closest("button[data-view]");
@@ -319,10 +481,12 @@ function applyView() {
   boatsWrap.style.display = on("boats");
   payoutWrap.style.display = on("payout");
   mapWrap.style.display = on("map");
+  codesWrap.style.display = on("codes");
   if (currentView === "clients") renderClients(window.__allBookings || []);
   else if (currentView === "boats") renderBoats();
   else if (currentView === "payout") renderPayout();
   else if (currentView === "map") renderMap();
+  else if (currentView === "codes") loadCodes();
   else renderBookings(window.__allBookings || []);
 }
 
@@ -370,6 +534,7 @@ async function loadBookings() {
   else if (currentView === "boats") renderBoats();
   else if (currentView === "payout") renderPayout();
   else if (currentView === "map") renderMap();
+  else if (currentView === "codes") renderCodes();
   else renderBookings(data);
 }
 
