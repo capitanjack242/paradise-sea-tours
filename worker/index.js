@@ -11,7 +11,7 @@
 // Set a monthly spend limit on the key at platform.claude.com.
 //
 // A question it can't answer from its notes is emailed to hello@paradiseseaexpress.com (through
-// Resend: the RESEND_API_KEY secret), so the answer can be added to knowledge.txt. Nothing else
+// Resend: the RESEND_CHAT_API_KEY secret), so the answer can be added to knowledge.txt. Nothing else
 // asked is stored, sent on or logged. Each address may ask ASK_LIMIT (wrangler.jsonc)
 // questions a minute.
 
@@ -159,12 +159,14 @@ const REPLY = {
 };
 
 // A question the chat couldn't answer, emailed to the office (after the reply has gone) through
-// Resend (resend.com), so the answer can be added to knowledge.txt. Needs the RESEND_API_KEY
+// Resend (resend.com), so the answer can be added to knowledge.txt. Needs the RESEND_CHAT_API_KEY
 // secret; without it nothing is sent.
 const FORWARD_TO = "hello@paradiseseaexpress.com";
 const FORWARD_FROM = "Ask us chat <chat@paradiseseaexpress.com>";
 function forward(env, question, answer, earlier) {
-  if (!env.RESEND_API_KEY) return Promise.resolve();
+  // (Named RESEND_CHAT_API_KEY in Cloudflare; RESEND_API_KEY works too.)
+  const key = env.RESEND_CHAT_API_KEY || env.RESEND_API_KEY;
+  if (!key) return Promise.resolve();
   const when = new Date().toLocaleString("en-US", { timeZone: "America/Nassau", dateStyle: "medium", timeStyle: "short" });
   const text =
     `Someone asked the website chat a question it couldn't answer from its notes.\n\n` +
@@ -176,7 +178,7 @@ function forward(env, question, answer, earlier) {
     `(Nothing about who asked is kept. Don't reply to this email: it goes nowhere.)`;
   return fetch(env.RESEND_URL || "https://api.resend.com/emails", {
     method: "POST",
-    headers: { authorization: `Bearer ${env.RESEND_API_KEY}`, "content-type": "application/json" },
+    headers: { authorization: `Bearer ${key}`, "content-type": "application/json" },
     body: JSON.stringify({ from: FORWARD_FROM, to: [FORWARD_TO], subject: `Chat couldn't answer: ${question.slice(0, 70)}`, text }),
   })
     .then(async (res) => res.ok || console.error(`Forward: ${res.status} ${(await res.text()).slice(0, 200)}`))
