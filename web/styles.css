@@ -250,6 +250,11 @@ img{max-width:100%}
 .booking-points{list-style:none;padding:0;margin:1.4rem 0;display:grid;gap:.6rem;font-weight:500}
 .booking-points .ico{color:var(--deep);margin-right:.35rem}
 .booking-call a{color:var(--deep);font-weight:600;text-decoration:underline}
+.policy{margin-top:1.8rem;background:#fff;border:1px solid var(--line);border-left:4px solid var(--teal);border-radius:16px;padding:1.2rem 1.3rem;box-shadow:var(--shadow);scroll-margin-top:90px}
+.policy h3{margin:0 0 .6rem;font-size:1.1rem;color:var(--navy)}
+.policy ul{margin:0;padding-left:1.1rem;display:grid;gap:.45rem;font-size:.92rem;color:var(--muted)}
+.policy strong{color:var(--ink)}
+.policy a{color:var(--deep);font-weight:600}
 .booking-form{background:#fff;border:1px solid var(--line);border-radius:var(--radius);
   padding:1.8rem;box-shadow:var(--shadow);display:grid;gap:1rem}
 .booking-form .row{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
