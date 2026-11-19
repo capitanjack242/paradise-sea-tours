@@ -10,7 +10,7 @@
     close: "Close",
     hello: "Hi! Ask me anything about our boat rides: fares, stops, times, charters or fishing tours.",
     suggestions: ["How much to Pigs Beach?", "What time do boats run?", "How do I pay?", "Can I book a private charter?"],
-    note: "Answers are by AI and can be wrong. To book or for anything urgent, use the booking form or call +1 (242) 535-7430.",
+    note: "Answers are by AI and can be wrong. Questions it can't answer are passed to our team. To book or for anything urgent, use the booking form or call +1 (242) 535-7430.",
     placeholder: "Your question",
     send: "Send",
     thinking: "Thinking…",

@@ -76,8 +76,9 @@ We use a small number of service providers, only for the purposes above:
   receives your name, number or trip link. You can opt out with Google's
   [browser add-on](https://tools.google.com/dlpage/gaoptout).
 - **Anthropic (Claude)** — answers the questions typed into "Ask us", the chat on our
-  website. What you type goes to Anthropic to be answered and is not stored by us; please
-  don't put personal details in it. Anthropic's own
+  website. What you type goes to Anthropic to be answered. We don't keep it, except that a question
+  the chat couldn't answer is emailed to our team, with the chat's reply, so we can add the
+  answer (nothing about who asked is sent); please don't put personal details in it. Anthropic's own
   [privacy policy](https://www.anthropic.com/legal/privacy) applies to what it receives.
 - **Meta (Facebook and Instagram)** — the passenger app tells Meta when it's
   installed and opened, and when a boat is requested (the route and number of
