@@ -554,17 +554,31 @@ function pickStop(name) {
 drawHarbour();
 
 // ── Ships in port today ─────────────────────────────────────────────────────
-/* The strip under the banner: today's cruise ships and when they sail, from the worker
-   (/api/ships). Stays hidden when there are none or the schedule can't be read. */
+/* The strip under the banner: today's cruise ships at Nassau and when they sail (tomorrow's,
+   once today's have all gone), from data/ships.json, which scripts/fetch-ships.py refreshes
+   weekly. Stays hidden when there's nothing to show. */
 (async () => {
   const strip = document.getElementById("shipsStrip");
   if (!strip) return;
   try {
-    const res = await fetch("/api/ships");
+    const res = await fetch("/data/ships.json");
     const data = res.ok ? await res.json() : null;
-    if (!data?.ships?.length) return;
-    document.getElementById("shipsWhen").textContent = `In port ${data.when === "tomorrow" ? "tomorrow" : "today"} · ${data.date}`;
-    document.getElementById("shipsList").replaceChildren(...data.ships.map((ship) => {
+    const nassau = (d, o) => d.toLocaleString("en-CA", { timeZone: "America/Nassau", ...o });
+    const now = new Date();
+    const iso = (d) => nassau(d, { year: "numeric", month: "2-digit", day: "2-digit" });
+    const hour = Number(nassau(now, { hour: "2-digit", minute: "2-digit", hour12: false }).replace(/\D/g, ""));
+    let day = now;
+    let ships = data?.days?.[iso(day)] ?? [];
+    let when = "today";
+    if (!ships.length || ships.every((s) => s.departs && Number(s.departs) <= hour)) {
+      day = new Date(now.getTime() + 86400e3);
+      ships = data?.days?.[iso(day)] ?? [];
+      when = "tomorrow";
+    }
+    if (!ships.length) return;
+    const label = day.toLocaleDateString("en-US", { timeZone: "America/Nassau", weekday: "short", month: "short", day: "numeric" });
+    document.getElementById("shipsWhen").textContent = `In port ${when} · ${label}`;
+    document.getElementById("shipsList").replaceChildren(...ships.map((ship) => {
       const li = document.createElement("li");
       const b = document.createElement("b");
       b.textContent = ship.name;
