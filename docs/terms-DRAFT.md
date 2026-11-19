@@ -47,7 +47,7 @@ All prices are in US dollars (BSD accepted at par). Bahamas VAT, currently
 - **No fee if it's on us:** no charge if the captain is more than 5 minutes late, isn't heading to
   the pickup, or we cancel for weather or sea conditions.
 - **Disputes:** email hello@paradiseseaexpress.com.
-- Refunds go back to the card used, through Fygaro, within [ADMIN: X] business days.
+- Refunds go back to the card used, through Fygaro, within 10 business days.
 
 ## 5. On the day
 
