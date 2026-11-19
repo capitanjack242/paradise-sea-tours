@@ -467,6 +467,8 @@ function drawHarbour() {
 
 /* A dotted line from the port to the picked stop, bowed out to sea. */
 let harbourTrip = 0;
+let harbourRoutes = null;
+fetch("/images/harbour-routes.json").then((r) => (r.ok ? r.json() : null)).then((r) => (harbourRoutes = r)).catch(() => {});
 function drawHarbourRoute(name) {
   const line = document.getElementById("harbourRoute");
   const reveal = document.getElementById("routeMaskPath");
@@ -477,10 +479,15 @@ function drawHarbourRoute(name) {
   const to = find(name);
   boat.setAttribute("opacity", "0");
   if (!to || name === PORT_NAME) { line.setAttribute("d", ""); reveal.setAttribute("d", ""); return; }
-  const [x0, y0] = harbourXY(find(PORT_NAME));
-  const [x1, y1] = harbourXY(to);
-  const mx = (x0 + x1) / 2, my = Math.min(y0, y1) - 24 - Math.abs(x1 - x0) * 0.12;
-  const d = `M${x0.toFixed(1)} ${(y0 - 6).toFixed(1)}Q${mx.toFixed(1)} ${my.toFixed(1)} ${x1.toFixed(1)} ${(y1 - 6).toFixed(1)}`;
+  // The way by water (images/harbour-routes.json, worked out around the islands by
+  // scripts/make-harbour-map.py), or, until that has loaded, a simple curve.
+  let d = harbourRoutes?.[name];
+  if (!d) {
+    const [x0, y0] = harbourXY(find(PORT_NAME));
+    const [x1, y1] = harbourXY(to);
+    const mx = (x0 + x1) / 2, my = Math.min(y0, y1) - 24 - Math.abs(x1 - x0) * 0.12;
+    d = `M${x0.toFixed(1)} ${(y0 - 6).toFixed(1)}Q${mx.toFixed(1)} ${my.toFixed(1)} ${x1.toFixed(1)} ${(y1 - 6).toFixed(1)}`;
+  }
   line.setAttribute("d", d);
   reveal.setAttribute("d", d);
   const len = reveal.getTotalLength();
@@ -488,7 +495,7 @@ function drawHarbourRoute(name) {
   if (matchMedia("(prefers-reduced-motion: reduce)").matches) { reveal.style.strokeDashoffset = "0"; return; }
 
   /* A little boat runs the route from the port, drawing the line behind it. */
-  const ms = Math.min(2200, 700 + len * 2.2);
+  const ms = Math.min(3200, 800 + len * 2.4);
   const start = performance.now();
   boat.setAttribute("opacity", "1");
   const step = (now) => {
